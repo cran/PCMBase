@@ -3,11 +3,11 @@ context("PCMLik, DOU")
 
 library(PCMBase)
 
-if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
+if(PCMBaseIsADevRelease()) {
 
   library(mvtnorm)
 
-  load("testobjects.RData")
+  list2env(PCMBaseTestObjects, globalenv())
 
   test_that("Calling PCMGenerateParameterizations()", {
     expect_silent(tableParametrizationsDOU <- PCMTableParameterizations(structure(0.0, class="DOU")))
@@ -31,7 +31,7 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
               identical(type, "VectorParameter") ), ])
     )
   })
-  set.seed(1)
+  set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
   test_that("Equal likelihood with dmvnorm on a random model, single regime (a)", {
     expect_silent(model.a.123.DOU <- PCM("DOU__Global_X0__Schur_WithNonNegativeDiagonal_Transformable_H1__Schur_WithNonNegativeDiagonal_Transformable_H2__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigmae_x", k = 3, regimes = "a"))
@@ -40,10 +40,8 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
                                       offset = 0, k = 3, load = TRUE))
     #expect_silent(traits.a.123.DOU <- PCMSim(tree.a, model.a.123.DOU, model.a.123.DOU$X0) )
     expect_true(is.finite(PCMLik(traits.a.123, tree.a, model.a.123.DOU)))
-    #expect_equal(PCMLik(traits.a.123, tree.a, model.a.123.DOU),
-    #             dmvnorm(as.vector(traits.a.123[, 1:PCMTreeNumTips(tree.a)]),
-    #                     as.vector(PCMMean(tree.a, model.a.123.DOU, model.a.123.DOU$X0)),
-    #                     PCMVar(tree.a, model.a.123.DOU), log = TRUE))
+    expect_true(abs(PCMLik(traits.a.123, tree.a, model.a.123.DOU) -
+                 PCMLikDmvNorm(traits.a.123, tree.a, model.a.123.DOU)) < 5)
 
   })
 
@@ -54,10 +52,8 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
                                       offset = 0, k = 3, load = TRUE))
     #expect_silent(traits.ab.123.DOU <- PCMSim(tree.ab, model.ab.123.DOU, model.ab.123.DOU$X0) )
     expect_true(is.finite(PCMLik(traits.ab.123, tree.ab, model.ab.123.DOU)))
-    #expect_equal(PCMLik(traits.ab.123, tree.ab, model.ab.123.DOU),
-    #             dmvnorm(as.vector(traits.ab.123[, 1:PCMTreeNumTips(tree.ab)]),
-    #                     as.vector(PCMMean(tree.ab, model.ab.123.DOU, model.ab.123.DOU$X0)),
-    #                     PCMVar(tree.ab, model.ab.123.DOU), log = TRUE))
+    expect_true(abs(PCMLik(traits.ab.123, tree.ab, model.ab.123.DOU) -
+                 PCMLikDmvNorm(traits.ab.123, tree.ab, model.ab.123.DOU)) < 5)
 
   })
 

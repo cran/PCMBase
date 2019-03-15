@@ -8,13 +8,15 @@ PCMTreeSplitAtNode(tree, node,
   tableAncestors = PCMTreeTableAncestors(tree), X = NULL)
 }
 \arguments{
-\item{tree}{a phylo object}
+\item{tree}{a PCMTree object.}
 
 \item{node}{an integer or character indicating a root, internal or tip node}
 
-\item{tableAncestors}{an integer matrix returned by a previous call to PCMTreeTableAncestors(tree) or NULL.}
+\item{tableAncestors}{an integer matrix returned by a previous call to
+PCMTreeTableAncestors(tree) or NULL.}
 
-\item{X}{an optional k x N matrix with trait value vectors for each tip in tree.}
+\item{X}{an optional k x N matrix with trait value vectors for each tip in
+tree.}
 }
 \value{
 A list containing two named phylo objects:
@@ -29,8 +31,23 @@ A list containing two named phylo objects:
 Slit a tree at a given internal node into a clade rooted at this node and the remaining tree after dropping this clade
 }
 \details{
-In the current implementation, the edge.jump and edge.regime members
+In the current implementation, the edge.jump and edge.part members
 of the tree will be discarded and not present in the clade.
-
-TODO: preserveRegimes and preserve regimes
+}
+\examples{
+set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+tree <- PCMTree(ape::rtree(25))
+\donttest{
+PCMTreePlot(tree) + ggtree::geom_nodelab(angle = 45) +
+  ggtree::geom_tiplab(angle = 45)
+}
+spl <- PCMTreeSplitAtNode(tree, 28)
+\donttest{
+PCMTreePlot(PCMTree(spl$clade)) + ggtree::geom_nodelab(angle = 45) +
+  ggtree::geom_tiplab(angle = 45)
+}
+\donttest{
+PCMTreePlot(PCMTree(spl$rest)) + ggtree::geom_nodelab(angle = 45) +
+  ggtree::geom_tiplab(angle = 45)
+}
 }

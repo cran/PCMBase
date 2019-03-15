@@ -2,7 +2,7 @@ Package: PCMBase
 Type: Package
 Title: Simulation and Likelihood Calculation of Phylogenetic
         Comparative Models
-Version: 1.2.7
+Version: 1.2.9
 Authors@R: c(person("Venelin", "Mitov", email = "vmitov@gmail.com",
                     role = c("aut", "cre", "cph")),
              person("Krzysztof", "Bartoszek",
@@ -36,7 +36,7 @@ License: GPL (>= 3.0)
 LazyData: true
 Depends: R (>= 3.1.0)
 Imports: ape, expm, mvtnorm, data.table, ggplot2
-Suggests: testthat, knitr, rmarkdown, abind, ggtree, covr
+Suggests: testthat, knitr, rmarkdown, abind, ggtree, cowplot, covr
 RoxygenNote: 6.1.1
 ByteCompile: yes
 VignetteBuilder: knitr, rmarkdown
@@ -44,10 +44,10 @@ URL: https://venelin.github.io/PCMBase/,
         https://github.com/venelin/PCMBase
 BugReports: https://github.com/venelin/PCMBase/issues
 NeedsCompilation: no
-Packaged: 2018-11-20 15:10:33 UTC; vmitov
+Packaged: 2019-03-15 09:46:04 UTC; vmitov
 Author: Venelin Mitov [aut, cre, cph],
   Krzysztof Bartoszek [ctb],
   Georgios Asimomitis [ctb],
   Tanja Stadler [ctb]
 Repository: CRAN
-Date/Publication: 2018-11-30 23:50:04 UTC
+Date/Publication: 2019-03-15 10:43:33 UTC

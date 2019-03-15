@@ -3,13 +3,13 @@ context("PCMLik, OU")
 
 library(PCMBase)
 
-if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
+if(PCMBaseIsADevRelease()) {
 
   library(mvtnorm)
 
-  load("testobjects.RData")
+  list2env(PCMBaseTestObjects, globalenv())
 
-  set.seed(1)
+  set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
   test_that("Equal likelihood with dmvnorm on a random model, single regime (a)", {
     expect_silent(model.a.123.BM <- PCM("BM", k = 3, regimes = "a"))
@@ -21,6 +21,28 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
       dmvnorm(as.vector(traits.a.123[, 1:PCMTreeNumTips(tree.a)]),
               as.vector(PCMMean(tree.a, model.a.123.BM, model.a.123.BM$X0)),
               PCMVar(tree.a, model.a.123.BM), log = TRUE))
+
+  })
+
+  test_that("Equal likelihood with dmvnorm on a random model, with single regime (a) and SE >0", {
+    expect_silent(model.a.123.BM <- PCM("BM", k = 3, regimes = "a"))
+    expect_silent(PCMParamLoadOrStore(model.a.123.BM,
+                                      PCMParamRandomVecParams(model.a.123.BM),
+                                      offset = 0, k = 3, load = TRUE))
+    expect_equivalent(
+      PCMLik(traits.a.123, tree.a, model.a.123.BM, SE = abs(0.01*traits.a.123[, seq_len(PCMTreeNumTips(tree.a))])),
+      PCMLikDmvNorm(traits.a.123, tree.a, model.a.123.BM, SE = abs(0.01*traits.a.123[, seq_len(PCMTreeNumTips(tree.a))])))
+    expect_equivalent(
+      PCMLik(traits.a.123, tree.a, model.a.123.BM, SE = abs(0.01*traits.a.123[, seq_len(PCMTreeNumTips(tree.a))])),
+      {
+        dmvnorm(
+          as.vector(traits.a.123[, 1:PCMTreeNumTips(tree.a)]),
+          as.vector(PCMMean(tree.a, model.a.123.BM, model.a.123.BM$X0)),
+          PCMVar(tree.a, model.a.123.BM) + diag(abs(0.01*as.vector(traits.a.123[, 1:PCMTreeNumTips(tree.a)]))^2),
+          log = TRUE
+        )
+      }
+    )
 
   })
 
@@ -37,3 +59,4 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
 
   })
 }
+

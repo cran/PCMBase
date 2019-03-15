@@ -102,11 +102,11 @@ PCMOptions <- function() {
 #' @name PCM
 #' @title Create a phylogenetic comparative model object
 #'
-#' @description This is the entry-point function for creating model objects within
-#' the PCMBase framework representing a single model-type with one or several
-#' model-regimes of this type associated with the branches of a tree. For mixed
-#' Gaussian phylogenetic models, which enable multiple model-types, use the
-#' \code{\link{MixedGaussian}} function.
+#' @description This is the entry-point function for creating model objects
+#' within the PCMBase framework representing a single model-type with one or
+#' several model-regimes of this type associated with the branches of a tree.
+#' For mixed Gaussian phylogenetic models, which enable multiple model-types,
+#' use the \code{\link{MixedGaussian}} function.
 #' @param model This argument can take one of the following forms:
 #' \itemize{
 #' \item a character vector of the S3-classes of the model object to be
@@ -126,7 +126,8 @@ PCMOptions <- function() {
 #' @param vecParams NULL (default) or a numeric vector the vector
 #' representation of the variable parameters in the model. See details.
 #' @param offset integer offset in vecParams; see Details.
-#' @param spec NULL or a list specifying the model parameters (see \code{\link{PCMSpecify}}). If NULL (default), the generic PCMSpecify
+#' @param spec NULL or a list specifying the model parameters (see
+#' \code{\link{PCMSpecify}}). If NULL (default), the generic PCMSpecify
 #' is called on the created object of class \code{model}.
 #' @param ... additional parameters intended for use by sub-classes of the PCM
 #' class.
@@ -434,16 +435,40 @@ PCMDescribeParameters <- function(model, ...) {
 #' @param model a PCM.
 #' @param ... additional arguments used by implementing methods.
 #'
-#' @description This is an S3 generic.
+#' @description These are S3 generics. `PCMListParameterizations` should return
+#' all possible parametrizations for the class of `model`.
+#' `PCMListDefaultParameterizations` is a handy way to specify a subset of all
+#' parametrizations. `PCMListDefaultParameterizations` should be used to avoid
+#' generating too many model parametrizations which occupy space in the R-global
+#' environment while they are not used (see \link{PCMGenerateParameterizations}).
+#' It is mandatory to implement a specification for `PCMListParameterizations`
+#' for each newly defined class of models.
+#' `PCMListDefaultParameterizations` has a default implementation that calls
+#' `PCMListParameterizations` and returns the first parametrization for each
+#' parameter. Hence, implementing a method for `PCMListDefaultParameterizations`
+#' for a newly defined model type is optional.
+#'
 #' @return a named list with list elements corresponding to each parameter in
 #' model. Each list element is a list of character vectors, specifying the possible
 #' S3 class attributes for the parameter in question. For an example, type
 #' `PCMListParameterizations.BM` to see the possible parameterizations for the
 #' BM model.
 #'
+#' @seealso PCMGenerateParameterizations
 #' @export
 PCMListParameterizations <- function(model, ...) {
   UseMethod("PCMListParameterizations", model)
+}
+
+#' @rdname PCMListParameterizations
+#' @export
+PCMListDefaultParameterizations <- function(model, ...) {
+  UseMethod("PCMListDefaultParameterizations", model)
+}
+
+#' @export
+PCMListDefaultParameterizations.default <- function(model, ...) {
+  lapply(PCMListParameterizations(model, ...), function(item) item[1])
 }
 
 #' Cartesian product of possible parameterizations for the different parameters of a model
@@ -491,6 +516,10 @@ PCMTableParameterizations <- function(
 #' @param useModelClassNameForFirstRow A logical specifying if the S3 class name of
 #' `model` should be used as a S3 class for the model defined in the first row of
 #' `tableParameterizations`. Default: FALSE.
+#' @param sourceFile NULL or a character string indicating a .R filename, to
+#' which the automatically generated code will be saved. If NULL (the default),
+#' the generated source code is evaluated and the S3 methods are defined in the
+#' global environment. Default: NULL.
 #' @return This function does not return a value. It only has a side effect by
 #' defining S3 methods in `env`.
 #'
@@ -500,7 +529,8 @@ PCMGenerateParameterizations <- function(
   listParameterizations = PCMListParameterizations(model),
   tableParameterizations = PCMTableParameterizations(model, listParameterizations),
   env = .GlobalEnv,
-  useModelClassNameForFirstRow = FALSE) {
+  useModelClassNameForFirstRow = FALSE,
+  sourceFile = NULL) {
 
   if(!is.PCM(model)) {
     # We assume that the passed model's class is a single character not including the
@@ -512,7 +542,7 @@ PCMGenerateParameterizations <- function(
   paramNames <- names(tableParameterizations)
   paramDescriptions <- PCMDescribeParameters(model)
 
-  for(i in 1:nrow(tableParameterizations)) {
+  for(i in seq_len(nrow(tableParameterizations))) {
     nameFunPCMParentClasses <- paste0("PCMParentClasses.", classesModel[1])
     nameFunPCMSpecify <- paste0("PCMSpecify.", classesModel[1])
     if(i != 1 || !useModelClassNameForFirstRow) {
@@ -562,17 +592,71 @@ PCMGenerateParameterizations <- function(
     sourcePCMSpecify <- paste0(
       sourcePCMSpecify,
       "attributes(spec) <- attributes(model)\n",
-      "if(is.null(names(spec))) names(spec) <- ", PCMCharacterVectorToRExpression(paramNames), "\n",
+      "if(is.null(names(spec))) names(spec) <- ",
+      PCMCharacterVectorToRExpression(paramNames), "\n",
       "if(any(sapply(spec, is.Transformable))) class(spec) <- c(class(spec), '_Transformable')\n",
       "spec\n",
       "}")
 
-    eval(parse(text = sourcePCMParentClasses), env)
-    eval(parse(text = sourcePCMSpecify), env)
+    if(!is.null(sourceFile)) {
+      write(paste0(
+        "#' @export\n", sourcePCMParentClasses, "\n\n",
+        "#' @export\n", sourcePCMSpecify, "\n\n"),
+        file = sourceFile, append = TRUE)
+    } else {
+      eval(parse(text = sourcePCMParentClasses), env)
+      eval(parse(text = sourcePCMSpecify), env)
+    }
   }
 }
 
 
+#' Generate default model types for given PCM base-classes
+#' @description This function calls `PCMListParameterizations` or
+#' `PCMListDefaultParameterizations` and generates the corresponding
+#' `PCMParentClasses` and `PCMSpecify` methods in the global environment.
+#' @param baseTypes a character vector specifying base S3-class names for which
+#' the default parametrizations (sub-classes) will be generated. Defaults to
+#' `c("BM", "OU")`.
+#' @param parametrizations a character string specifying which one of
+#' `PCMListParameterizations` or `PCMListDefaultParameterizations` should be used.
+#' This argument should be one of:
+#' \itemize{
+#' \item{"all"}{for calling `PCMListParameterizations`}
+#' \item{"default"}{for calling `PCMListDefaultParameterizations`}
+#' }
+#' @param sourceFile NULL or a character string indicating a .R filename, to
+#' which the automatically generated code will be saved. If NULL (the default),
+#' the generated source code is evaluated and the S3 methods are defined in the
+#' global environment. Default: NULL.
+#' @return This function has side effects only and does not return a value.
+#' @seealso PCMListDefaultParameterizations
+#' @export
+PCMGenerateModelTypes <- function(
+  baseTypes = c("BM", "OU"),
+  parametrizations = c("default", "all"),
+  sourceFile = NULL) {
+
+  if( !is.null(sourceFile) ) {
+    write(paste0(
+      "# This file was auto-generated through a call to ",
+      "PCMGenerateModelTypes()\n" ,
+      "# Do not edit by hand.\n\n"),
+      file = sourceFile)
+  }
+
+  for(bt in baseTypes) {
+    o <- structure(0.0, class=bt)
+    PCMGenerateParameterizations(
+      o,
+      listParameterizations = if(parametrizations[[1]] == "all") {
+        PCMListParameterizations(o)
+      } else {
+        PCMListDefaultParameterizations(o)
+      },
+      sourceFile = sourceFile)
+  }
+}
 
 #' Fix a parameter in a PCM model
 #' @param model a PCM object
@@ -617,54 +701,65 @@ PCMNumTraits <- function(model) {
 
 #' @export
 PCMNumTraits.PCM <- function(model) {
-  attr(model, "k")
+  attr(model, "k", exact = TRUE)
 }
 
-#' Regimes in a model
-#' @param model a PCM object
-#' @return a character or an integer vector giving the regime names in the model
+#' Get the regimes (aka colors) of a PCM or of a PCMTree object
+#' @param obj a PCM or a PCMTree object
+#' @return a character or an integer vector giving the regime names in the obj
 #' @export
-PCMRegimes <- function(model) {
-  UseMethod("PCMRegimes", model)
+PCMRegimes <- function(obj) {
+  UseMethod("PCMRegimes", obj)
 }
 
 #' @export
-PCMRegimes.PCM <- function(model) {
-  attr(model, "regimes")
+PCMRegimes.PCM <- function(obj) {
+  attr(obj, "regimes", exact = TRUE)
 }
 
-#' #' Regimes in a model
-#' #' @param model a PCM object
-#' #' @param tree a phylo object or NULL. If the regimes in the model are integers and tree is not NULL,
-#' #' then these integers are used as indexes in PCMTreeUniqueRegimes(tree). Default NULL.
-#' #' @return a character or an integer vector giving the regime names of the models
-#' #' @export
-#' PCMRegimes <- function(model, tree = NULL, preorder = if(is.null(tree)) NULL else PCMTreePreorder(tree)) {
-#'   UseMethod("PCMRegimes", model)
-#' }
+
+#' Number of regimes in a obj
+#' @param obj a PCM object
+#' @return an integer
+#' @export
+PCMNumRegimes <- function(obj) {
+  UseMethod("PCMNumRegimes", obj)
+}
+
+#' @export
+PCMNumRegimes.PCM <- function(obj) {
+  length(PCMRegimes(obj))
+}
+
+#' Get the model type(s) of a model
 #'
-#' #' @export
-#' PCMRegimes.PCM <- function(model, tree = NULL, preorder = if(is.null(tree)) NULL else PCMTreePreorder(tree)) {
-#'   r <- attr(model, "regimes")
-#'   if(is.integer(r) && !is.null(tree)) {
-#'     PCMTreeUniqueRegimes(tree, preorder)[r]
-#'   } else {
-#'     r
-#'   }
-#' }
+#' @description For a regular PCM object, the model type is its S3 class. For a
+#' MixedGaussian each regime is mapped to one of several possible model types.
+#'
+#' @param obj a PCM object
+#' @return a character vector
+#' @export
+PCMModelTypes <- function(obj) {
+  UseMethod("PCMModelTypes", obj)
+}
+
+#' @export
+PCMModelTypes.PCM <- function(obj) {
+  class(obj)[1]
+}
 
 
 #' Integer vector giving the model type index for each regime
 #' @param model a PCM model
-#' @param tree a phylo object with an edge.regime member
+#' @param tree a phylo object with an edge.part member
 #' @param ... additional parameters passed to methods
 #' @return an integer vector with elements corresponding to the elements in
-#' \code{PCMTreeUniqueRegimes(tree)}
+#' \code{PCMTreeGetPartNames(tree)}
 #' @details This is a generic S3 method. The default implementation for the basic
 #' class PCM returns a vector of 1's, because it assumes that a single model type
-#' is associated with each regime. The implementation for multi-regime models (MRG)
-#' returns the mapping attribute of the MRG object reordered to correspond to
-#' \code{PCMTreeUniqueRegimes(tree)}.
+#' is associated with each regime. The implementation for mixed Gaussian models
+#' returns the mapping attribute of the MixedGaussian object reordered to
+#' correspond to \code{PCMTreeGetPartNames(tree)}.
 #' @export
 PCMMapModelTypesToRegimes <- function(model, tree, ...) {
   UseMethod("PCMMapModelTypesToRegimes", model)
@@ -672,24 +767,12 @@ PCMMapModelTypesToRegimes <- function(model, tree, ...) {
 
 #' @export
 PCMMapModelTypesToRegimes.PCM <- function(model, tree, ...) {
-  uniqueRegimes <- PCMTreeUniqueRegimes(tree)
+  uniqueRegimes <- PCMTreeGetPartNames(tree)
   res <- rep(1, length(uniqueRegimes))
   names(res) <- as.character(uniqueRegimes)
   res
 }
 
-#' Number of regimes in a model
-#' @param model a PCM object
-#' @return an integer
-#' @export
-PCMNumRegimes <- function(model) {
-  UseMethod("PCMNumRegimes", model)
-}
-
-#' @export
-PCMNumRegimes.PCM <- function(model) {
-  length(PCMRegimes(model))
-}
 
 #' Get a vector of all parameters (real and discrete) describing a model on a
 #' tree including the numerical parameters of each model regime, the integer ids
@@ -702,7 +785,7 @@ PCMNumRegimes.PCM <- function(model) {
 #' in the vector of the first splitting node.
 #'
 #' @param model a PCM model
-#' @param tree a phylo object with an edge.regime member.
+#' @param tree a phylo object with an edge.part member.
 #' @param ... additional parameters passed to methods.
 #' @return a numeric vector concatenating the result
 #' @export
@@ -713,7 +796,7 @@ PCMGetVecParamsRegimesAndModels <- function(model, tree, ...) {
 #' @export
 PCMGetVecParamsRegimesAndModels.PCM <- function(model, tree, ...) {
   numericParams <- PCMParamGetShortVector(model)
-  startingNodesRegimes <- PCMTreeGetStartingNodesRegimes(tree)
+  startingNodesRegimes <- PCMTreeGetPartition(tree)
   models <- PCMMapModelTypesToRegimes(model, tree, ...)
   c(numericParams, startingNodesRegimes, models)
 }
@@ -776,7 +859,7 @@ PCMApplyTransformation.PCM <- function(o, ...) {
 #' @param r an integer specifying a model regime
 #' @return an object of type specific to the type of model
 #' @export
-PCMCond <- function(tree, model, r=1, metaI=PCMInfo(NULL, tree, model, verbose), verbose = FALSE) {
+PCMCond <- function(tree, model, r=1, metaI=PCMInfo(NULL, tree, model, verbose = verbose), verbose = FALSE) {
   UseMethod("PCMCond", model)
 }
 
@@ -805,7 +888,7 @@ PCMCond <- function(tree, model, r=1, metaI=PCMInfo(NULL, tree, model, verbose),
 #' # create a random tree of 10 tips
 #' tree <- ape::rtree(10)
 #' PCMMean(tree, modelBM)
-PCMMean <- function(tree, model, X0 = model$X0, metaI=PCMInfo(NULL, tree, model, verbose), internal = FALSE, verbose = FALSE)  {
+PCMMean <- function(tree, model, X0 = model$X0, metaI=PCMInfo(NULL, tree, model, verbose = verbose), internal = FALSE, verbose = FALSE)  {
   UseMethod("PCMMean", model)
 }
 
@@ -813,8 +896,9 @@ PCMMean <- function(tree, model, X0 = model$X0, metaI=PCMInfo(NULL, tree, model,
 #' @param t positive numeric denoting time
 #' @param model a PCM model object
 #' @param X0 a numeric vector of length k, where k is the number of traits in the model (Defaults to model$X0).
-#' @param regime an integer or a character denoting the regime in model for which to do the calculation;
-#' (Defaults to 1L meaning the first regime in the model)
+#' @param regime an integer or a character denoting the regime in model for
+#' which to do the calculation; Defaults to PCMRegimes(model)[1L], meaning the
+#' first regime in the model.
 #' @param verbose a logical indicating if (debug) messages should be written on the console (Defaults to FALSE).
 #' @return A numeric vector of length k
 #' @export
@@ -837,24 +921,30 @@ PCMMean <- function(tree, model, X0 = model$X0, metaI=PCMInfo(NULL, tree, model,
 #' # note that the variance at time 0 is not the 0 matrix because the model has a non-zero
 #' # environmental deviation
 #' PCMMeanAtTime(0, modelBM)
-PCMMeanAtTime <- function(t, model, X0 = model$X0, regime = 1L, verbose = FALSE) {
-  if(is.character(regime)) {
-    regime <- match(regime, PCMRegimes(model))
+PCMMeanAtTime <- function(
+  t, model, X0 = model$X0, regime = PCMRegimes(model)[1L], verbose = FALSE) {
+  if(! (regime %in% PCMRegimes(model)) ) {
+    stop("PCMMeanAtTime:: regime should be among PCMRegimes(model).")
   }
 
-  cherry <- list(tip.labels=c("t1", "t2"),
-                 edge=rbind(c(3L, 1L), c(3L, 2L)),
-                 edge.length=rep(t, 2),
-                 Nnode = 1L,
-                 edge.regime = rep(regime, 2))
+  cherry <- list(tip.label = c("t1", "t2"),
+                 edge = rbind(c(3L, 1L), c(3L, 2L)),
+                 edge.length = rep(t, 2),
+                 Nnode = 1L)
   class(cherry) <- "phylo"
+  cherry <- PCMTree(cherry)
+  PCMTreeSetPartRegimes(cherry, c(`3` = regime[1]))
 
-  metaI <- PCMInfo(NULL, cherry, model, verbose = verbose)
+  metaI <- PCMInfo(X = NULL, tree = cherry, model = model, verbose = verbose)
 
-  metaI$r <- rep(regime, 2)
+  MeanCherry <- PCMMean(
+    tree = cherry,
+    model = model,
+    X0 = X0,
+    metaI = metaI,
+    verbose = verbose)
 
-  MeanCherry <- PCMMean(cherry, model, X0, metaI = metaI, verbose = verbose)
-  MeanCherry[, 1]
+  MeanCherry[, 1L]
 }
 
 
@@ -887,8 +977,12 @@ PCMMeanAtTime <- function(t, model, X0 = model$X0, regime = 1L, verbose = FALSE)
 #' # create a random tree of 10 tips
 #' tree <- ape::rtree(10)
 #' covMat <- PCMVar(tree, modelBM)
-PCMVar <- function(tree, model, W0 = matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)),
-                   metaI=PCMInfo(NULL, tree, model, verbose), internal = FALSE, verbose = FALSE)  {
+PCMVar <- function(
+  tree, model,
+  W0 = matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)),
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI=PCMInfo(NULL, tree, model, verbose = verbose),
+  internal = FALSE, verbose = FALSE)  {
   UseMethod("PCMVar", model)
 }
 
@@ -897,8 +991,12 @@ PCMVar <- function(tree, model, W0 = matrix(0.0, PCMNumTraits(model), PCMNumTrai
 #' @param model a PCM model object
 #' @param W0 a numeric matrix denoting the initial k x k variance covariance matrix at the
 #'  root (default is the k x k zero matrix).
-#' @param regime an integer or a character denoting the regime in model for which to do the calculation;
-#' (Defaults to 1L meaning the first regime in the model)
+#' @param SE a k x k matrix specifying the upper triangular Choleski factor of the measurement error variance-covariance matrix. The product
+#' SE %*% t(SE) is added to the variance calculated from the model.
+#' Default: SE = matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)).
+#' @param regime an integer or a character denoting the regime in model for
+#' which to do the calculation; Defaults to PCMRegimes(model)[1L], meaning the
+#' first regime in the model.
 #' @param verbose a logical indicating if (debug) messages should be written on the console (Defaults to FALSE).
 #' @return A numeric k x k matrix
 #' @export
@@ -921,29 +1019,217 @@ PCMVar <- function(tree, model, W0 = matrix(0.0, PCMNumTraits(model), PCMNumTrai
 #' # note that the variance at time 0 is not the 0 matrix because the model has a non-zero
 #' # environmental deviation
 #' PCMVarAtTime(0, modelBM)
-PCMVarAtTime <- function(t, model, W0 =  matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)),
-                         regime = 1L, verbose = FALSE) {
-  if(is.character(regime)) {
-    regime <- match(regime, PCMRegimes(model))
+PCMVarAtTime <- function(
+  t, model,
+  W0 =  matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)),
+  SE = matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)),
+  regime = PCMRegimes(model)[1L], verbose = FALSE) {
+
+  if(! (regime %in% PCMRegimes(model)) ) {
+    stop("PCMVarAtTime:: regime should be among PCMRegimes(model).")
   }
 
-  cherry <- list(tip.labels=c("t1", "t2"),
-                 edge=rbind(c(3L, 1L), c(3L, 2L)),
-                 edge.length=rep(t, 2),
-                 Nnode = 1L,
-                 edge.regime = rep(regime, 2))
+  cherry <- list(tip.label = c("t1", "t2"),
+                 edge = rbind(c(3L, 1L), c(3L, 2L)),
+                 edge.length = rep(t, 2),
+                 Nnode = 1L)
   class(cherry) <- "phylo"
+  cherry <- PCMTree(cherry)
+  PCMTreeSetPartRegimes(cherry, c(`3` = regime[1]))
 
+  metaI <- PCMInfo(
+    X = NULL, tree = cherry, model = model, verbose = verbose)
 
-  metaI <- PCMInfo(NULL, cherry, model, verbose = verbose)
-
-  # need to manually set the r member in metaI to the regime index:
-  metaI$r <- rep(regime, 2)
-
-  VarCherry <- PCMVar(cherry, model, W0, metaI = metaI, verbose = verbose)
+  VarCherry <- PCMVar(
+    tree = cherry, model = model, W0 = W0,
+    metaI = metaI, verbose = verbose)
 
   k <- PCMNumTraits(model)
-  VarCherry[1:k, 1:k]
+  VarCherry[1:k, 1:k] + (SE %*% t(SE))
+}
+
+
+#' Generate a trajectory for the mean in one regime of a PCM
+#'
+#' @param model a PCM object.
+#' @param regime a regime in `model`. Default is PCMRegimes(model)[1].
+#' @param X0 a numeric vector specifying an initial point in the trait space.
+#' Default is rep(0, PCMNumTraits(model))
+#' @param W0 a numeric k x k symmetric positive definite matrix or 0 matrix,
+#' specifying the initial variance covariance matrix at t0.
+#' @param tX,tVar numeric vectors of positive points in time sorted in
+#' increasing order. tX specifies the points in time at which to calculate the
+#' mean (conditional on X0). tVar specifies a subset of the points in tX at
+#' which to generate random samples from the k-variate Gaussian distribution
+#' with mean equal to the mean value at the corresponding time conditional on X0
+#' and variance equal to the variance at this time, conditional on W0. Default
+#' settings are `tX = seq(0, 100, by = 1)` and
+#' `tVar = tX[seq(0, length(tX), length.out = 4)]`.
+#' @param dims an integer vector specifying the traits for which samples at tVar
+#' should be generated (see tX,tVar above).
+#' Default: seq_len(PCMNumTraits(model)).
+#' @param sizeSamp an integer specifying the number points in the random
+#' samples (see tX and tVar above). Default 100.
+#' @param doPlot2D Should a ggplot object be produced and returned. This is
+#' possible only for two of the traits specified in dims.  Default: FALSE.
+#' @param plot a ggplot object. This can be specified when doPlot2D is TRUE and
+#' allows to add the plot of this trajector as a layer in an existing ggplot.
+#' Default: NULL
+#'
+#' @return if doPlot2D is TRUE, returns a ggplot. Otherwise a named list of two
+#' elements:
+#' \itemize{
+#' \item{dt }{a data.table with columns 'regime', 't', 'X', 'V' and 'samp'. For
+#' each row corresponding to time in tVar, the column samp represents a list of
+#' sizeSamp k-vectors.}
+#' \item{dtPlot }{a data.table with the same data as in dt, but with converted
+#' columns X and samp into 2 x k columns denoted xi, i=1,...,k and xsi (i=1...k)
+#' This is suitable for plotting with ggplot.}}
+#' @importFrom ggplot2 ggplot scale_color_continuous geom_path aes stat_ellipse arrow
+#' @importFrom data.table data.table rbindlist
+#' @importFrom mvtnorm rmvnorm
+#' @export
+#' @examples
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#'
+#' # a Brownian motion model with one regime
+#' modelOU <- PCM(model = PCMDefaultModelTypes()['F'], k = 2)
+#'
+#' # assign the model parameters at random: this will use uniform distribution
+#' # with boundaries specified by PCMParamLowerLimit and PCMParamUpperLimit
+#' # We do this in two steps:
+#' # 1. First we generate a random vector. Note the length of the vector equals
+#' # PCMParamCount(modelBM).
+#'
+#' randomParams <- PCMParamRandomVecParams(
+#'   modelOU, PCMNumTraits(modelOU), PCMNumRegimes(modelOU))
+#' # 2. Then we load this random vector into the model.
+#' PCMParamLoadOrStore(
+#'   modelOU,
+#'   randomParams,
+#'   0, PCMNumTraits(modelBM), PCMNumRegimes(modelBM), load = TRUE)
+#'
+#' # let's plot the trajectory of the model starting from X0 = c(0,0)
+#' PCMTrajectory(
+#'   model = modelOU,
+#'   X0 = c(0, 0),
+#'   doPlot2D = TRUE)
+#'
+#'
+#' # A faceted grid of plots for the two regimes in a mixed model:
+#' pla <- PCMTrajectory(
+#'   model = PCMBaseTestObjects$model_MixedGaussian_ab, regime = "a",
+#'   X0 = c(0, 0, 0),
+#'   doPlot2D = TRUE) +
+#'   ggplot2::scale_y_continuous(limits = c(0, 10)) +
+#'   ggplot2::facet_grid(.~regime)
+#'
+#' plb <- PCMTrajectory(
+#'   model = PCMBaseTestObjects$model_MixedGaussian_ab, regime = "b",
+#'   X0 = c(0, 0, 0),
+#'   doPlot2D = TRUE) +
+#'   ggplot2::scale_y_continuous(limits = c(0, 10)) +
+#'   ggplot2::facet_grid(.~regime) +
+#'   ggplot2::theme(
+#'     axis.title.y = ggplot2::element_blank(),
+#'     axis.text.y = ggplot2::element_blank(),
+#'     axis.ticks.y = ggplot2::element_blank())
+#' cowplot::plot_grid(pla, plb)
+PCMTrajectory <- function(
+  model,
+  regime = PCMRegimes(model)[1],
+  X0 = rep(0, PCMNumTraits(model)),
+  W0 = matrix(0.0, nrow = PCMNumTraits(model), ncol = PCMNumTraits(model)),
+
+  tX = seq(0, 100, by = 1),
+  tVar = tX[seq(0, length(tX), length.out = 4)],
+  dims = seq_len(PCMNumTraits(model)),
+  sizeSamp = 100,
+  doPlot2D = FALSE,
+  plot = NULL) {
+
+  dt <- data.table(
+    regime = regime,
+    t = tX,
+    X = list(NULL),
+    V = list(NULL),
+    samp = list(NULL))
+
+  for(i in seq_len(nrow(dt))) {
+    dt[i, c("regime", "X", "V", "samp"):={
+      X <- PCMMeanAtTime(
+        t = t,
+        model = model,
+        X0 = X0,
+        regime = regime)
+      V = PCMVarAtTime(
+        t = t,
+        W0 = W0,
+        model = model,
+        regime = regime)
+      if(t %in% tVar) {
+        samp <- rmvnorm(sizeSamp, sigma = V)
+      } else {
+        samp <- NULL
+      }
+      list(regime = regime, X = list(X), V = list(V), samp = list(samp))
+    }]
+  }
+
+  dtPlot <- rbindlist(lapply(seq_len(nrow(dt)), function(i) {
+    dt[i,
+       c(list(t = t, regime = regime),
+         lapply(dims, function(d) {
+           X[[1]][d]
+         }),
+         lapply(dims, function(d) {
+           if(is.null(samp[[1]])) {
+             NA_real_
+           } else {
+             samp[[1]][, d] + X[[1]][d]
+           }
+         }))]
+  }))
+  names(dtPlot) <- c("t", "regime", paste0("x", dims), paste0("xs", dims))
+
+  # avoid warning from r check
+  x1 <- x2 <- xs1 <- xs2 <- NULL
+
+  if(doPlot2D) {
+    if(is.null(plot)) {
+      pl <- ggplot(NULL)
+    } else {
+      pl <- plot
+    }
+    pl <- pl + geom_path(
+      data = dtPlot,
+      mapping = aes(x = x1, y = x2))
+    pl <- pl +
+      stat_ellipse(
+        data = dtPlot,
+        aes(x = xs1, y = xs2, group = factor(t)),
+        type="norm")
+    pl
+  } else {
+    list(dt = dt, dtPlot = dtPlot)
+  }
+}
+
+#' Calculate the likelihood of a model using the standard formula for multivariate pdf
+#' @inheritParams PCMLik
+#' @return a numerical value with named attributes as follows:
+#' @importFrom mvtnorm dmvnorm
+#' @export
+PCMLikDmvNorm <- function(
+  X, tree, model,
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI = PCMInfo(X, tree, model, SE, verbose = verbose),
+  log = TRUE,
+  verbose = FALSE) {
+
+  dmvnorm(as.vector(X[, 1:PCMTreeNumTips(tree)]),
+          as.vector(PCMMean(tree, model, model$X0, metaI = metaI)),
+          PCMVar(tree, model, metaI = metaI), log = log)
 }
 
 
@@ -956,6 +1242,11 @@ PCMVarAtTime <- function(t, model, W0 =  matrix(0.0, PCMNumTraits(model), PCMNum
 #' trait values at the root of the tree.
 #' @param tree a phylo object specifying a rooted tree.
 #' @param model an S3 object specifying the model (see Details).
+#' @param SE a k x N matrix specifying the standard error for each measurement in
+#' X. Alternatively, a k x k x N cube specifying an upper triangular k x k
+#' Choleski factor of the variance covariance matrix for the measurement error
+#' for each node i=1, ..., N.
+#' Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.
 #' @param metaI a named list containg meta-information about the data and the
 #' model.
 #' @param verbose a logical indicating if informative messages should be written
@@ -977,7 +1268,9 @@ PCMVarAtTime <- function(t, model, W0 =  matrix(0.0, PCMNumTraits(model), PCMNum
 #' @export
 PCMSim <- function(
   tree, model, X0,
-  metaI = PCMInfo(X = NULL, tree = tree, model = model, verbose = verbose),
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI = PCMInfo(
+    X = NULL, tree = tree, model = model, SE = SE, verbose = verbose),
   verbose = FALSE) {
 
   UseMethod("PCMSim", model)
@@ -1006,7 +1299,12 @@ PCMSim <- function(
 #' @param model an S3 object specifying both, the model type (class, e.g. "OU") as
 #'   well as the concrete model parameter values at which the likelihood is to be
 #'   calculated (see also Details).
-#' @param metaI a list returned from a call to \code{PCMInfo(X, tree, model)},
+#' @param SE a k x N matrix specifying the standard error for each measurement in
+#' X. Alternatively, a k x k x N cube specifying an upper triangular k x k
+#' Choleski factor of the variance covariance matrix for the measurement error
+#' for each node i=1, ..., N.
+#' Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.
+#' @param metaI a list returned from a call to \code{PCMInfo(X, tree, model, SE)},
 #'   containing meta-data such as N, M and k.
 #' @param log logical indicating whether a log-liklehood should be calculated. Default
 #'  is TRUE.
@@ -1041,7 +1339,9 @@ PCMSim <- function(
 #' @export
 PCMLik <- function(
   X, tree, model,
-  metaI = PCMInfo(X, tree, model, verbose = verbose),
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI = PCMInfo(
+    X = X, tree = tree, model = model, SE = SE, verbose = verbose),
   log = TRUE,
   verbose = FALSE) {
 
@@ -1058,15 +1358,19 @@ logLik.PCM <- function(object, ...) {
   if( !is.matrix(X) ) {
     stop("ERR:02032:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object, it should have a k x N numeric matrix attribute called 'X'.")
   }
+  SE <- attr(object, "SE", exact = TRUE)
+  if( !is.matrix(SE) ) {
+    stop("ERR:02033:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object, it should have a k x N numeric matrix attribute called 'SE'.")
+  }
   tree <- attr(object, "tree", exact = TRUE)
   if( !inherits(tree, "phylo") ) {
-    stop("ERR:02033:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object should have an attribute called 'tree' of class phylo.")
+    stop("ERR:02034:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object should have an attribute called 'tree' of class phylo.")
   }
 
   if(is.function(attr(object, "PCMInfoFun", exact = TRUE))) {
-    value <- PCMLik(X, tree, object, log = TRUE, attr(object, "PCMInfoFun", exact = TRUE)(X, tree, object))
+    value <- PCMLik(X, tree, object, SE, metaI = attr(object, "PCMInfoFun", exact = TRUE)(X, tree, object, SE), log = TRUE)
   } else {
-    value <- PCMLik(X, tree, object, log = TRUE)
+    value <- PCMLik(X, tree, object, SE, log = TRUE)
   }
 
   attr(value, "df") <- PCMParamCount(object, countRegimeChanges = TRUE, countModelTypes = TRUE)
@@ -1159,11 +1463,15 @@ PCMPresentCoordinates <- function(X, tree, metaI) {
 #' @param ... additional arguments used by implementing methods.
 #'
 #' @return a named list with the following elements:
+#' \item{X}{k x N matrix denoting the trait data;}
+#' \item{VE}{k x k x N array denoting the measurement error variance covariance
+#' matrix for each for each tip i = 1,...,N. See the parameter \code{SE} in
+#' \code{\link{PCMLik}.}}
 #' \item{M}{total number of nodes in the tree;}
 #' \item{N}{number of tips;}
 #' \item{k}{number of traits;}
-#' \item{RTree}{number of regimes on the tree (distinct elements of tree$edge.regime);}
-#' \item{RModel}{number of regimes in the model (distinct elements of attr(model, regimes));}
+#' \item{RTree}{number of parts on the tree (distinct elements of tree$edge.part);}
+#' \item{RModel}{number of regimes in the model (elements of attr(model, regimes));}
 #' \item{p}{number of free parameters describing the model;}
 #' \item{r}{an integer vector corresponding to tree$edge with the regime for each
 #' branch in tree;}
@@ -1174,32 +1482,65 @@ PCMPresentCoordinates <- function(X, tree, metaI) {
 #' This list is passed to \code{\link{PCMLik}}.
 #'
 #' @export
-PCMInfo <- function(X, tree, model, verbose = FALSE, preorder = NULL, ...) {
+PCMInfo <- function(
+  X, tree, model,
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  verbose = FALSE, preorder = NULL, ...) {
   UseMethod("PCMInfo", model)
 }
 
 #' @export
-PCMInfo.PCM <- function(X, tree, model, verbose = FALSE, preorder = NULL, ...) {
+PCMInfo.PCM <- function(
+  X, tree, model,
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  verbose = FALSE, preorder = NULL, ...) {
 
   if(is.Transformable(model)) {
     model <- PCMApplyTransformation(model)
   }
 
-  if(is.null(tree$edge.regime)) {
-    PCMTreeSetDefaultRegime(tree, model)
-  }
+  tree <- PCMTree(tree)
 
   if(is.null(preorder)) {
     preorder <- PCMTreePreorder(tree)
   }
 
+  k <- PCMNumTraits(model)
+  N <- PCMTreeNumTips(tree)
+  M <- PCMTreeNumNodes(tree)
+
+  VE <- array(0.0, dim = c(k, k, N))
+  if(is.matrix(SE) && identical(unname(dim(SE)), c(k, N)) ) {
+    # SE is k x N matrix
+    for(i in seq_len(N)) {
+      VE[, , i] <- diag(SE[, i]*SE[, i], nrow = k)
+    }
+  } else if(is.array(SE) && identical(unname(dim(SE)), c(k, k, N)) ) {
+    # SE is k x k x N array
+    for(i in seq_len(N)) {
+      VE[, , i] <- SE[, , i] %*% t(SE[, , i])
+    }
+  } else {
+    stop("SE should be a k x N matrix or a k x k x N array.")
+  }
+
   res <- list(
-    M = PCMTreeNumNodes(tree),
-    N = PCMTreeNumTips(tree),
-    k = PCMNumTraits(model),
-    RTree = PCMTreeNumUniqueRegimes(tree),
+    X = X,
+    VE = VE,
+    M = M,
+    N = N,
+    k = k,
+    RTree = PCMTreeNumParts(tree),
     RModel = PCMNumRegimes(model),
-    r = PCMTreeMatchRegimesWithModel(tree, model, preorder),
+    r = {
+      regimeIndices <- match(PCMTreeGetRegimesForEdges(tree), PCMRegimes(model))
+      if(any(is.na(regimeIndices))) {
+        stop(paste0(
+          "PCMInfo:: Some of the regimes for the edges in tree could not be",
+          "matched with regimes in PCMRegimes(model)."))
+      }
+      regimeIndices
+    },
     p = PCMParamCount(model),
     xi = PCMTreeJumps(tree),
     edge = tree$edge,
@@ -1215,24 +1556,36 @@ PCMInfo.PCM <- function(X, tree, model, verbose = FALSE, preorder = NULL, ...) {
 
 #' Create a likelhood function of a numerical vector parameter
 #' @inheritParams PCMLik
-#' @param positiveValueGuard positive numerical value (default Inf), which serves as a guard for numerical error. Values exceeding
-#' this positiveGuard are most likely due to numerical error and PCMOptions()$PCMBase.Value.NA is returned instead.
-#' @return a function of a numerical vector parameter called p returning the likelihood
-#' of X given the tree and the model with parameter values specified by p.
-#' @details It is possible to specify a function for the argument metaI. This function should
-#' have three parameters (X, tree, model) and should return a metaInfo object. (see \code{\link{PCMInfo}}).
+#' @param positiveValueGuard positive numerical value (default Inf), which
+#' serves as a guard for numerical error. Values exceeding
+#' this positiveGuard are most likely due to numerical error and
+#' PCMOptions()$PCMBase.Value.NA is returned instead.
+#' @return a function of a numerical vector parameter called p returning the
+#' likelihood of X given the tree and the model with parameter values specified
+#' by p.
+#' @details It is possible to specify a function for the argument metaI. This
+#' function should have three parameters (X, tree, model) and should return a
+#' metaInfo object. (see \code{\link{PCMInfo}}).
 #'
 #' @export
-PCMCreateLikelihood <- function(X, tree, model, metaI = PCMInfo(X, tree, model), positiveValueGuard = Inf) {
+PCMCreateLikelihood <- function(
+  X, tree, model,
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI = PCMInfo(X, tree, model, SE),
+  positiveValueGuard = Inf) {
+
   if(is.function(metaI)) {
-    metaI <- metaI(X, tree, model)
+    metaI <- metaI(X, tree, model, SE)
   }
   value.NA <- PCMOptions()$PCMBase.Value.NA
 
   function(p, log = TRUE) {
-    PCMParamLoadOrStore(model, p, offset = 0L, k = PCMNumTraits(model), R = PCMNumRegimes(model), load = TRUE)
-    value <- PCMLik(X, tree, model, metaI, log = log)
-    if(value > positiveValueGuard) {
+    PCMParamLoadOrStore(model, p, offset = 0L,
+                        k = PCMNumTraits(model),
+                        R = PCMNumRegimes(model),
+                        load = TRUE)
+    value <- PCMLik(X, tree, model, SE, metaI, log = log)
+    if(is.na(value) || value > positiveValueGuard) {
       value <- value.NA
     }
     value

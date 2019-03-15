@@ -12,14 +12,14 @@
 
 <meta name="author" content="Venelin Mitov" />
 
-<meta name="date" content="2018-11-20" />
+<meta name="date" content="2019-03-15" />
 
 <title>Getting Started with the PCMBase R-package</title>
 
 
 
 <style type="text/css">code{white-space: pre;}</style>
-<style type="text/css">
+<style type="text/css" data-origin="pandoc">
 div.sourceCode { overflow-x: auto; }
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
   margin: 0; padding: 0; vertical-align: baseline; border: none; }
@@ -55,7 +55,29 @@ code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
 code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
 code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
 code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+
 </style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
@@ -70,7 +92,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">Getting Started with the PCMBase R-package</h1>
 <h4 class="author"><em>Venelin Mitov</em></h4>
-<h4 class="date"><em>2018-11-20</em></h4>
+<h4 class="date"><em>2019-03-15</em></h4>
 
 
 <div id="TOC">
@@ -129,7 +151,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>One may wonder why in the above description, p = 8 instead of 10 (see also <code>?PCMParamCount</code>). The reason is that both, the matrix Sigma and the matrix Sigmae, are symmetric matrices and their matching off-diagonal elements are counted only one time.</p>
 <div id="model-regimes" class="section level2">
 <h2>Model regimes</h2>
-<p>Model <em>regimes</em> are different models associated with different branches of the phylogenetic tree. This is a powerful concept allowing to model different evolutionary modes on different lineages on the tree. Let us create a 2-trait BM model with two regimes called a and b:</p>
+<p>Model <em>regimes</em> are different models associated with different parts of the phylogenetic tree. This is a powerful concept allowing to model different evolutionary modes on different lineages on the tree. Let us create a 2-trait BM model with two regimes called a and b:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modelBM.ab &lt;-<span class="st"> </span><span class="kw">PCM</span>(<span class="st">&quot;BM&quot;</span>, <span class="dt">k =</span> <span class="dv">2</span>, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))
 modelBM.ab</code></pre></div>
 <pre><code>## Brownian motion model
@@ -193,9 +215,9 @@ modelBM.ab<span class="op">$</span>Sigmae_x[,, <span class="st">&quot;b&quot;</s
 param2 &lt;-<span class="st"> </span><span class="kw">jitter</span>(param)
 
 <span class="kw">print</span>(param2)</code></pre></div>
-<pre><code>##  [1]  4.986428496  1.990535888  1.601214415 -0.015370015  2.416278662
-##  [6]  1.586909126  0.786985768  2.414898307  0.119580497  0.008673193
-## [11]  0.387799413  0.098946797 -0.012034333  0.410997072</code></pre>
+<pre><code>##  [1]  5.011142116  2.008981272  1.602330599  0.016798115  2.417186893
+##  [6]  1.601842169  0.785598809  2.383546738  0.115406305 -0.018173201
+## [11]  0.391706960  0.096997701  0.004235176  0.401911263</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># set the new parameter vector</span>
 <span class="kw">PCMParamLoadOrStore</span>(modelBM.ab, param2, <span class="dt">offset =</span> <span class="dv">0</span>, <span class="dt">load=</span><span class="ot">TRUE</span>)</code></pre></div>
 <pre><code>## [1] 14</code></pre>
@@ -203,32 +225,32 @@ param2 &lt;-<span class="st"> </span><span class="kw">jitter</span>(param)
 <pre><code>## Brownian motion model
 ## S3 class: BM, GaussianPCM, PCM; k=2; p=14; regimes: a, b. Parameters/sub-models:
 ## X0 (VectorParameter, _Global, numeric; trait values at the root):
-## [1] 4.986428 1.990536
+## [1] 5.011142 2.008981
 ## Sigma_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; Choleski factor of the unit-time variance rate):
 ## , , a
 ## 
-##          [,1]        [,2]
-## [1,] 1.601214 -0.01537001
-## [2,] 0.000000  2.41627866
+##          [,1]       [,2]
+## [1,] 1.602331 0.01679812
+## [2,] 0.000000 2.41718689
 ## 
 ## , , b
 ## 
 ##          [,1]      [,2]
-## [1,] 1.586909 0.7869858
-## [2,] 0.800000 2.4148983
+## [1,] 1.601842 0.7855988
+## [2,] 0.800000 2.3835467
 ## 
 ## Sigmae_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; Choleski factor of the non-heritable variance or the variance of the measurement error):
 ## , , a
 ## 
-##           [,1]        [,2]
-## [1,] 0.1195805 0.008673193
-## [2,] 0.0000000 0.387799413
+##           [,1]       [,2]
+## [1,] 0.1154063 -0.0181732
+## [2,] 0.0000000  0.3917070
 ## 
 ## , , b
 ## 
 ##           [,1]        [,2]
-## [1,] 0.0989468 -0.01203433
-## [2,] 0.0000000  0.41099707
+## [1,] 0.0969977 0.004235176
+## [2,] 0.0000000 0.401911263
 ## 
 ## </code></pre>
 </div>
@@ -236,7 +258,7 @@ param2 &lt;-<span class="st"> </span><span class="kw">jitter</span>(param)
 <div id="simulating-data-on-a-phylogenetic-tree" class="section level1">
 <h1>Simulating data on a phylogenetic tree</h1>
 <p>The first functionality of the PCMBase package is to provide an easy way to simulate multiple trait data on a tree under a given (possibly multiple regime) PCM.</p>
-<p>For this example, first we simulate a birth death tree with two regimes “a” and “b” using the <code>phytools</code> R-package:</p>
+<p>For this example, first we simulate a birth death tree with two parts “a” and “b” using the <code>phytools</code> R-package:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># make results reproducible</span>
 <span class="kw">set.seed</span>(<span class="dv">2</span>)
 
@@ -246,23 +268,28 @@ R &lt;-<span class="st"> </span><span class="dv">2</span>
 <span class="co"># number of extant tips</span>
 N &lt;-<span class="st"> </span><span class="dv">100</span>
 
-tree.a &lt;-<span class="st"> </span><span class="kw">rtree</span>(<span class="dt">n=</span>N)
+tree.a &lt;-<span class="st"> </span><span class="kw">PCMTree</span>(<span class="kw">rtree</span>(<span class="dt">n=</span>N))
 <span class="kw">PCMTreeSetLabels</span>(tree.a)
-<span class="kw">PCMTreeSetDefaultRegime</span>(tree.a, <span class="dt">regime =</span> <span class="st">&quot;a&quot;</span>)
+<span class="kw">PCMTreeSetPartRegimes</span>(tree.a, <span class="dt">part.regime =</span> <span class="kw">c</span>(<span class="st">`</span><span class="dt">101</span><span class="st">`</span> =<span class="st"> &quot;a&quot;</span>), <span class="dt">setPartition =</span> <span class="ot">TRUE</span>)
 
 lstDesc &lt;-<span class="st"> </span><span class="kw">PCMTreeListDescendants</span>(tree.a)
 splitNode &lt;-<span class="st"> </span><span class="kw">names</span>(lstDesc)[<span class="kw">which</span>(<span class="kw">sapply</span>(lstDesc, length) <span class="op">&gt;</span><span class="st"> </span>N<span class="op">/</span><span class="dv">2</span> <span class="op">&amp;</span><span class="st"> </span><span class="kw">sapply</span>(lstDesc, length) <span class="op">&lt;</span><span class="st"> </span><span class="dv">2</span><span class="op">*</span>N<span class="op">/</span><span class="dv">3</span>)][<span class="dv">1</span>]
 
-tree.ab &lt;-<span class="st"> </span><span class="kw">PCMTreeInsertSingletons</span>(tree.a, <span class="dt">nodes =</span> <span class="kw">as.integer</span>(splitNode), 
-                                   <span class="dt">positions =</span> <span class="kw">PCMTreeGetBranchLength</span>(tree.a, <span class="kw">as.integer</span>(splitNode))<span class="op">/</span><span class="dv">2</span>)
-<span class="kw">PCMTreeSetRegimes</span>(tree.ab, <span class="dt">nodes =</span> splitNode, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>), <span class="dt">inplace =</span> <span class="ot">TRUE</span>)
+tree.ab &lt;-<span class="st"> </span><span class="kw">PCMTreeInsertSingletons</span>(
+  tree.a, <span class="dt">nodes =</span> <span class="kw">as.integer</span>(splitNode), 
+  <span class="dt">positions =</span> <span class="kw">PCMTreeGetBranchLength</span>(tree.a, <span class="kw">as.integer</span>(splitNode))<span class="op">/</span><span class="dv">2</span>)
+<span class="kw">PCMTreeSetPartRegimes</span>(
+  tree.ab,
+  <span class="dt">part.regime =</span> <span class="kw">structure</span>(<span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>), <span class="dt">names =</span> <span class="kw">as.character</span>(<span class="kw">c</span>(N<span class="op">+</span><span class="dv">1</span>, splitNode))), 
+  <span class="dt">setPartition =</span> <span class="ot">TRUE</span>)
 
 <span class="co"># Currently this is causing a failure of the pkgdown::build_site(), so we use the </span>
 <span class="co"># ape's tree-plotting function</span>
 <span class="co"># PCMTreePlot(tree.ab)</span>
 
 palette &lt;-<span class="st"> </span><span class="kw">PCMColorPalette</span>(<span class="dv">2</span>, <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))
-<span class="kw">plot</span>(tree.ab, <span class="dt">show.tip.label=</span><span class="ot">FALSE</span>, <span class="dt">edge.color =</span> palette[tree.ab<span class="op">$</span>edge.regime])</code></pre></div>
+<span class="kw">plot</span>(tree.ab, <span class="dt">show.tip.label=</span><span class="ot">FALSE</span>, 
+     <span class="dt">edge.color =</span> palette[<span class="kw">PCMTreeGetRegimesForEdges</span>(tree.ab)])</code></pre></div>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
 <p>Now we can simulate data on the tree using the modelBM.ab$X0 as a starting value:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">traits &lt;-<span class="st"> </span><span class="kw">PCMSim</span>(tree.ab, modelBM.ab, modelBM.ab<span class="op">$</span>X0)</code></pre></div>
@@ -271,9 +298,9 @@ palette &lt;-<span class="st"> </span><span class="kw">PCMColorPalette</span>(<s
 <h1>Calculating likelihoods</h1>
 <p>Calculating a model likelihood for a given tree and data is the other key functionality of the PCMBase package.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">PCMLik</span>(traits, tree.ab, modelBM.ab)</code></pre></div>
-<pre><code>## [1] -409.7765
+<pre><code>## [1] -409.4394
 ## attr(,&quot;X0&quot;)
-## [1] 4.986428 1.990536
+## [1] 5.011142 2.008981
 ## attr(,&quot;class&quot;)
 ## [1] &quot;VectorParameter&quot; &quot;_Global&quot;         &quot;numeric&quot;        
 ## attr(,&quot;description&quot;)
@@ -283,9 +310,9 @@ palette &lt;-<span class="st"> </span><span class="kw">PCMColorPalette</span>(<s
 likFun &lt;-<span class="st"> </span><span class="kw">PCMCreateLikelihood</span>(traits, tree.ab, modelBM.ab)
 
 <span class="kw">likFun</span>(param2)</code></pre></div>
-<pre><code>## [1] -409.7765
+<pre><code>## [1] -409.4394
 ## attr(,&quot;X0&quot;)
-## [1] 4.986428 1.990536
+## [1] 5.011142 2.008981
 ## attr(,&quot;class&quot;)
 ## [1] &quot;VectorParameter&quot; &quot;_Global&quot;         &quot;numeric&quot;        
 ## attr(,&quot;description&quot;)

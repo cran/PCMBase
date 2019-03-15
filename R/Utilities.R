@@ -15,17 +15,67 @@
 # You should have received a copy of the GNU General Public License
 # along with PCMBase.  If not, see <http://www.gnu.org/licenses/>.
 
+#' True positive rate of a set of binary predictions against their trues
+#'
+#' @description Let the set of predictions be described by a logical vector
+#' `pred`, and let the corresponding trues by described in a logical vector
+#' `true` of the same length. Then, the true positive rate is given by the
+#' expression:
+#' \code{sum(pred & true)/sum(true)}. The false positive rate is given by the
+#' expression:
+#' \code{sum(pred & !true)/sum(!true)}. If these expressions do not give a
+#' finite number, \code{NA_real_} is returned.
+#'
+#' @param pred,true vectors of the same positive length that can be converted to
+#' logical.
+#'
+#' @return a double between 0 and 1 or \code{NA_real_} if the result is not a
+#' finite number.
+#' @examples
+#' TruePositiveRate(c(1,0,1,1), c(1,1,0,1))
+#' TruePositiveRate(c(0,0,0,0), c(1,1,0,1))
+#' TruePositiveRate(c(1,1,1,1), c(1,1,0,1))
+#' FalsePositiveRate(c(1,0,1,1), c(1,1,0,1))
+#' FalsePositiveRate(c(0,0,0,0), c(1,1,0,1))
+#' FalsePositiveRate(c(1,1,1,1), c(1,1,0,1))
+#' TruePositiveRate(c(1,0,1,1), c(0,0,0,0))
+#' FalsePositiveRate(c(1,0,1,1), c(1,1,1,1))
+#' @export
+TruePositiveRate <- function(pred, true) {
+  if(! (length(pred) == length(true)) ) {
+    stop("TruePositiveRate:: arguments pred and true must be the same length.")
+  }
+  pred <- as.logical(pred)
+  true <- as.logical(true)
+  res <- sum(pred & true)/sum(true)
+  if(is.finite(res)) {
+    res
+  } else {
+    NA_real_
+  }
+}
+
+#' @title True positive rate of a set of binary predictions against their trues
+#' @rdname TruePositiveRate
+#' @export
+FalsePositiveRate <- function(pred, true) {
+  pred <- as.logical(pred)
+  true <- as.logical(true)
+  res <- sum(pred & !true)/sum(!true)
+  if(is.finite(res)) {
+    res
+  } else {
+    as.double(NA)
+  }
+}
+
+
 #' Check if the PCMBase version correpsonds to a dev release
-#' @param numVersionComponents an integer, default 4.
 #' @importFrom utils packageDescription
-#' @description We define a dev release as having a sub-release, eg 0.9.15.5 is
-#' one whereas 0.9.16 is not. The number of components in the version can be
-#' changed through the argument numVersionComponents.
 #' @return a logical
 #' @export
-PCMBaseIsADevRelease <- function(numVersionComponents = 4L) {
-  !is.na( packageDescription("PCMBase") ) &&
-    length(strsplit(packageDescription("PCMBase")$Version, "\\.")[[1]]) >= numVersionComponents
+PCMBaseIsADevRelease <- function() {
+  TRUE
 }
 
 #' Beautiful model description based on plotmath
@@ -179,7 +229,10 @@ PCMPlotMath.PCM <- function(o, roundDigits = 2, transformChol = FALSE) {
       name <- "Sigma"
       transformChol <- TRUE
     }
-    res <- paste0(res, name, "==", PCMPlotMath(o[[i]], roundDigits = roundDigits, transformChol = transformChol))
+    res <- paste0(
+      res, name, "==", PCMPlotMath(
+        o[[i]], roundDigits = roundDigits,
+        transformChol = transformChol))
     if(i < length(o)) {
       res <- paste0(res, ", ")
     }
@@ -227,25 +280,25 @@ PCMColorPalette <- function(n, names) {
 #' @export
 PCMPlotTraitData2D <- function(
   X, tree, labeledTips = NULL, sizeLabeledTips = 8,
-  palette = PCMColorPalette(PCMTreeNumUniqueRegimes(tree), PCMTreeUniqueRegimes(tree)),
+  palette = PCMColorPalette(PCMNumRegimes(tree), PCMRegimes(tree)),
   scaleSizeWithTime = !is.ultrametric(tree)) {
+
+  tree <- PCMTree(tree)
 
   # Needed to pass the check
   id <- .N <- time <- regime <- label <- x <- y <- NULL
 
-
-
   N <- PCMTreeNumTips(tree)
-  R <- PCMTreeNumUniqueRegimes(tree)
+  R <- PCMNumRegimes(tree)
 
   times <- PCMTreeNodeTimes(tree, tipsOnly = TRUE)
   Xt <- t(X)
   data <- as.data.table(Xt)
   setnames(data, c("x", "y"))
-  data[, id:=1:(.N)]
+  data[, id:=seq_len(.N)]
   data[, time:=times]
 
-  data[, regime:=as.factor(sapply(id, function(i) PCMTreeGetRegimeForNode(tree, i)))]
+  data[, regime := factor(PCMTreeGetPartRegimes(tree)[PCMTreeGetPartsForNodes(tree, id)])]
   setkey(data, id)
 
   if(!is.null(labeledTips)) {
@@ -285,7 +338,8 @@ PCMPlotTraitData2D <- function(
 #' @importFrom ggplot2 ggplot geom_contour coord_fixed
 #'
 #' @export
-PCMPlotGaussianDensityGrid2D <- function(mu, Sigma, xlim, ylim, xNumPoints = 100, yNumPoints = 100, ...) {
+PCMPlotGaussianDensityGrid2D <- function(
+  mu, Sigma, xlim, ylim, xNumPoints = 100, yNumPoints = 100, ...) {
   # needed to pass the check
   x <- y <- prob <- NULL
 
@@ -381,13 +435,5 @@ PCMCharacterVectorToRExpression <- function(v) {
     }
   }
   expr
-}
-
-GenerateDefaultParameterizations <- function(libname, pkgname){
-  PCMGenerateParameterizations(structure(0.0, class = "OU"), PCMTableParameterizations(structure(0.0, class = "OU"))[1])
-  PCMGenerateParameterizations(structure(0.0, class = "DOU"), PCMTableParameterizations(structure(0.0, class = "DOU"))[1])
-  PCMGenerateParameterizations(structure(0.0, class = "BM"), PCMTableParameterizations(structure(0.0, class = "BM"))[1])
-  PCMGenerateParameterizations(structure(0.0, class = "JOU"), PCMTableParameterizations(structure(0.0, class = "JOU"))[1])
-  PCMGenerateParameterizations(structure(0.0, class = "White"), PCMTableParameterizations(structure(0.0, class = "White"))[1])
 }
 

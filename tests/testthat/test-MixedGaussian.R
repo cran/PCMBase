@@ -3,9 +3,9 @@ context("MixedGaussian likelihood test")
 
 library(PCMBase)
 
-if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
+if(PCMBaseIsADevRelease()) {
 
-  load("testobjects.RData")
+  list2env(PCMBaseTestObjects, globalenv())
 
   # generate some  models
   test_that("Calling PCMGenerateParameterizations()", {
@@ -39,7 +39,6 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
 
   test_that(
     "Generated OU parametrizations", {
-      expect_identical(length(PCMModels("^OU")), 43L)
       expect_true(is.function(PCMSpecify.OU__Omitted_X0__H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigmae_x))
     })
 
@@ -144,7 +143,7 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
     PCMLik(traits.ab.123, tree.ab, model.ab.123.bSigmae_x)
   ))
 
-  set.seed(1)
+  set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
   test_that("Generate a random MixedGaussian model", {
     expect_silent(model.ab.123.MG <- MixedGaussian(

@@ -4,7 +4,8 @@
 \alias{PCMInfo}
 \title{Meta-information about a tree associated with a PCM}
 \usage{
-PCMInfo(X, tree, model, verbose = FALSE, preorder = NULL, ...)
+PCMInfo(X, tree, model, SE = matrix(0, PCMNumTraits(model),
+  PCMTreeNumTips(tree)), verbose = FALSE, preorder = NULL, ...)
 }
 \arguments{
 \item{X}{a \code{k x N} numerical matrix with possible \code{NA} and \code{NaN} entries. Each
@@ -19,6 +20,12 @@ likelihoods: see \code{\link{PCMPresentCoordinates}}.}
 well as the concrete model parameter values at which the likelihood is to be
 calculated (see also Details).}
 
+\item{SE}{a k x N matrix specifying the standard error for each measurement in
+X. Alternatively, a k x k x N cube specifying an upper triangular k x k
+Choleski factor of the variance covariance matrix for the measurement error
+for each node i=1, ..., N.
+Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.}
+
 \item{verbose}{logical indicating if some debug-messages should printed.}
 
 \item{preorder}{an integer vector of row-indices in tree$edge matrix as returned
@@ -29,11 +36,15 @@ operations needing preorder are executed on the tree. Default : \code{NULL}.}
 }
 \value{
 a named list with the following elements:
+\item{X}{k x N matrix denoting the trait data;}
+\item{VE}{k x k x N array denoting the measurement error variance covariance
+matrix for each for each tip i = 1,...,N. See the parameter \code{SE} in
+\code{\link{PCMLik}.}}
 \item{M}{total number of nodes in the tree;}
 \item{N}{number of tips;}
 \item{k}{number of traits;}
-\item{RTree}{number of regimes on the tree (distinct elements of tree$edge.regime);}
-\item{RModel}{number of regimes in the model (distinct elements of attr(model, regimes));}
+\item{RTree}{number of parts on the tree (distinct elements of tree$edge.part);}
+\item{RModel}{number of regimes in the model (elements of attr(model, regimes));}
 \item{p}{number of free parameters describing the model;}
 \item{r}{an integer vector corresponding to tree$edge with the regime for each
 branch in tree;}

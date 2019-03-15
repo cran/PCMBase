@@ -3,13 +3,11 @@ context("PCMLik, OU")
 
 library(PCMBase)
 
-if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
+if(PCMBaseIsADevRelease()) {
 
   library(mvtnorm)
 
-  load("testobjects.RData")
-
-
+  list2env(PCMBaseTestObjects, globalenv())
 
   # test likelihood
   test_that(
@@ -39,7 +37,7 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
     }
   )
 
-  set.seed(1)
+  set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
   test_that("Generate a random model, single regime (a)", {
     expect_silent(model.a.123.OU <- PCM("OU", k = 3, regimes = "a"))
@@ -69,4 +67,5 @@ if(PCMBaseIsADevRelease(numVersionComponents = 3)) {
     #           PCMVar(tree.ab, model.ab.123.OU), log = TRUE))
 
   })
+
 }
