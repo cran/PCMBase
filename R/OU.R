@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -30,12 +30,11 @@ PCMCond.OU <- function(
 
   Theta <- if(is.Global(model$Theta)) as.vector(model$Theta) else model$Theta[, r]
 
-  Sigma_x <- if(is.Global(model$Sigma_x)) as.matrix(model$Sigma_x) else as.matrix(model$Sigma_x[,, r])
-
+  Sigma_x <- GetSigma_x(model, "Sigma", r)
   Sigma <- Sigma_x %*% t(Sigma_x)
 
   if(!is.null(model$Sigmae_x)) {
-    Sigmae_x <- if(is.Global(model$Sigmae_x)) as.matrix(model$Sigmae_x) else as.matrix(model$Sigmae_x[,,r])
+    Sigmae_x <- GetSigma_x(model, "Sigmae", r)
 
     Sigmae <- Sigmae_x %*% t(Sigmae_x)
   } else {
@@ -71,8 +70,8 @@ PCMDescribeParameters.OU <- function(model, ...) {
     X0 = "trait values at the root",
     H = "adaptation rate matrix",
     Theta = "long-term optimum",
-    Sigma_x = "Choleski factor of the unit-time variance rate",
-    Sigmae_x = "Choleski factor of the non-heritable variance or the variance of the measurement error")
+    Sigma_x = "factor of the unit-time variance rate",
+    Sigmae_x = "factor of the non-heritable variance or the variance of the measurement error")
 }
 
 #' @export
@@ -137,12 +136,14 @@ PCMListDefaultParameterizations.OU <- function(model, ...) {
     ),
 
     H = list(
+      c("MatrixParameter"),
       c("MatrixParameter", "_Diagonal", "_WithNonNegativeDiagonal"),
       c("MatrixParameter", "_Schur", "_WithNonNegativeDiagonal", "_Transformable"),
       c("MatrixParameter", "_Schur", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal", "_Transformable"),
       c("MatrixParameter", "_Schur", "_Diagonal", "_WithNonNegativeDiagonal", "_Transformable"),
       c("MatrixParameter", "_Schur", "_ScalarDiagonal", "_WithNonNegativeDiagonal", "_Transformable"),
 
+      c("MatrixParameter", "_Global"),
       c("MatrixParameter", "_Diagonal", "_WithNonNegativeDiagonal", "_Global"),
       c("MatrixParameter", "_Schur", "_WithNonNegativeDiagonal", "_Transformable", "_Global"),
       c("MatrixParameter", "_Schur", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal", "_Transformable", "_Global"),
@@ -164,7 +165,10 @@ PCMListDefaultParameterizations.OU <- function(model, ...) {
     ),
 
     Sigmae_x = list(
-      c("MatrixParameter", "_Omitted"))
+      c("MatrixParameter", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal"),
+      c("MatrixParameter", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal", "_Global"),
+      c("MatrixParameter", "_Omitted")
+    )
   )
 }
 
@@ -180,9 +184,9 @@ PCMSpecify.OU <- function(model, ...) {
     Theta = structure(0.0, class = c('VectorParameter'),
                       description = 'long-term optimum'),
     Sigma_x = structure(0.0, class = c('MatrixParameter', '_UpperTriangularWithDiagonal', '_WithNonNegativeDiagonal'),
-                        description = 'Choleski factor of the unit-time variance rate'),
+                        description = 'factor of the unit-time variance rate'),
     Sigmae_x = structure(0.0, class = c('MatrixParameter', '_UpperTriangularWithDiagonal', '_WithNonNegativeDiagonal'),
-                         description = 'Choleski factor of the non-heritable variance or the variance of the measurement error'))
+                         description = 'factor of the non-heritable variance or the variance of the measurement error'))
   attributes(spec) <- attributes(model)
   if(is.null(names(spec))) names(spec) <- c('X0', 'H', 'Theta', 'Sigma_x', 'Sigmae_x')
   if(any(sapply(spec, is.Transformable))) class(spec) <- c(class(spec), '_Transformable')

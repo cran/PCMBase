@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Krzysztof Bartoszek, Venelin Mitov" />
+
+<meta name="date" content="2019-09-11" />
+
+<title>Creating a Custom Model in the PCMBase Framework</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Creating a Custom Model in the PCMBase Framework</h1>
+<h4 class="author">Krzysztof Bartoszek, Venelin Mitov</h4>
+<h4 class="date">2019-09-11</h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#brownian-motion-with-drift">Brownian motion with drift</a></li>
+<li><a href="#a-pcmbase-class-for-brownian-motion-with-drift">A PCMBase class for Brownian motion with drift</a></li>
+<li><a href="#example-run">Example run</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</div>
+
+<!--
+# Copyright 2016-2019 Venelin Mitov, Krzysztof Bartoszek
+#
+# This file is part of PCMBase.
+#
+# PCMBase is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PCMBase is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PCMBase.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>The PCMBase package is designed as a computational engine to calculate the likelihood for a user specified model evolving on a phylogenetic tree. The package comes with some pre-implemented models, e.g. Brownian Motion or Ornstein-Uhlenbeck, both allowing for multivariate correlated evolution. However, the mathematical theory behind the method for calculating the likelihood <span class="citation">(Mitov et al. 2018)</span> is not limited to these two models. In fact any stochastic process that belongs to the so-called GLInv family of models is implementable in PCMBase. From a mathematical perspective one needs to be able to implement functions that calculate the compound parameters <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span>. Furthermore, from the implementation side one has to be able to handle the model defining parameters (default values, allowable parametrizations, etc.).</p>
+<p>PCMBase’s interface is based on the S3 object system (an excellent introduction by Hadley Wickham is available at <a href="http://adv-r.had.co.nz/S3.html" class="uri">http://adv-r.had.co.nz/S3.html</a>). Each implemented model will be an S3 object and below we will describe how users can implement new model classes by themselves.</p>
+</div>
+<div id="brownian-motion-with-drift" class="section level1">
+<h1>Brownian motion with drift</h1>
+<p>We will show how to create one’s own model class with the example of Brownian motion with drift. The model is a simple generalization of the Brownian motion model by including a deterministic drift. It is defined by the stochastic differential equation (SDE) <span class="math display">\[d\vec{X}(t) = \vec{h} dt + \mathbf{\Sigma}_{x} d W(t),\]</span> where <span class="math inline">\(W(t)\)</span> is the standard Wiener process, <span class="math inline">\(\vec{h}\)</span> is a constant <span class="math inline">\(k\)</span>-dimensional vector and <span class="math inline">\(\mathbf{\Sigma}_{x}\)</span> is a an upper-triangular matrix with positive diagonal elements. Setting <span class="math inline">\(\vec{h}=\vec{0}\)</span> reduces the model to a Brownian motion process. The expectation of the process at any time <span class="math inline">\(t\)</span>, given initial value at <span class="math inline">\(t=0\)</span> is <span class="math inline">\(E[\vec{X}(t)] = \vec{X}(0)+t\vec{h}\)</span> and the variance is <span class="math inline">\(Var[\vec{X}(t)] = t\mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^{T}\)</span>. Here, Based on this we can calculate the the compound parameters <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span> defining the model in the GLInv family (Eq. 30, <span class="citation">(Mitov et al. 2018)</span>) <span class="math display">\[
+\vec{\omega} = \vec{h}t,
+\]</span> <span class="math display">\[
+\mathbf{\Phi} = \mathbf{I},
+\]</span> <span class="math display">\[
+\mathbf{V} = \mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^{T}t.
+\]</span> The above equations hold for any internal node without measured trait data. For any tip or internal node with available trait values the variance is given by <span class="math display">\[
+\mathbf{V} = \mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^{T}t +  \mathbf{\Sigma}_{e,x}\mathbf{\Sigma}_{e,x}^{T} + \mathbf{S}_{e,i}\mathbf{S}_{e,i}^{T},
+\]</span> where <span class="math inline">\(\mathbf{\Sigma}_{e,x}\)</span> is a regime-specific or global upper triangular matrix parameter with a non-negative diagonal specifying an unknown non-phylogenetic component of the trait variance covariance matrix (e.g. an unknown measurement error), and <span class="math inline">\(\mathbf{S}_{e,i}\)</span> is a species-specific upper triangular matrix with a non-negative diagonal specifying a known standard error of the measured trait data for each species.</p>
+</div>
+<div id="a-pcmbase-class-for-brownian-motion-with-drift" class="section level1">
+<h1>A PCMBase class for Brownian motion with drift</h1>
+<p>We will now show how to implement the Brownian motion with drift model in a class called “BM_drift that inherits from the”GaussianPCM&quot; and “PCM” classes. It is easiest if one takes an .R file from the PCMBase package that already implements a model class and then modifies it accordingly. We will work here with the BM.R file (that implements the BM model). We need to redefine the generic functions of the “PCM” and “GaussianPCM” classes to suit the Brownian motion with drift model. We remind the reader that the function name is composed of two parts separated by the dot. The first part is the generic function, the second the name of the class in which it is implemented. For example <code>PCMCond.BM_drift</code> is the <code>PCMCond</code> function’s instance in the “BM_drift” class.</p>
+<ul>
+<li><code>PCMParentClasses.BM_drift</code> : function returning the parental classes. of “BM_drift”:</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">PCMParentClasses.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(model) {</a>
+<a class="sourceLine" id="cb1-2" data-line-number="2">  <span class="kw">c</span>(<span class="st">&quot;GaussianPCM&quot;</span>, <span class="st">&quot;PCM&quot;</span>)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">}</a></code></pre></div>
+<ul>
+<li><code>PCMDescribe.BM_drift</code> : function returning a custom description of the model.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">PCMDescribe.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(model, ...) {</a>
+<a class="sourceLine" id="cb2-2" data-line-number="2">  <span class="st">&quot;Brownian motion model with drift&quot;</span></a>
+<a class="sourceLine" id="cb2-3" data-line-number="3">}</a></code></pre></div>
+<ul>
+<li><code>PCMCond.BM_drift</code> : the key function when implementing a new model class. This function returns a list with functions for calculating the <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span> compound parameters that define the conditional distribution of the daughter node given the value of the trait at its parent node (<span class="math inline">\(\vec{x}_{parent}\)</span>. Following <span class="citation">(Mitov et al. 2018)</span> we know that in the GLInv family a daughter node conditional on its parent is normally distributed with expectation <span class="math inline">\(\vec{\omega}+\mathbf{\Phi}\vec{x}_{parent}\)</span> and variance-covariance matrix <span class="math inline">\(\mathbf{V}\)</span>. In particular the <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span> compound parameters can depend on time (i.e. the length of the branch from the parental to the daughter node). In the case of the BM with drift model the <span class="math inline">\(\vec{\omega}=t\cdot \vec{h}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> is the identity matrix and <span class="math inline">\(\mathbf{V}\)</span> is the same as in the Brownian motion model (which in itself is a limit of the OU model, hence the reuse of the PCMConcVOU function).</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">PCMCond.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">  tree, model, <span class="dt">r =</span> <span class="dv">1</span>, <span class="dt">metaI =</span> <span class="kw">PCMInfo</span>(<span class="ot">NULL</span>, tree, model, <span class="dt">verbose =</span> verbose),</a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">  <span class="dt">verbose=</span><span class="ot">FALSE</span>) {</a>
+<a class="sourceLine" id="cb3-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">  </a>
+<a class="sourceLine" id="cb3-6" data-line-number="6">  Sigma_x &lt;-<span class="st"> </span><span class="cf">if</span>(<span class="kw">is.Global</span>(model<span class="op">$</span>Sigma_x)){<span class="kw">as.matrix</span>(model<span class="op">$</span>Sigma_x)}</a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">         <span class="cf">else</span>{<span class="kw">as.matrix</span>(model<span class="op">$</span>Sigma_x[,, r])}</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">  Sigma &lt;-<span class="st"> </span>Sigma_x <span class="op">%*%</span><span class="st"> </span><span class="kw">t</span>(Sigma_x)</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">  <span class="cf">if</span>(<span class="op">!</span><span class="kw">is.null</span>(model<span class="op">$</span>Sigmae_x)) {</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">    Sigmae_x &lt;-<span class="st"> </span><span class="cf">if</span>(<span class="kw">is.Global</span>(model<span class="op">$</span>Sigmae_x)){<span class="kw">as.matrix</span>(model<span class="op">$</span>Sigmae_x)}</a>
+<a class="sourceLine" id="cb3-11" data-line-number="11">        <span class="cf">else</span>{<span class="kw">as.matrix</span>(model<span class="op">$</span>Sigmae_x[,,r])}</a>
+<a class="sourceLine" id="cb3-12" data-line-number="12">    Sigmae &lt;-<span class="st"> </span>Sigmae_x <span class="op">%*%</span><span class="st"> </span><span class="kw">t</span>(Sigmae_x)</a>
+<a class="sourceLine" id="cb3-13" data-line-number="13">  } <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb3-14" data-line-number="14">    Sigmae &lt;-<span class="st"> </span><span class="ot">NULL</span></a>
+<a class="sourceLine" id="cb3-15" data-line-number="15">  }</a>
+<a class="sourceLine" id="cb3-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb3-17" data-line-number="17">  <span class="cf">if</span>(<span class="op">!</span><span class="kw">is.null</span>(model<span class="op">$</span>h_drift)) { </a>
+<a class="sourceLine" id="cb3-18" data-line-number="18">    h_drift &lt;-<span class="st"> </span><span class="cf">if</span>(<span class="kw">is.Global</span>(model<span class="op">$</span>h_drift)) <span class="kw">as.vector</span>(model<span class="op">$</span>h_drift) <span class="cf">else</span> model<span class="op">$</span>h_drift[, r]</a>
+<a class="sourceLine" id="cb3-19" data-line-number="19">  }<span class="cf">else</span>{</a>
+<a class="sourceLine" id="cb3-20" data-line-number="20">    h_drift &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="dv">0</span>,<span class="kw">nrow</span>(Sigma_x))</a>
+<a class="sourceLine" id="cb3-21" data-line-number="21">  }</a>
+<a class="sourceLine" id="cb3-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb3-23" data-line-number="23">  V &lt;-<span class="st"> </span><span class="kw">PCMCondVOU</span>(<span class="kw">matrix</span>(<span class="dv">0</span>, <span class="kw">nrow</span>(Sigma), <span class="kw">ncol</span>(Sigma)), Sigma, Sigmae)</a>
+<a class="sourceLine" id="cb3-24" data-line-number="24">  omega &lt;-<span class="st"> </span><span class="cf">function</span>(t, edgeIndex, metaI) {</a>
+<a class="sourceLine" id="cb3-25" data-line-number="25">    t<span class="op">*</span>h_drift</a>
+<a class="sourceLine" id="cb3-26" data-line-number="26">  }</a>
+<a class="sourceLine" id="cb3-27" data-line-number="27">  Phi &lt;-<span class="st"> </span><span class="cf">function</span>(t, edgeIndex, metaI, <span class="dt">e_Ht =</span> <span class="ot">NULL</span>) {</a>
+<a class="sourceLine" id="cb3-28" data-line-number="28">    <span class="kw">diag</span>(<span class="kw">nrow</span>(Sigma))</a>
+<a class="sourceLine" id="cb3-29" data-line-number="29">  }</a>
+<a class="sourceLine" id="cb3-30" data-line-number="30">  <span class="kw">list</span>(<span class="dt">omega =</span> omega, <span class="dt">Phi =</span> Phi, <span class="dt">V =</span> V)</a>
+<a class="sourceLine" id="cb3-31" data-line-number="31">}</a></code></pre></div>
+<ul>
+<li><code>PCMDescribeParameters.BM_drift</code> : a function that returns a list with a custom description of each model parameter.</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">PCMDescribeParameters.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(model, ...) {</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">  <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">    <span class="dt">X0 =</span> <span class="st">&quot;trait values at the root&quot;</span>,</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4">    <span class="dt">h_drift =</span> <span class="st">&quot;drift vector modifying the expectation&quot;</span>,</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5">    <span class="dt">Sigma_x =</span> <span class="st">&quot;Upper triangular factor of the unit-time variance rate&quot;</span>,</a>
+<a class="sourceLine" id="cb4-6" data-line-number="6">    <span class="dt">Sigmae_x =</span> <span class="st">&quot;Upper triangular factor of the non-heritable variance </span></a>
+<a class="sourceLine" id="cb4-7" data-line-number="7"><span class="st">        or the variance of the measurement error&quot;</span>)</a>
+<a class="sourceLine" id="cb4-8" data-line-number="8">}</a></code></pre></div>
+<ul>
+<li><code>PCMListParameterizations.BM_drift</code> : a function that returns all possible parametrizations for the implemented model class. These parametrizations correspond to how each parameter defining the model can be parametrized. Probably from the perspective of just calculating the likelihood given some parameters this function does not seem that useful. However, one should not forget that PCMBase is designed to be a computational engine providing the likelihood that will be optimized over some other code. Here, <span class="math inline">\(\vec{X}(0)\)</span> and <span class="math inline">\(\vec{h}\)</span> are vectors (i.e. “VectorParameter”). The &quot;_AllEqual&quot; parametrization means all the entries of the vector should be equal. &quot;_Global&quot; means that it is the same for all regimes (notice that <span class="math inline">\(\vec{X}(0)\)</span> is the value at the root, so it has to be common for all), &quot;_Omitted&quot; means not present (for <span class="math inline">\(\vec{h}\)</span> this means that the model will correspond to a Brownian motion with <span class="math inline">\(0\)</span> drift). Finally &quot;_Fixed&quot; means that the parameter is “known”, i.e. it is not to be optimized over. Matrix parametrizations are more involved. For example one will not optimize over a covariance matrix but e.g. over its decomposition as a product of an upper triangular matrix with its transpose. Here we just have the <span class="math inline">\(\mathbf{\Sigma}_{x}\)</span> and <span class="math inline">\(\mathbf{\Sigma}_{e,x}\)</span> matrices (however see the “OU” class for more involved cases with the <span class="math inline">\(H\)</span> matrix). Both of them enter the likelihood (through <span class="math inline">\(\mathbf{V}\)</span>) as a product of themselves and their transposition i.e. <span class="math inline">\(\mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^{T}\)</span> so decomposition into a triangular matrix (with non-negative diagonal) suffices for unique identification of the matrix. Note that this parametrization guarantees that the matrix <span class="math inline">\(\mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^{T}\)</span> is a symmetric semi- positive-definite matrix. If the diagonal elements of <span class="math inline">\(\mathbf{\Sigma}_{x}\)</span> are strictly non-zero <span class="math inline">\(\mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^{T}\)</span> will be positive-definite. A detailed description of the different possible parametrizations is given in the <a href="https://venelin.github.io/PCMBase/articles/PCMParam.html">The PCMBase Parametrization API</a> guide.</li>
+</ul>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">PCMListParameterizations.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(model, ...) {</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">  <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">    <span class="dt">X0 =</span> <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Fixed&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb5-6" data-line-number="6">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_AllEqual&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb5-7" data-line-number="7">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>)),</a>
+<a class="sourceLine" id="cb5-8" data-line-number="8">    <span class="dt">h_drift =</span> <span class="kw">list</span>(     </a>
+<a class="sourceLine" id="cb5-9" data-line-number="9">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>),</a>
+<a class="sourceLine" id="cb5-10" data-line-number="10">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Fixed&quot;</span>),</a>
+<a class="sourceLine" id="cb5-11" data-line-number="11">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_AllEqual&quot;</span>),</a>
+<a class="sourceLine" id="cb5-12" data-line-number="12">       <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>)),</a>
+<a class="sourceLine" id="cb5-13" data-line-number="13">       </a>
+<a class="sourceLine" id="cb5-14" data-line-number="14">    <span class="dt">Sigma_x =</span> <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb5-15" data-line-number="15">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_UpperTriangularWithDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb5-16" data-line-number="16">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Diagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb5-17" data-line-number="17">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_ScalarDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>)),</a>
+<a class="sourceLine" id="cb5-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb5-19" data-line-number="19">    <span class="dt">Sigmae_x =</span> <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb5-20" data-line-number="20">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_UpperTriangularWithDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb5-21" data-line-number="21">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Diagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb5-22" data-line-number="22">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_ScalarDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb5-23" data-line-number="23">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_UpperTriangularWithDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb5-24" data-line-number="24">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Diagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb5-25" data-line-number="25">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_ScalarDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb5-26" data-line-number="26">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>))</a>
+<a class="sourceLine" id="cb5-27" data-line-number="27">  )</a>
+<a class="sourceLine" id="cb5-28" data-line-number="28">}</a></code></pre></div>
+<ul>
+<li><code>PCMListDefaultParameterizations.BM_drift</code> : this function is optional to define but can be useful if only a subset of the parametrizations defined in the <code>PCMListParametrizations</code> function will actually be used in practice.</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">PCMListDefaultParameterizations.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(model, ...) {</a>
+<a class="sourceLine" id="cb6-2" data-line-number="2">  <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb6-3" data-line-number="3">    <span class="dt">X0 =</span> <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb6-4" data-line-number="4">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</a>
+<a class="sourceLine" id="cb6-5" data-line-number="5">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>)</a>
+<a class="sourceLine" id="cb6-6" data-line-number="6">    ),</a>
+<a class="sourceLine" id="cb6-7" data-line-number="7">    <span class="dt">h_drift =</span> <span class="kw">list</span>(     </a>
+<a class="sourceLine" id="cb6-8" data-line-number="8">      <span class="kw">c</span>(<span class="st">&quot;VectorParameter&quot;</span>)),</a>
+<a class="sourceLine" id="cb6-9" data-line-number="9">       </a>
+<a class="sourceLine" id="cb6-10" data-line-number="10">    <span class="dt">Sigma_x =</span> <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb6-11" data-line-number="11">        <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_UpperTriangularWithDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb6-12" data-line-number="12">        <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Diagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>),</a>
+<a class="sourceLine" id="cb6-13" data-line-number="13">        <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_ScalarDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>)</a>
+<a class="sourceLine" id="cb6-14" data-line-number="14">      ),</a>
+<a class="sourceLine" id="cb6-15" data-line-number="15"></a>
+<a class="sourceLine" id="cb6-16" data-line-number="16">    <span class="dt">Sigmae_x =</span> <span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb6-17" data-line-number="17">      <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>))</a>
+<a class="sourceLine" id="cb6-18" data-line-number="18">  )</a>
+<a class="sourceLine" id="cb6-19" data-line-number="19">}</a></code></pre></div>
+<ul>
+<li><code>PCMSpecify.BM_drift</code> : generate default model parameters. Notice that here we obtain a singular model with 0 mean and 0 variance.</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">PCMSpecify.BM_drift &lt;-<span class="st"> </span><span class="cf">function</span>(model, ...) {</a>
+<a class="sourceLine" id="cb7-2" data-line-number="2">  spec &lt;-<span class="st"> </span><span class="kw">list</span>(</a>
+<a class="sourceLine" id="cb7-3" data-line-number="3">    <span class="dt">X0 =</span> <span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">'VectorParameter'</span>, <span class="st">'_Global'</span>),</a>
+<a class="sourceLine" id="cb7-4" data-line-number="4">                   <span class="dt">description =</span> <span class="st">'trait values at the root'</span>),</a>
+<a class="sourceLine" id="cb7-5" data-line-number="5">    <span class="dt">h_drift =</span> <span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">'VectorParameter'</span>),</a>
+<a class="sourceLine" id="cb7-6" data-line-number="6">                   <span class="dt">description =</span> <span class="st">'drift vector modifying the expectation'</span>),</a>
+<a class="sourceLine" id="cb7-7" data-line-number="7">    <span class="dt">Sigma_x =</span> <span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">'MatrixParameter'</span>, <span class="st">'_UpperTriangularWithDiagonal'</span>, </a>
+<a class="sourceLine" id="cb7-8" data-line-number="8">                    <span class="st">'_WithNonNegativeDiagonal'</span>),</a>
+<a class="sourceLine" id="cb7-9" data-line-number="9">                        <span class="dt">description =</span> <span class="st">'Cholesky factor of the unit-time variance rate'</span>),</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">    <span class="dt">Sigmae_x =</span> <span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">'MatrixParameter'</span>, <span class="st">'_UpperTriangularWithDiagonal'</span>,</a>
+<a class="sourceLine" id="cb7-11" data-line-number="11">                    <span class="st">'_WithNonNegativeDiagonal'</span>),</a>
+<a class="sourceLine" id="cb7-12" data-line-number="12">                         <span class="dt">description =</span> <span class="st">'Upper triangular factor of the non-heritable variance </span></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13"><span class="st">                                or the variance of the measurement error'</span>))</a>
+<a class="sourceLine" id="cb7-14" data-line-number="14">  <span class="kw">attributes</span>(spec) &lt;-<span class="st"> </span><span class="kw">attributes</span>(model)</a>
+<a class="sourceLine" id="cb7-15" data-line-number="15">  <span class="cf">if</span>(<span class="kw">is.null</span>(<span class="kw">names</span>(spec))) <span class="kw">names</span>(spec) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'X0'</span>, <span class="st">'h_drift'</span>, <span class="st">'Sigma_x'</span>, <span class="st">'Sigmae_x'</span>)</a>
+<a class="sourceLine" id="cb7-16" data-line-number="16">  <span class="cf">if</span>(<span class="kw">any</span>(<span class="kw">sapply</span>(spec, is.Transformable))) <span class="kw">class</span>(spec) &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">class</span>(spec), <span class="st">'_Transformable'</span>)</a>
+<a class="sourceLine" id="cb7-17" data-line-number="17">  spec</a>
+<a class="sourceLine" id="cb7-18" data-line-number="18">}</a></code></pre></div>
+</div>
+<div id="example-run" class="section level1">
+<h1>Example run</h1>
+<p>Now that we have defined all the code necessary for the class let us demonstrate it. After running all the above code defining the “BM_drift” class we create a model instance. We do this for a two regimes model.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1">X0 &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">5</span>, <span class="dv">2</span>, <span class="dv">1</span>) <span class="co">## root state</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2">  </a>
+<a class="sourceLine" id="cb8-3" data-line-number="3"><span class="co">## in regime a traits evolve independently</span></a>
+<a class="sourceLine" id="cb8-4" data-line-number="4">a.Sigma_x &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">1.6</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">2.4</span>, <span class="fl">0.0</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">2.0</span>))</a>
+<a class="sourceLine" id="cb8-5" data-line-number="5"><span class="co">## no jumps at the end of a branch</span></a>
+<a class="sourceLine" id="cb8-6" data-line-number="6">a.Sigmae_x &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>))</a>
+<a class="sourceLine" id="cb8-7" data-line-number="7">a.h_drift&lt;-<span class="kw">c</span>(<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>)</a>
+<a class="sourceLine" id="cb8-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb8-9" data-line-number="9"><span class="co">## in regime b evolution is correlated</span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10">b.Sigma_x &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">1.6</span>, <span class="fl">0.3</span>, <span class="fl">0.3</span>), <span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.3</span>, <span class="fl">0.4</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">2.0</span>))</a>
+<a class="sourceLine" id="cb8-11" data-line-number="11"><span class="co">## no jumps at the end of a branch</span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12">b.Sigmae_x &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>),<span class="kw">c</span>(<span class="fl">0.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>))</a>
+<a class="sourceLine" id="cb8-13" data-line-number="13">b.h_drift&lt;-<span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb8-14" data-line-number="14"></a>
+<a class="sourceLine" id="cb8-15" data-line-number="15">Sigma_x &lt;-<span class="st"> </span><span class="kw">abind</span>(a.Sigma_x, b.Sigma_x, <span class="dt">along=</span><span class="dv">3</span>, <span class="dt">new.names=</span><span class="kw">list</span>(<span class="dt">x=</span><span class="ot">NULL</span>,<span class="dt">y=</span><span class="ot">NULL</span>,<span class="dt">regime=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'b'</span>)))</a>
+<a class="sourceLine" id="cb8-16" data-line-number="16">Sigmae_x &lt;-<span class="st"> </span><span class="kw">abind</span>(a.Sigmae_x,b.Sigmae_x,<span class="dt">along=</span><span class="dv">3</span>,<span class="dt">new.names=</span><span class="kw">list</span>(<span class="dt">x=</span><span class="ot">NULL</span>,<span class="dt">y=</span><span class="ot">NULL</span>,<span class="dt">regime=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'b'</span>)))</a>
+<a class="sourceLine" id="cb8-17" data-line-number="17">h_drift &lt;-<span class="st"> </span><span class="kw">abind</span>(a.h_drift, b.h_drift, <span class="dt">along=</span><span class="dv">2</span>, <span class="dt">new.names=</span><span class="kw">list</span>(<span class="dt">xy=</span><span class="ot">NULL</span>, <span class="dt">regime=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'b'</span>)))</a>
+<a class="sourceLine" id="cb8-18" data-line-number="18"></a>
+<a class="sourceLine" id="cb8-19" data-line-number="19">PCMBase_model_BM_drift &lt;-<span class="st"> </span><span class="kw">PCM</span>(<span class="st">&quot;BM_drift&quot;</span>, <span class="dt">k =</span> <span class="dv">3</span>, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>),</a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="dt">params =</span> <span class="kw">list</span>(<span class="dt">X0 =</span> X0,<span class="dt">h_drift =</span> h_drift[,,<span class="dt">drop=</span><span class="ot">FALSE</span>],</a>
+<a class="sourceLine" id="cb8-21" data-line-number="21"><span class="dt">Sigma_x =</span> Sigma_x[,,,<span class="dt">drop=</span><span class="ot">FALSE</span>],<span class="dt">Sigmae_x =</span> Sigmae_x[,,,<span class="dt">drop=</span><span class="ot">FALSE</span>]))</a></code></pre></div>
+<p>Now we simulate a random phylogeny using the same example code as in the <a href="https://venelin.github.io/PCMBase/articles/PCMBase.html">Getting started</a> guide.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co"># make results reproducible</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">2</span>, <span class="dt">kind =</span> <span class="st">&quot;Mersenne-Twister&quot;</span>, <span class="dt">normal.kind =</span> <span class="st">&quot;Inversion&quot;</span>)</a>
+<a class="sourceLine" id="cb9-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb9-4" data-line-number="4"><span class="co"># number of regimes</span></a>
+<a class="sourceLine" id="cb9-5" data-line-number="5">R &lt;-<span class="st"> </span><span class="dv">2</span></a>
+<a class="sourceLine" id="cb9-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb9-7" data-line-number="7"><span class="co"># number of extant tips</span></a>
+<a class="sourceLine" id="cb9-8" data-line-number="8">N &lt;-<span class="st"> </span><span class="dv">100</span></a>
+<a class="sourceLine" id="cb9-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb9-10" data-line-number="10">tree.a &lt;-<span class="st"> </span><span class="kw">PCMTree</span>(<span class="kw">rtree</span>(<span class="dt">n=</span>N))</a>
+<a class="sourceLine" id="cb9-11" data-line-number="11"><span class="kw">PCMTreeSetLabels</span>(tree.a)</a>
+<a class="sourceLine" id="cb9-12" data-line-number="12"><span class="kw">PCMTreeSetPartRegimes</span>(tree.a, <span class="dt">part.regime =</span> <span class="kw">c</span>(<span class="st">`</span><span class="dt">101</span><span class="st">`</span> =<span class="st"> &quot;a&quot;</span>), <span class="dt">setPartition =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb9-13" data-line-number="13"></a>
+<a class="sourceLine" id="cb9-14" data-line-number="14">lstDesc &lt;-<span class="st"> </span><span class="kw">PCMTreeListDescendants</span>(tree.a)</a>
+<a class="sourceLine" id="cb9-15" data-line-number="15">splitNode &lt;-<span class="st"> </span><span class="kw">names</span>(lstDesc)[<span class="kw">which</span>(<span class="kw">sapply</span>(lstDesc, length) <span class="op">&gt;</span><span class="st"> </span>N<span class="op">/</span><span class="dv">2</span> <span class="op">&amp;</span><span class="st"> </span><span class="kw">sapply</span>(lstDesc, length) <span class="op">&lt;</span><span class="st"> </span><span class="dv">2</span><span class="op">*</span>N<span class="op">/</span><span class="dv">3</span>)][<span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb9-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb9-17" data-line-number="17">tree.ab &lt;-<span class="st"> </span><span class="kw">PCMTreeInsertSingletons</span>(</a>
+<a class="sourceLine" id="cb9-18" data-line-number="18">  tree.a, <span class="dt">nodes =</span> <span class="kw">as.integer</span>(splitNode), </a>
+<a class="sourceLine" id="cb9-19" data-line-number="19">  <span class="dt">positions =</span> <span class="kw">PCMTreeGetBranchLength</span>(tree.a, <span class="kw">as.integer</span>(splitNode))<span class="op">/</span><span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb9-20" data-line-number="20"><span class="kw">PCMTreeSetPartRegimes</span>(</a>
+<a class="sourceLine" id="cb9-21" data-line-number="21">  tree.ab,</a>
+<a class="sourceLine" id="cb9-22" data-line-number="22">  <span class="dt">part.regime =</span> <span class="kw">structure</span>(<span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>), <span class="dt">names =</span> <span class="kw">as.character</span>(<span class="kw">c</span>(N<span class="op">+</span><span class="dv">1</span>, splitNode))), </a>
+<a class="sourceLine" id="cb9-23" data-line-number="23">  <span class="dt">setPartition =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb9-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb9-25" data-line-number="25">palette &lt;-<span class="st"> </span><span class="kw">PCMColorPalette</span>(<span class="dv">2</span>, <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</a>
+<a class="sourceLine" id="cb9-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb9-27" data-line-number="27"><span class="co"># Plot the tree with branches colored according to the regimes.</span></a>
+<a class="sourceLine" id="cb9-28" data-line-number="28"><span class="co"># The following function call works only if the ggtree package is installed, </span></a>
+<a class="sourceLine" id="cb9-29" data-line-number="29"><span class="co"># which is not on CRAN:</span></a>
+<a class="sourceLine" id="cb9-30" data-line-number="30"><span class="kw">PCMTreePlot</span>(tree.ab) <span class="op">+</span><span class="st"> </span>ggtree<span class="op">::</span><span class="kw">geom_nodelab</span>(<span class="dt">size =</span> <span class="dv">2</span>)</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>We simulate the traits using PCMBase’s functionality.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1">mData&lt;-<span class="kw">PCMSim</span>(tree.ab, PCMBase_model_BM_drift, X0)[,<span class="dv">1</span><span class="op">:</span>N] <span class="co">## we only want the tip data</span></a>
+<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="co">## </span><span class="al">NOTE</span><span class="co"> that observations from different species are in the columns NOT in the rows as </span></a>
+<a class="sourceLine" id="cb10-3" data-line-number="3"><span class="co">## in other software</span></a></code></pre></div>
+<p>Finally we calculate the likelihood under the BM with drift model.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1">log_lik&lt;-<span class="st"> </span><span class="kw">PCMLik</span>(mData, tree.ab, PCMBase_model_BM_drift)</a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw">print</span>(log_lik[<span class="dv">1</span>]) <span class="co">## we just want to print the log-likelihood without the attributes</span></a></code></pre></div>
+<pre><code>## [1] -564</code></pre>
+<p>If PCMBase is used as a computational engine for some inference package, then the above code can be one way of obtaining the likelihood under a “GaussianPCM” model object. However, in such a setup it is recommended to use the mechanism of creating a likelihood function for a particular dataset through PCMCreateLikelihood. This will speed up the calculations as it avoids re-creating some internal data objects for the tree every time the likelihood value is required. One just needs to update the parameters to obtain a new likelihood value.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="co">## create an vector of appropriate length to store the vectorized model parameters</span></a>
+<a class="sourceLine" id="cb13-2" data-line-number="2">v_param &lt;-<span class="st"> </span><span class="kw">double</span>(<span class="kw">PCMParamCount</span>(PCMBase_model_BM_drift))</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4"><span class="co"># load the current model parameters into param</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="kw">PCMParamLoadOrStore</span>(PCMBase_model_BM_drift, v_param, <span class="dt">offset=</span><span class="dv">0</span>, <span class="dt">load=</span><span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## [1] 33</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">print</span>(v_param)</a></code></pre></div>
+<pre><code>##  [1] 5.0 2.0 1.0 4.0 5.0 6.0 1.0 2.0 3.0 1.6 0.0 2.4 0.0 0.0 2.0 1.6 0.3
+## [18] 0.3 0.3 0.4 2.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="co">## now create a likelihood function for the particular model and observed data</span></a>
+<a class="sourceLine" id="cb17-2" data-line-number="2">likFun &lt;-<span class="st"> </span><span class="kw">PCMCreateLikelihood</span>(mData, tree.ab, PCMBase_model_BM_drift)</a>
+<a class="sourceLine" id="cb17-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb17-4" data-line-number="4">log_lik_from_likFun&lt;-<span class="kw">likFun</span>(v_param)</a>
+<a class="sourceLine" id="cb17-5" data-line-number="5"><span class="kw">print</span>(log_lik_from_likFun[<span class="dv">1</span>])</a></code></pre></div>
+<pre><code>## [1] -564</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">print</span>(log_lik_from_likFun[<span class="dv">1</span>]<span class="op">==</span>log_lik[<span class="dv">1</span>])</a></code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="co"># modify slightly the model parameters</span></a>
+<a class="sourceLine" id="cb21-2" data-line-number="2">v_param_<span class="dv">2</span> &lt;-<span class="st"> </span><span class="kw">jitter</span>(v_param)</a>
+<a class="sourceLine" id="cb21-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb21-4" data-line-number="4"><span class="kw">print</span>(v_param_<span class="dv">2</span>)</a></code></pre></div>
+<pre><code>##  [1]  4.9865  2.0053  1.0026  3.9961  4.9818  6.0110  0.9975  1.9800
+##  [9]  2.9915  1.5923 -0.0188  2.3946 -0.0055  0.0087  2.0048  1.6134
+## [17]  0.2837  0.2993  0.2829  0.4137  2.0150  0.0012  0.0155 -0.0119
+## [25]  0.0025 -0.0003 -0.0184  0.0090  0.0041  0.0028  0.0026  0.0060
+## [33] -0.0174</code></pre>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co"># set the new parameter vector</span></a>
+<a class="sourceLine" id="cb23-2" data-line-number="2">PCMBase_model_BM_drift_<span class="dv">2</span>&lt;-PCMBase_model_BM_drift</a>
+<a class="sourceLine" id="cb23-3" data-line-number="3"><span class="kw">PCMParamLoadOrStore</span>(PCMBase_model_BM_drift_<span class="dv">2</span>, v_param_<span class="dv">2</span>, <span class="dt">offset =</span> <span class="dv">0</span>, <span class="dt">load=</span><span class="ot">TRUE</span>)</a></code></pre></div>
+<pre><code>## [1] 33</code></pre>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="kw">print</span>(PCMBase_model_BM_drift_<span class="dv">2</span>)</a></code></pre></div>
+<pre><code>## Brownian motion model with drift
+## S3 class: BM_drift, GaussianPCM, PCM; k=3; p=33; regimes: a, b. Parameters/sub-models:
+## X0 (VectorParameter, _Global, numeric; trait values at the root):
+## [1] 5 2 1
+## h_drift (VectorParameter, matrix; drift vector modyfing the expectation):
+##      a b
+## [1,] 4 1
+## [2,] 5 2
+## [3,] 6 3
+## Sigma_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; Upper triangular factor of the unit-time variance rate):
+## , , a
+## 
+##      [,1]   [,2]    [,3]
+## [1,]  1.6 -0.019 -0.0055
+## [2,]  0.0  2.395  0.0087
+## [3,]  0.0  0.000  2.0048
+## 
+## , , b
+## 
+##      [,1] [,2] [,3]
+## [1,]  1.6 0.28 0.28
+## [2,]  0.0 0.30 0.41
+## [3,]  0.0 0.00 2.01
+## 
+## Sigmae_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; Upper triangular factor of the non-heritable variance or the variance of the measurement error):
+## , , a
+## 
+##        [,1]   [,2]    [,3]
+## [1,] 0.0012  0.015  0.0025
+## [2,] 0.0000 -0.012 -0.0003
+## [3,] 0.0000  0.000 -0.0184
+## 
+## , , b
+## 
+##       [,1]   [,2]    [,3]
+## [1,] 0.009 0.0041  0.0026
+## [2,] 0.000 0.0028  0.0060
+## [3,] 0.000 0.0000 -0.0174
+## 
+## </code></pre>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1">log_lik_from_likFun_<span class="dv">2</span>&lt;-<span class="kw">likFun</span>(v_param_<span class="dv">2</span>)</a>
+<a class="sourceLine" id="cb27-2" data-line-number="2"><span class="kw">print</span>(log_lik_from_likFun_<span class="dv">2</span>[<span class="dv">1</span>])</a></code></pre></div>
+<pre><code>## [1] -564</code></pre>
+</div>
+<div id="references" class="section level1 unnumbered">
+<h1>References</h1>
+<div id="refs" class="references">
+<div id="ref-Mitov:2018fl">
+<p>Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja Stadler. 2018. “Fast likelihood evaluation for multivariate phylogenetic comparative methods: the PCMBase R package.” <em>arXiv.org</em>, September, arXiv:1809.09014. <a href="http://arxiv.org/abs/1809.09014">http://arxiv.org/abs/1809.09014</a>.</p>
+</div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

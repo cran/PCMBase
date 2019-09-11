@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -162,6 +162,8 @@ PCMVar.GaussianPCM <- function(
     }
   }
 
+  # Products of the Phi matrix in the direction from the nodes to the root
+  # listProdPhi[[i]] = Phi_i %*% Phi_{parent(i)} %*% ... %*% I(root)
   listProdPhi <- list()
 
   # first we calculate the variance (diagonal) blocks (i,i) following preorder traversal
@@ -197,17 +199,21 @@ PCMVar.GaussianPCM <- function(
     if(is.na(min(svdV)/max(svdV)) ||
        min(svdV)/max(svdV) < threshold_SV ||
        eigval[k] < threshold_eigval) {
-      if( !skip_singular || t > threshold_skip_singular ) {
+      if( !skip_singular ||
+          # We try to support singular branches leading to tips, but we don't
+          # support such during a likelihood calculation (Function PCMAbCdEf).
+          # i <= metaI$N ||
+          t > threshold_skip_singular ) {
         err <- paste0(
-          "ERR:02121:PCMBase:GaussianPCM.R:PCMVar.GaussianPCM:",i,":",
-          " The matrix V for node ", i,
+          "PCMVar.GaussianPCM:",i,":",
+          " The matrix V for node ", i, " (branch length=", t, ")",
           " is nearly singular: min(svdV)/max(svdV)=", min(svdV)/max(svdV),
-          ". eigval[k] = ", eigval[k],
+          ". smallest eigenvalue: ", eigval[k],
           "; Check PCMOptions()$PCMBase.Threshold.EV, ", "
           PCMOptions()$PCMBase.Threshold.SV, ",
           "PCMOptions()$PCMBase.Threshold.Skip.Singular ",
           "and the model parameters and the length of the branch ",
-          "leading to the node. For details on this error, read the User Guide.")
+          "leading to the node.")
         stop(err)
       } else {
         # skip the singular branch by taking the values from j unchanged
@@ -290,7 +296,7 @@ PCMSim.GaussianPCM <- function(
   }
 
   if(length(X0)!=metaI$k) {
-    stop(paste('ERR:02102:PCMBase:GaussianPCM.R:PCMSim:: X0 must be of length', metaI$k, '.'))
+    stop(paste('GaussianPCM.R:PCMSim:: X0 must be of length', metaI$k, '.'))
   }
 
   values <- matrix(0, nrow=metaI$k, ncol=dim(tree$edge)[1]+1)
@@ -373,60 +379,81 @@ PCMLik.GaussianPCM <- function(
   if(class(PCMLmr) == "try-error") {
     errL <- PCMParseErrorMessage(PCMLmr)
     if(is.null(errL)) {
-      err <- paste0("ERR:02141:PCMBase:GaussianPCM.R:PCMLik:: There was a problem calculating the coefficients L,m,r. Error message from call to PCMLmr: ", PCMLmr, "; print(model):",
+      err <- paste0("GaussianPCM.R:PCMLik:: There was a problem calculating the coefficients L,m,r. Error message from call to PCMLmr: ", PCMLmr, "; print(model):",
                     do.call(paste, c(as.list(capture.output(print(model))), list(sep="\n"))))
       errL <- PCMParseErrorMessage(err)
     } else {
       err <- PCMLmr
     }
-    if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
-      warning(err)
-    } else {
-      stop(err)
+
+    if(getOption("PCMBase.Raise.Lik.Errors", TRUE)) {
+      if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
+        warning(err)
+      } else {
+        stop(err)
+      }
     }
-    X0 <- model$X0
+
+
+    k0 <- metaI$pc[, metaI$N + 1L]
+    X0 <- rep(NaN, metaI$k)
+    X0[k0] <- model$X0[k0]
+
     attr(value.NA, 'X0') <- X0
     attr(value.NA, "error") <- errL
 
     return(value.NA)
 
   } else if(is.list(PCMLmr)) {
-    L_root <- PCMLmr$L
-    m_root <- PCMLmr$m
-    r_root <- PCMLmr$r
+    L0 <- as.matrix(PCMLmr$L)
+    m0 <- PCMLmr$m
+    r0 <- PCMLmr$r
+    k0 <- metaI$pc[, metaI$N + 1L]
 
-    if(is.null(L_root) | is.null(m_root) | is.null(r_root)) {
-      err <- paste0("ERR:02142:PCMBase:GaussianPCM.R:PCMLik:: The list returned by PCMLmr did not contain elements 'L', 'm' and 'r'.")
-      if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
-        warning(err)
-      } else {
-        stop(err)
-      }
+    if(is.null(L0) | is.null(m0) | is.null(r0)) {
+      err <- paste0("GaussianPCM.R:PCMLik:: The list returned by PCMLmr did not contain elements 'L', 'm' and 'r'.")
 
-      errL <- PCMParseErrorMessage(err)
-
-      X0 <- model$X0
-      attr(value.NA, 'X0') <- X0
-      attr(value.NA, "error") <- errL
-
-      return(value.NA)
-
-    }
-
-    if(is.null(model$X0) || isTRUE(all(is.na(model$X0)))) {
-      # set the root value to the one that maximizes the likelihood
-      X0 <- try(solve(a=L_root + t(L_root), b = -m_root), silent = TRUE)
-      if(class(X0) == "try-error") {
-        err <- paste0(
-          "ERR:02143:PCMBase:GaussianPCM.R:PCMLik:: There was a problem calculating X0 from the coefficients L,m,r. ", "L=", toString(PCMLmr$L), "; m=", toString(PCMLmr$m), "; r=", PCMLmr$r,
-          ". Error message from call to solve(a=L_root + t(L_root), b = -m_root):", X0, "; print(model):",
-          do.call(paste, c(as.list(capture.output(print(model))), list(sep="\n"))))
-
-        errL <- PCMParseErrorMessage(err)
+      if(!getOption("PCMBase.Ignore.Lmr.Errors", FALSE)) {
         if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
           warning(err)
         } else {
           stop(err)
+        }
+      }
+
+      errL <- PCMParseErrorMessage(err)
+
+      k0 <- metaI$pc[, metaI$N + 1L]
+      X0 <- rep(NaN, metaI$k)
+      X0[k0] <- model$X0[k0]
+
+      attr(value.NA, 'X0') <- X0
+      attr(value.NA, "error") <- errL
+
+      return(value.NA)
+    }
+
+    if(is.null(model$X0) || isTRUE(all(is.na(model$X0)))) {
+      # set the root value to the one that maximizes the likelihood
+      X0 <- rep(NaN, metaI$k)
+      X0[k0] <- rep(NA_real_, sum(k0))
+
+      X0[k0] <- try(solve(
+        a=L0[k0,k0,drop=FALSE] + t(L0[k0,k0,drop=FALSE]),
+        b = -m0[k0]), silent = TRUE)
+      if(class(X0[[1]]) == "try-error") {
+        err <- paste0(
+          "GaussianPCM.R:PCMLik:: There was a problem calculating X0 from L0,m0,r0. ",
+          "L0=", toString(L0), "; m0=", toString(m0),
+          "; r0=", r0, ". Error message:", X0[[1]], "\n")
+
+        errL <- PCMParseErrorMessage(err)
+        if(getOption("PCMBase.Raise.Lik.Errors", TRUE)) {
+          if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
+            warning(err)
+          } else {
+            stop(err)
+          }
         }
         X0 <- NULL
         attr(value.NA, "X0") <- X0
@@ -437,21 +464,24 @@ PCMLik.GaussianPCM <- function(
       }
 
     } else {
-      X0 <- model$X0
+      k0 <- metaI$pc[, metaI$N + 1L]
+      X0 <- rep(NaN, metaI$k)
+      X0[k0] <- model$X0[k0]
     }
 
-    loglik <- try(X0 %*% L_root %*% X0 + m_root %*% X0 + r_root, silent = TRUE)
+    loglik <- try(X0[k0] %*% L0[k0,k0,drop=FALSE] %*% X0[k0] + m0[k0] %*% X0[k0] + r0, silent = TRUE)
     if(class(loglik) == "try-error") {
       err <- paste0(
-        "ERR:02144:PCMBase:GaussianPCM.R:PCMLik:: There was a problem calculating loglik from X0 and the coefficients L,m,r. ", "X0=", toString(X0), "L=", toString(L_root), "; m=", toString(m_root), "; r=", r_root,
-        ". Error message from call to X0 %*% L_root %*% X0 + m_root %*% X0 + r_root:", loglik, "; print(model):",
-        do.call(paste, c(as.list(capture.output(print(model))), list(sep="\n"))))
+        "GaussianPCM.R:PCMLik:: There was a problem calculating loglik from X0 and the coefficients L,m,r. ", "X0=", toString(X0), "L0=", toString(L0), "; m0=", toString(m0), "; r0=", r0,
+        ". Error message from call to X0 %*% L0 %*% X0 + m0 %*% X0 + r0:", loglik, "\n")
 
       errL <- PCMParseErrorMessage(err)
-      if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
-        warning(err)
-      } else {
-        stop(err)
+      if(getOption("PCMBase.Raise.Lik.Errors", TRUE)) {
+        if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
+          warning(err)
+        } else {
+          stop(err)
+        }
       }
 
       attr(value.NA, "X0") <- X0
@@ -465,14 +495,17 @@ PCMLik.GaussianPCM <- function(
 
     if(class(value) == "try-error") {
       err <- paste0(
-        "ERR:02145:PCMBase:GaussianPCM.R:PCMLik:: There was a problem calculating value from loglik=", toString(loglik), ". Error message from call to as.vector(if(log) loglik else exp(loglik)):", value, "; print(model):",
+        "GaussianPCM.R:PCMLik:: There was a problem calculating value from loglik=", toString(loglik), ". Error message from call to as.vector(if(log) loglik else exp(loglik)):", value, "; print(model):",
         do.call(paste, c(as.list(capture.output(print(model))), list(sep="\n"))))
 
       errL <- PCMParseErrorMessage(err)
-      if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
-        warning(err)
-      } else {
-        stop(err)
+
+      if(getOption("PCMBase.Raise.Lik.Errors", TRUE)) {
+        if(getOption("PCMBase.Errors.As.Warnings", TRUE)) {
+          warning(err)
+        } else {
+          stop(err)
+        }
       }
 
       attr(value.NA, "X0") <- X0
@@ -482,7 +515,7 @@ PCMLik.GaussianPCM <- function(
 
     } else if(is.na(value)) {
       err <- paste0(
-        "ERR:02146:PCMBase:GaussianPCM.R:PCMLik:: There was a possible numerical problem, e.g. division of 0 by 0 when calculating the likelihood. value=", toString(value), "; calculated loglik=", toString(loglik), "; print(model):",
+        "GaussianPCM.R:PCMLik:: There was a possible numerical problem, e.g. division of 0 by 0 when calculating the likelihood. value=", toString(value), "; calculated loglik=", toString(loglik), "; print(model):",
         do.call(paste, c(as.list(capture.output(print(model))), list(sep="\n"))), ". No error message was returned from the call to PCMLmr. Check for runtime warnings.")
 
       errL <- PCMParseErrorMessage(err)
@@ -503,6 +536,295 @@ PCMLik.GaussianPCM <- function(
     attr(value, "X0") <- X0
     return(value)
   }
+}
+
+#' @importFrom data.table setnames
+#' @importFrom utils tail
+#' @export
+PCMLikTrace.GaussianPCM <- function(
+  X, tree, model,
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI = PCMInfo(
+    X = X, tree = tree, model = model, SE = SE, verbose = verbose),
+  log = TRUE,
+  verbose = FALSE
+) {
+  if(is.Transformable(model)) {
+    model <- PCMApplyTransformation(model)
+  }
+
+  if(is.function(metaI)) {
+    metaI <- metaI(
+      X = X, tree = tree, model = model, SE = SE, verbose = verbose)
+  }
+
+  trace <- PCMLmr(X = X, tree, model, metaI = metaI)
+  names(trace) <- sapply(names(trace), function(name) {
+    if(name %in% c("L", "m", "r")) {
+      paste0(name, "_{ji}")
+    } else {
+      paste0(name, "_i")
+    }
+  })
+
+  traceList <- lapply(
+    names(trace), function(name) {
+      res <- if(is.list(trace[[name]])) {
+        trace[[name]]
+      } else if(is.array(trace[[name]]) && length(dim(trace[[name]])) == 3) {
+        lapply(seq_len(dim(trace[[name]])[3]), function(i) {
+          trace[[name]][,,i]
+        })
+      } else if(is.array(trace[[name]]) && length(dim(trace[[name]])) == 2) {
+        lapply(seq_len(dim(trace[[name]])[2]), function(i) {
+          trace[[name]][,i]
+        })
+      } else if(
+        is.array(trace[[name]]) && length(dim(trace[[name]])) == 1 ||
+        is.vector(trace[[name]])) {
+
+        trace[[name]]
+      }
+    })
+  names(traceList) <- names(trace)
+
+  traceTable <- do.call(data.table, traceList)
+
+  # prevent warning during R CMD CHECK
+  j <- .I <- i <- t_i <- k_i <- X_i <- .N <- VE_i <-
+    omega_i <- Phi_i <- V_i <- L_i <- m_i <-
+    r_i <- nodeId <- `L_{ji}` <- `m_{ji}` <- `r_{ji}` <- ff_i <- f_i <-
+    `rr_{ji}` <- L_i <- m_i <- r_i <- `\\hat{X}_i` <- `\\ell\\ell_i` <- NULL
+
+  traceTable[, j:=sapply(.I, function(nodeId) {
+    if(nodeId != metaI$N+1) {
+      PCMTreeGetLabels(tree)[PCMTreeGetParent(tree, nodeId)]
+    } else {
+      "ND"
+    }
+  })]
+  traceTable[, i:=PCMTreeGetLabels(tree)[.I]]
+  traceTable[, t_i:=lapply(.I, function(.) tree$edge.length[match(., tree$edge[, 2])])]
+  traceTable[metaI$N+1]$t_i[[1]] <- list("ND")
+
+  traceTable[, k_i:=lapply(
+    seq_len(ncol(metaI$pc)), function(i) which(metaI$pc[,i]))]
+
+  traceTable[, X_i:=lapply(seq_len(.N), function(nodeId) {
+    nodeLabel <- i[nodeId]
+    x <- if(nodeId <= metaI$N) {
+      X[, nodeId]
+    } else if(nodeId == metaI$N+1) {
+      x <- rep(NaN, PCMNumTraits(model))
+      if(any(is.finite(k_i[[nodeId]]))) {
+        x[k_i[[nodeId]]] <- model$X0[k_i[[nodeId]]]
+      }
+      x
+    } else {
+      x <- rep(NaN, PCMNumTraits(model))
+      if(any(is.finite(k_i[[nodeId]]))) {
+        x[k_i[[nodeId]]] <- NA_real_
+      }
+      x
+    }
+    x <- as.character(x)
+    mat <- xtable(
+      as.matrix(x), align=rep("", ncol(as.matrix(x)) + 1),
+      digits = getOption("digits", default = 2))
+    latex <- capture.output(
+      print(mat, floating=FALSE, tabular.environment="bmatrix",
+            hline.after=NULL, include.rownames=FALSE,
+            include.colnames=FALSE, comment = FALSE,
+            NA.string = "NA"))
+    paste0(" $", do.call(paste0, as.list(latex)), "$ ")
+  })]
+
+  traceTable[, VE_i:=lapply(seq_len(.N), function(nodeId) {
+    nodeLabel <- i[nodeId]
+    ve <- matrix(NA_real_, metaI$k, metaI$k)
+    ve[k_i[[nodeId]], k_i[[nodeId]]] <- if(nodeId <= metaI$N) {
+      metaI$VE[k_i[[nodeId]], k_i[[nodeId]], nodeId]
+    } else {
+      matrix(0, length(k_i[[nodeId]]), length(k_i[[nodeId]]))
+    }
+    ve
+  })]
+
+  setcolorder(traceTable, neworder = tail(seq_len(ncol(traceTable)), n = 5))
+
+  traceTable[, omega_i:=lapply(.I, function(nodeId) {
+    if(nodeId == metaI$N+1) {
+      "ND"
+    } else {
+      vec <- rep(NA_real_, metaI$k)
+      vec[k_i[[nodeId]]] <- omega_i[[nodeId]][k_i[[nodeId]]]
+      vec
+    }
+  })]
+  traceTable[, Phi_i:=lapply(.I, function(nodeId) {
+    if(nodeId == metaI$N+1) {
+      "ND"
+    } else {
+      k_j <- k_i[[PCMTreeGetParent(tree, nodeId)]]
+      mat <- matrix(NA_real_, metaI$k, metaI$k)
+      mat[k_i[[nodeId]], k_j] <- Phi_i[[nodeId]][k_i[[nodeId]], k_j]
+      mat
+    }
+  })]
+  traceTable[, V_i:=lapply(.I, function(nodeId) {
+    if(nodeId == metaI$N+1) {
+      "ND"
+    } else {
+      mat <- matrix(NA_real_, metaI$k, metaI$k)
+      mat[k_i[[nodeId]], k_i[[nodeId]]] <-
+        V_i[[nodeId]][k_i[[nodeId]], k_i[[nodeId]]]
+      mat
+    }
+  })]
+  traceTable[, L_i:=lapply(.I, function(nodeId) {
+    if(nodeId <= metaI$N) {
+      "ND"
+    } else {
+      mat <- matrix(NA_real_, metaI$k, metaI$k)
+      mat[k_i[[nodeId]], k_i[[nodeId]]] <- 0.0
+      mat
+    }
+  })]
+  traceTable[, m_i:=lapply(.I, function(nodeId) {
+    if(nodeId <= metaI$N) {
+      "ND"
+    } else {
+      vec <- rep(NA_real_, metaI$k)
+      vec[k_i[[nodeId]]] <- 0.0
+      vec
+    }
+  })]
+  traceTable[, r_i:=lapply(.I, function(nodeId) {
+    if(nodeId <= metaI$N) {
+      "ND"
+    } else {
+      0.0
+    }
+  })]
+
+  # nodeId column needed because setting a key will sort the table on the
+  # key-column.
+  traceTable[, nodeId:=.I]
+  setkey(traceTable, i)
+  for(rowId in seq_len(nrow(traceTable))) {
+    # daughter node label
+    ii <- traceTable[rowId, i]
+    # parent node label
+    jj <- traceTable[rowId, j]
+
+    if(traceTable[rowId, nodeId] != metaI$N + 1) {
+      # not at the root node, so a parent node certainly exists
+      traceTable[
+        list(jj),
+        L_i:=list(list( as.matrix(L_i[[1]] + traceTable[list(ii), `L_{ji}`[[1]]]) ))]
+      traceTable[
+        list(jj),
+        m_i:=list(list(m_i[[1]] + traceTable[list(ii), `m_{ji}`[[1]]]))]
+      traceTable[
+        list(jj),
+        r_i:=list(list(r_i[[1]] + traceTable[list(ii), `r_{ji}`[[1]]]))]
+    }
+  }
+  setkey(traceTable, nodeId)
+  traceTable[, nodeId:=NULL]
+
+  traceTable[metaI$N+1]$omega_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$Phi_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$V_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$V_1_i[[1]] <- list("ND")
+
+  traceTable[metaI$N+1]$A_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$b_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$C_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$d_i[[1]] <- list("ND")
+  traceTable[metaI$N+1]$E_i[[1]] <- list("ND")
+  traceTable[, ff_i:=as.list(f_i)]
+  traceTable[, f_i:=NULL]
+  setnames(traceTable, "ff_i", "f_i")
+  traceTable[metaI$N+1]$f_i[[1]] <- list("ND")
+
+  traceTable[metaI$N+1]$`L_{ji}`[[1]] <- list("ND")
+  traceTable[metaI$N+1]$`m_{ji}`[[1]] <- list("ND")
+  traceTable[, `rr_{ji}`:=as.list(`r_{ji}`)]
+  traceTable[, `r_{ji}`:=NULL]
+  setnames(traceTable, "rr_{ji}", "r_{ji}")
+  traceTable[metaI$N+1]$`r_{ji}`[[1]] <- list("ND")
+
+
+  traceTable[, `\\hat{X}_i`:=lapply(seq_len(.N), function(nodeId) {
+    if(nodeId <= metaI$N) {
+      "ND"
+    # } else if(nodeId == metaI$N+1) {
+    #   if(is.null(model$X0) || isTRUE(all(is.na(model$X0)))) {
+    #     # set the root value to the one that maximizes the likelihood
+    #     X0 <- try(solve(
+    #       a=L_i[[nodeId]] + t(L_i[[nodeId]]),
+    #       b = -m_i[[nodeId]]), silent = TRUE)
+    #     if(inherits(X0, "try-error")) {
+    #       X0 <- rep(NA_real_, PCMNumTraits(model))
+    #     }
+    #     X0
+    #   } else {
+    #     model$X0
+    #   }
+    } else {
+      x <- rep(NaN, PCMNumTraits(model))
+      if(any(is.finite(k_i[[nodeId]]))) {
+        xHat <- try(
+          solve(
+            a = L_i[[nodeId]][k_i[[nodeId]], k_i[[nodeId]], drop = FALSE] +
+              t(L_i[[nodeId]][k_i[[nodeId]],k_i[[nodeId]], drop = FALSE]),
+            b = -m_i[[nodeId]][k_i[[nodeId]]]), silent = TRUE)
+      }
+      if(inherits(xHat, "try-error")) {
+        x[k_i[[nodeId]]] <- rep(NA_real_, PCMNumTraits(model))
+      } else {
+        x[k_i[[nodeId]]] <- xHat
+      }
+      x
+    }
+  })]
+
+  traceTable[, `\\ell\\ell_i`:=lapply(seq_len(.N), function(nodeId) {
+
+    if(nodeId <= metaI$N) {
+      # tip node
+      "ND"
+    } else {
+      X0 <- `\\hat{X}_i`[[nodeId]]
+
+      # if(nodeId == metaI$N+1) {
+      #   # root node
+      #   ll <- try(X0 %*% L_i[[nodeId]] %*% X0 + m_i[[nodeId]] %*% X0 + r_i[[nodeId]], silent = TRUE)
+      #   if(inherits(ll, "try-error")) {
+      #     ll <- NA_real_
+      #   }
+      #   ll
+      # } else {
+        # internal node
+        ll <- try(
+          X0[k_i[[nodeId]]] %*%
+            L_i[[nodeId]][k_i[[nodeId]],k_i[[nodeId]], drop=FALSE] %*%
+            X0[k_i[[nodeId]]] +
+
+          m_i[[nodeId]][k_i[[nodeId]]] %*% X0[k_i[[nodeId]]] +
+
+          r_i[[nodeId]],
+          silent = TRUE)
+        if(inherits(ll, "try-error")) {
+          ll <- NA_real_
+        }
+        ll
+      #}
+    }
+  })]
+
+  traceTable
 }
 
 #' Quadratic polynomial parameters A, b, C, d, E, f for each node
@@ -549,19 +871,19 @@ PCMAbCdEf.default <- function(
     cond[[r]] <- PCMCond(tree, model, r, metaI, verbose)
   }
 
-  omega <- array(NA, dim=c(k, M))
-  Phi <- array(NA, dim=c(k, k, M))
-  V <- array(NA, dim=c(k, k, M))
-  V_1 <- array(NA, dim=c(k, k, M))
+  omega <- array(NA_real_, dim=c(k, M))
+  Phi <- array(NA_real_, dim=c(k, k, M))
+  V <- array(NA_real_, dim=c(k, k, M))
+  V_1 <- array(NA_real_, dim=c(k, k, M))
 
 
   # returned general form parameters
-  A <- array(NA, dim=c(k, k, M))
-  b <- array(NA, dim=c(k, M))
-  C <- array(NA, dim=c(k, k, M))
-  d <- array(NA, dim=c(k, M))
-  E <- array(NA, dim=c(k, k, M))
-  f <- array(NA, dim=c(M))
+  A <- array(NA_real_, dim=c(k, k, M))
+  b <- array(NA_real_, dim=c(k, M))
+  C <- array(NA_real_, dim=c(k, k, M))
+  d <- array(NA_real_, dim=c(k, M))
+  E <- array(NA_real_, dim=c(k, k, M))
+  f <- array(NA_real_, dim=c(M))
 
   singular <- rep(FALSE, M)
 
@@ -609,14 +931,12 @@ PCMAbCdEf.default <- function(
        min(svdV)/max(svdV) < threshold_SV ||
        eigval[sum(ki)] < threshold_eigval) {
       singular[edgeIndex] <- TRUE
-      if(!skip_singular || ti > threshold_skip_singular ) {
+      if(!skip_singular || i <= N || ti > threshold_skip_singular ) {
         err <- paste0(
-          "ERR:02131:PCMBase:GaussianPCM.R:PCMAbCdEf.default:",i,":",
-          " The matrix V for node ", i,
+          "GaussianPCM.R:PCMAbCdEf.default:",i,":",
+          " The matrix V for node ", i, " (branch length=", ti, ")",
           " is nearly singular: min(svdV)/max(svdV)=", min(svdV)/max(svdV),
-          "; eigval[sum(ki)] = ", eigval[sum(ki)],
-          " Check the model parameters and the length of the branch",
-          " leading to the node. For details on this error, read the User Guide.")
+          "; smallest eigenvalue = ", eigval[sum(ki)])
         stop(err)
       }
     }
@@ -626,7 +946,7 @@ PCMAbCdEf.default <- function(
       if(sum(ki) == 1) {
         if(V[ki,ki,i] < 0) {
           err <- paste0(
-            "ERR:02132:PCMBase:GaussianPCM.R:PCMAbCdEf.default:",i,":",
+            "GaussianPCM.R:PCMAbCdEf.default:",i,":",
             " The matrix V[ki,ki,i] for node ", i, " (sum(ki)=", sum(ki), ")",
             " is not positive definite, V[ki,ki,i]. Check the model parameters; V[ki,ki,i]=", V[ki,ki,i], ".")
           stop(err)
@@ -634,7 +954,7 @@ PCMAbCdEf.default <- function(
       } else {
         if(!isSymmetric(V[ki,ki,i], tol = metaI$PCMBase.Tolerance.Symmetric)) {
           err <- paste0(
-            "ERR:02133:PCMBase:GaussianPCM.R:PCMAbCdEf.default:",i,":",
+            "GaussianPCM.R:PCMAbCdEf.default:",i,":",
             " The matrix V[ki,ki,i] for node ", i, " (sum(ki)=", sum(ki), ")",
             " is not symmetric. It must be symmetric positive definite.")
           stop(err)
@@ -642,14 +962,14 @@ PCMAbCdEf.default <- function(
 
         if(any(eigval<=0)) {
           err <- paste0(
-            "ERR:02134:PCMBase:GaussianPCM.R:PCMAbCdEf.default:",i,":",
+            "GaussianPCM.R:PCMAbCdEf.default:",i,":",
             " The matrix V[ki,ki,i] for node ", i, " (sum(ki)=", sum(ki), ")",
             " is not positive definite. It must be symmetric positive definite; eigval=", toString(eigval), ".")
           stop(err)
         }
       }
 
-      V_1[ki,ki,i] <- solve(V[ki,ki,i])
+      V_1[ki,ki,i] <- solve(as.matrix(V[ki,ki,i]))
       # TODO: V_1.slice(i)(ki, ki) = real(eigvec * diagmat(1/eigval) * eigvec.t());
 
       `%op%` <- if(sum(ki) > 1) `%*%` else `*`
@@ -663,13 +983,15 @@ PCMAbCdEf.default <- function(
     }
   }
 
-  list(A=A, b=b, C=C, d=d, E=E, f=f, omega=omega, Phi=Phi, V=V, V_1=V_1, singular = singular)
+  list(omega=omega, Phi=Phi, V=V, V_1=V_1,
+       A=A, b=b, C=C, d=d, E=E, f=f,
+       singular = singular)
 }
 
 #' Quadratic polynomial parameters L, m, r
 #'
 #' @inheritParams PCMLik
-#' @param root.only logical indicatin whether to return the calculated values of L,m,r
+#' @param root.only logical indicating whether to return the calculated values of L,m,r
 #'  only for the root or for all nodes in the tree.
 #' @return A list with the members A,b,C,d,E,f,L,m,r for all nodes in the tree or
 #'   only for the root if root.only=TRUE.
@@ -697,13 +1019,19 @@ PCMLmr.default <- function(
   edge <- tree$edge
   pc <- metaI$pc
 
-  L <- array(0, dim=c(k, k, M))
-  m <- array(0, dim=c(k, M))
-  r <- array(0, dim=c(M))
-
   AbCdEf <- PCMAbCdEf(
     tree = tree, model = model, SE = SE, metaI = metaI,
     verbose = verbose)
+
+  L <- array(NA_real_, dim=c(k, k, M))
+  m <- array(NA_real_, dim=c(k, M))
+  r <- array(NA_real_, dim=c(M))
+
+  for(i in seq(N+1, M)) {
+    L[pc[,i],pc[,i],i] <- 0.0
+    m[pc[,i],i] <- 0.0
+    r[i] <- 0.0
+  }
 
   postorder <- rev(metaI$preorder)
 
@@ -772,7 +1100,7 @@ PCMLmr.default <- function(
          m = m[,N+1],
          r = r[N+1])
   } else {
-    c(AbCdEf[c("A", "b", "C", "d", "E", "f", "V", "V_1")],
+    c(AbCdEf[c("omega", "Phi", "V", "V_1", "A", "b", "C", "d", "E", "f")],
       list(L = L, m = m, r = r))
   }
 }

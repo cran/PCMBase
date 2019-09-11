@@ -11,18 +11,30 @@ a named list with the currently set values of the following global
 options:
 \itemize{
 \item{\code{PCMBase.Value.NA }}{NA value for the likelihood; used in GaussianPCM to
-return this value in case of an error occuring
+return this value in case of an error occurring
 during likelihood calculation. By default, this is set to \code{as.double(NA)}.}
 \item{\code{PCMBase.Errors.As.Warnings }}{a logical flag indicating if errors
 (occuring, e.g. during likelihood calculation) should be treated as warnings
-and added as an attribute "error" to returne likelihood values. Default TRUE.}
+and added as an attribute "error" to attach to the likelihood values. Default TRUE.}
+\item{\item{PCMBase.Raise.Lik.Errors} }{Should numerical and other sort of
+errors occurring during likelihood calculation be raised either as errors or
+as warnings, depending on the option \code{PCMBase.Errors.As.Warnings}.
+Default TRUE. This option can be useful if too frequent warnings get raised
+during a model fit procedure.}
 \item{\code{PCMBase.Threshold.Lambda_ij }}{a 0-threshold for abs(Lambda_i + Lambda_j),
 where Lambda_i and Lambda_j are eigenvalues of the parameter matrix H of an OU or
 other model. Default 1e-8. See \code{\link{PCMPExpxMeanExp}}.}
+\item{\code{PCMBase.Threshold.EV }}{A 0-threshold for the eigenvalues of the
+matrix V for a given branch. The V matrix is considered singular if it has
+eigenvalues smaller than \code{PCMBase.Threshold.EV } or when the ratio
+min(svdV)/max(svdV) is below \code{PCMBase.Threshold.SV }. Default is 1e-5.
+Treatment of branches with singular V matrix is defined by the option
+\code{PCMBase.Skip.Singular}.}
 \item{\code{PCMBase.Threshold.SV }}{A 0-threshold for min(svdV)/max(svdV), where
-svdV is the vector of eigenvalues of the matrix V for a given branch. The V matrix
-is considered singular if it has eigenvalues equal to 0 or when the ratio
-min(svdV)/max(svdV) is below PCMBase.Threshold.SV. Default is 1e-6. Treatment
+svdV is the vector of singular values of the matrix V for a given branch.
+The V matrix is considered singular if it has eigenvalues smaller than
+\code{PCMBase.Threshold.EV } or when the ratio min(svdV)/max(svdV) is below
+PCMBase.Threshold.SV. Default is 1e-6. Treatment
 of branches with singular V matrix is defined by the option \code{PCMBase.Skip.Singular}.}
 \item{\code{PCMBase.Threshold.Skip.Singular }}{A double indicating if a branch of shorter
 length with singular matrix V should be skipped during likelihood calculation. Setting this
@@ -41,7 +53,30 @@ for symmetric matrices. Default 1e-8; see also \code{\link{isSymmetric}}.}
 \item{\code{PCMBase.Lmr.mode }}{An integer code specifying the parallel likelihood calculation mode.}
 \item{\code{PCMBase.ParamValue.LowerLimit}}{Default lower limit value for parameters, default setting is -10.0.}
 \item{\code{PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal}}{Default lower limit value for parameters corresponding to non-negative diagonal elements of matrices, default setting is 0.0.}
-\item{\code{PCMBase.ParamValue.UpperLimit}}{Default upper limit value for parameters, default setting is 10.0.}
+\item{\code{PCMBase.ParamValue.UpperLimit} }{Default upper limit value for parameters, default setting is 10.0.}
+\item{\code{PCMBase.Transpose.Sigma_x} }{Should upper diagonal factors for variance-covariance rate matrices be transposed, e.g. should Sigma = t(Sigma_x) Sigma_x or, rather Sigma = Sigma_x t(Sigma_x)? Note that the two variants are not equal. The default is FALSE, meaning Sigma = Sigma_x t(Sigma_x). In this case, though Sigma_x is not the actual upper Cholesky factor of Sigma, i.e. chol(Sigma) != Sigma_x. See also \code{\link{chol}} and \code{\link{UpperChol}}. This option applies to parameters Sigma_x, Sigmae_x, Sigmaj_x and the measurement errors \code{SE[,,i]} for each measurement i when the argument \code{SE} is specified as a cube.}
+\item{\code{PCMBase.MaxLengthListCladePartitions} }{Maximum number of tree partitions returned by \code{\link{PCMTreeListCladePartitions}}. This option has the goal to interrupt the recursive search for new partitions in the case of calling PCMTreeListCladePartitions on a big tree with a small value of the maxCladeSize argument. By default this is set to Inf.}
+\item{\code{PCMBase.PCMPresentCoordinatesFun} }{A function with the same synopsis as \code{\link{PCMPresentCoordinates}} that can be specified in case of custom setting for the present coordinates for specific nodes of the tree. See \code{\link{PCMPresentCoordinates}}, and \code{\link{PCMInfo}}.}
+\item{\code{PCMBase.Use1DClasses} }{Logical indicating if 1D arithmetic operations
+should be used instead of multi-dimensional ones. This can speed-up computations
+in the case of a single trait. Currently, this feature is implemented only in
+the PCMBaseCpp R-package and only for some model types, such as OU and BM.
+Default: FALSE}
+\item{\code{PCMBase.PrintSubscript_u} }{Logical indicating if a subscript 'u'
+should be printed instead of a subscript 'x'. Used in \code{PCMTable}. Default: FALSE.}
+\item{\code{PCMBase.MaxNForGuessSigma_x} }{A real fraction number in the
+interval (0, 1) or an integer bigger than 1 controlling the
+number of tips to use for analytical calculation of the evolutionary rate
+matrix under a BM assumption. This option is used in the suggested PCMFit
+R-package. Default: 0.25. }
+\item{\code{PCMBase.UsePCMVarForVCV} }{Logical (default: FALSE) indicating
+if the function \code{\link{PCMTreeVCV}} should use \code{\link{PCMVar}}
+instead of ape's function \code{\link{vcv}} to calculate the phylogenetic
+variance covariance matrix under BM assumption. Note that setting this option
+to TRUE would slow down the function PCMTreeVCV considerably but may be more
+stable, particularly in the case of very big and deep trees, where previous
+ape's versions of the \code{\link{vcv}} function have thrown stack-overflow
+errors.}
 }
 }
 \description{

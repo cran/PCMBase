@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with PCMBase.  If not, see <http://www.gnu.org/licenses/>.
+
 
 #' True positive rate of a set of binary predictions against their trues
 #'
@@ -70,7 +71,7 @@ FalsePositiveRate <- function(pred, true) {
 }
 
 
-#' Check if the PCMBase version correpsonds to a dev release
+#' Check if the PCMBase version corresponds to a dev release
 #' @importFrom utils packageDescription
 #' @return a logical
 #' @export
@@ -83,16 +84,16 @@ PCMBaseIsADevRelease <- function() {
 #' its argument.
 #' @param o a PCM or a parameter object.
 #' @param roundDigits an integer, default: 2.
-#' @param transformChol a logical indicating if Choleski transformation should be
-#' applied to Choleski-factor parameters prior to generating the plotmath expression.
+#' @param transformSigma_x a logical indicating if Cholesky transformation should be
+#' applied to Cholesky-factor parameters prior to generating the plotmath expression.
 #' @return a character string.
 #' @export
-PCMPlotMath <- function(o, roundDigits = 2, transformChol = FALSE) {
+PCMPlotMath <- function(o, roundDigits = 2, transformSigma_x = FALSE) {
   UseMethod("PCMPlotMath", o)
 }
 
 #' @export
-PCMPlotMath.default <- function(o, roundDigits = 2, transformChol = FALSE) {
+PCMPlotMath.default <- function(o, roundDigits = 2, transformSigma_x = FALSE) {
   if(is.numeric(o)) {
     format(round(o, roundDigits), nsmall = roundDigits)
   } else {
@@ -101,7 +102,7 @@ PCMPlotMath.default <- function(o, roundDigits = 2, transformChol = FALSE) {
 }
 
 #' @export
-PCMPlotMath.VectorParameter <- function(o, roundDigits = 2, transformChol = FALSE) {
+PCMPlotMath.VectorParameter <- function(o, roundDigits = 2, transformSigma_x = FALSE) {
   if(is.Global(o)) {
     k <- length(o)
     R <- 1
@@ -153,18 +154,26 @@ PCMPlotMath.VectorParameter <- function(o, roundDigits = 2, transformChol = FALS
 }
 
 #' @export
-PCMPlotMath.MatrixParameter <- function(o, roundDigits = 2, transformChol = FALSE) {
+PCMPlotMath.MatrixParameter <- function(o, roundDigits = 2, transformSigma_x = FALSE) {
   k <- dim(o)[1]
   if(is.Global(o)) {
     R <- 1
-    if(transformChol) {
-      o <- o %*% t(o)
+    if(transformSigma_x) {
+      if(getOption("PCMBase.Transpose.Sigma_x", FALSE)) {
+        o <- t(o) %*% o
+      } else {
+        o <- o %*% t(o)
+      }
     }
   } else {
     R <- dim(o)[3]
-    if(transformChol) {
+    if(transformSigma_x) {
       for(r in seq_len(R)) {
-        o[,,r] <- o[,,r] %*% t(o[,,r])
+        if(getOption("PCMBase.Transpose.Sigma_x", FALSE)) {
+          o[,,r] <- t(o[,,r]) %*% o[,,r]
+        } else {
+          o[,,r] <- o[,,r] %*% t(o[,,r])
+        }
       }
     }
   }
@@ -220,19 +229,19 @@ PCMPlotMath.MatrixParameter <- function(o, roundDigits = 2, transformChol = FALS
 }
 
 #' @export
-PCMPlotMath.PCM <- function(o, roundDigits = 2, transformChol = FALSE) {
+PCMPlotMath.PCM <- function(o, roundDigits = 2, transformSigma_x = FALSE) {
   res <- 'bgroup("{", list('
   for(i in seq_along(o)) {
     name <- names(o)[i]
-    transformChol <- FALSE
+    transformSigma_x <- FALSE
     if(name == "Sigma_x") {
       name <- "Sigma"
-      transformChol <- TRUE
+      transformSigma_x <- TRUE
     }
     res <- paste0(
       res, name, "==", PCMPlotMath(
         o[[i]], roundDigits = roundDigits,
-        transformChol = transformChol))
+        transformSigma_x = transformSigma_x))
     if(i < length(o)) {
       res <- paste0(res, ", ")
     }
@@ -246,6 +255,10 @@ PCMPlotMath.PCM <- function(o, roundDigits = 2, transformChol = FALSE) {
 #'
 #' @param n an integer defining the number of colors in the resulting palette.
 #' @param names a character vector of length `n`.
+#' @param colors a vector of n values convertible to colors. Default:
+#' \code{structure(hcl(
+#' h = seq(15, 375, length = n + 1), l = 65, c = 100)[seq_len(n)],
+#' names = names)}
 #'
 #' @return A vector of character strings which can be used as color
 #' specifications by R graphics functions.
@@ -253,11 +266,17 @@ PCMPlotMath.PCM <- function(o, roundDigits = 2, transformChol = FALSE) {
 #' @importFrom grDevices hcl
 #'
 #' @export
-PCMColorPalette <- function(n, names) {
-  hues = seq(15, 375, length = n + 1)
-  palette <- hcl(h = hues, l = 65, c = 100)[1:n]
-  names(palette) <- names
-  palette
+PCMColorPalette <- function(
+  n, names,
+  colors = structure(hcl(
+    h = seq(15, 375, length = n + 1), l = 65, c = 100)[seq_len(n)],
+    names = names)) {
+
+  if(length(colors) != n) {
+    stop("colors should be of length n.")
+  }
+  names(colors) <- names
+  colors
 }
 
 
@@ -270,23 +289,38 @@ PCMColorPalette <- function(n, names) {
 #'   should reflect the distance from the present (points that are farther away in time with
 #'   respect to the present moment, i.e. closer to the root of the tree, are displayed smaller
 #'   and more transparent.). By default this is set to \code{!is.ultrametric(tree)}.
-#' @importFrom ggplot2 ggplot geom_point scale_size_continuous scale_alpha_continuous geom_text aes theme_gray theme
-#' @param sizeLabeledTips passed geom_text to specify the size of tip-labels for the trait-points.
+#'
+#' @param sizeLabels passed to \code{geom_text} to specify the size of tip-labels for the trait-points.
+#' @param nudgeLabels a numeric vector of two elements (default: c(0,0)), passed as
+#' arguments nudge_x and nudge_y of \code{geom_text}.
+#' @param sizePoints,alphaPoints numeric parameters passed as arguments size and alpha to \code{geom_point}.
+#' Default: sizePoints = 2, alphaPoints = 1.
+#' @param numTimeFacets a number or a numeric vector controlling the creation of different facets
+#' corresponding to different time intervals when the tree is non-ultrametric. If a single number,
+#' it will be interpreted as an integer specifying the number of facets, each facets corresponding to
+#' an equal interval of time. If a numeric vector, it will be used to specify the cut-points for
+#' each interval. Default: \code{if(is.ultrametric(tree) || scaleSizeWithTime) 1L else 3}.
+#' @param nrowTimeFacets,ncolTimeFacets integers specifying how the time facets should
+#' be layed out. Default: \code{nrowTimeFacets = 1L, ncolTimeFacets = numTimeFacets}.
 #'
 #' @return a ggplot object
 #' @importFrom data.table data.table is.data.table setkey := setnames
-#' @importFrom ggplot2 scale_color_manual
+#' @importFrom ggplot2 ggplot geom_point scale_size_continuous scale_alpha_continuous geom_text aes theme_gray theme scale_color_manual facet_wrap vars
 #' @importFrom ape is.ultrametric
 #' @export
 PCMPlotTraitData2D <- function(
-  X, tree, labeledTips = NULL, sizeLabeledTips = 8,
+  X, tree,
+  sizePoints = 2, alphaPoints = 1,
+  labeledTips = NULL, sizeLabels = 8, nudgeLabels = c(0.0, 0.0),
   palette = PCMColorPalette(PCMNumRegimes(tree), PCMRegimes(tree)),
-  scaleSizeWithTime = !is.ultrametric(tree)) {
+  scaleSizeWithTime = !is.ultrametric(tree),
+  numTimeFacets = if(is.ultrametric(tree) || scaleSizeWithTime) 1L else 3L,
+  nrowTimeFacets = 1L, ncolTimeFacets = numTimeFacets) {
 
   tree <- PCMTree(tree)
 
   # Needed to pass the check
-  id <- .N <- time <- regime <- label <- x <- y <- NULL
+  id <- .N <- time <- regime <- label <- x <- y <- timeFacet <- NULL
 
   N <- PCMTreeNumTips(tree)
   R <- PCMNumRegimes(tree)
@@ -297,6 +331,11 @@ PCMPlotTraitData2D <- function(
   setnames(data, c("x", "y"))
   data[, id:=seq_len(.N)]
   data[, time:=times]
+  data[, timeFacet:=if(length(numTimeFacets) > 1L || numTimeFacets > 1L) {
+    cut(time, numTimeFacets, include.lowest = TRUE)
+  } else {
+    factor(paste0("[", toString(range(time)), "]"))
+  }]
 
   data[, regime := factor(PCMTreeGetPartRegimes(tree)[PCMTreeGetPartsForNodes(tree, id)])]
   setkey(data, id)
@@ -312,14 +351,24 @@ PCMPlotTraitData2D <- function(
       scale_size_continuous(range = c(0.2, 2.8)) +
       scale_alpha_continuous(range = c(0.2, 0.75))
   } else {
-    pl <- pl + geom_point(aes(x=x, y=y, col=regime), alpha=.8, na.rm = TRUE)
+    pl <- pl + geom_point(
+      aes(x=x, y=y, col=regime),
+      size = sizePoints, alpha=alphaPoints, na.rm = TRUE)
   }
 
   pl <- pl + scale_color_manual(name = "regime", values = palette)
 
   if(!is.null(labeledTips)) {
-    pl <- pl +
-      geom_text(aes(label = label, x = x, y = y, col = regime), size = sizeLabeledTips)
+    pl <- pl + geom_text(
+      aes(label = label, x = x, y = y, col = regime),
+      size = sizeLabels,
+      nudge_x = nudgeLabels[1], nudge_y = nudgeLabels[2],
+      show.legend = FALSE,
+      check_overlap = TRUE)
+  }
+
+  if(length(numTimeFacets) > 1L || numTimeFacets > 1L) {
+    pl <- pl + facet_wrap(vars(timeFacet), nrow = nrowTimeFacets, ncol = ncolTimeFacets)
   }
 
   pl
@@ -436,4 +485,3 @@ PCMCharacterVectorToRExpression <- function(v) {
   }
   expr
 }
-

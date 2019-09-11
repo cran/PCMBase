@@ -1,3 +1,20 @@
+# Copyright 2016-2019 Venelin Mitov
+#
+# This file is part of PCMBase.
+#
+# PCMBase is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PCMBase is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PCMBase.  If not, see <http://www.gnu.org/licenses/>.
+
 #' Test objects for the PCMBase package
 #'
 #' A list containing simulated trees, trait-values and model objects for tests
@@ -39,5 +56,17 @@
 #'   \item{traits.a.2 }{ trait values simulated with model.a.2. }
 #'   \item{traits.a.3 }{ trait values simulated with model.a.3. }
 #'   \item{traits.ab.123 }{ trait values simulated with model.ab.123 on tree.ab. }
+#'   \item{tree }{a tree of 5 tips used for examples.}
+#'   \item{X }{3-trait data for 5 tips used together with tree for examples. }
+#'   \item{model.OU.BM }{a mixed Gaussian phylogenetic model for 3 traits and an OU and BM regime used in examples. }
 #' }
 "PCMBaseTestObjects"
+
+#' Data for Fig3 in the TPB manuscript
+#'
+#' A list containing simulated tree, models and data used in Fig. 3
+#'
+#' @format This is a list containing the following named elements representing
+#' simulation parameters, a simulated tree and PCM objects, used in Fig. 3. For
+#' details on all these objects, read the file data-raw/Fig3.Rmd.
+"dataFig3"

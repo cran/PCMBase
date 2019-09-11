@@ -2,7 +2,7 @@ Package: PCMBase
 Type: Package
 Title: Simulation and Likelihood Calculation of Phylogenetic
         Comparative Models
-Version: 1.2.9
+Version: 1.2.10
 Authors@R: c(person("Venelin", "Mitov", email = "vmitov@gmail.com",
                     role = c("aut", "cre", "cph")),
              person("Krzysztof", "Bartoszek",
@@ -10,7 +10,7 @@ Authors@R: c(person("Venelin", "Mitov", email = "vmitov@gmail.com",
              person("Georgios", "Asimomitis",
                     role = c("ctb")),
              person("Tanja", "Stadler",
-                    role = c("ctb")))
+                    role = c("ths")))
 Maintainer: Venelin Mitov <vmitov@gmail.com>
 Description: Phylogenetic comparative methods represent models of continuous trait 
   data associated with the tips of a phylogenetic tree. Examples of such models 
@@ -35,8 +35,9 @@ Encoding: UTF-8
 License: GPL (>= 3.0)
 LazyData: true
 Depends: R (>= 3.1.0)
-Imports: ape, expm, mvtnorm, data.table, ggplot2
-Suggests: testthat, knitr, rmarkdown, abind, ggtree, cowplot, covr
+Imports: ape, expm, mvtnorm, data.table, ggplot2, xtable
+Suggests: testthat, knitr, rmarkdown, abind, ggtree, cowplot, covr,
+        mvSLOUCH, BiocManager
 RoxygenNote: 6.1.1
 ByteCompile: yes
 VignetteBuilder: knitr, rmarkdown
@@ -44,10 +45,10 @@ URL: https://venelin.github.io/PCMBase/,
         https://github.com/venelin/PCMBase
 BugReports: https://github.com/venelin/PCMBase/issues
 NeedsCompilation: no
-Packaged: 2019-03-15 09:46:04 UTC; vmitov
+Repository: CRAN
+Packaged: 2019-09-11 16:00:01 UTC; vmitov
 Author: Venelin Mitov [aut, cre, cph],
   Krzysztof Bartoszek [ctb],
   Georgios Asimomitis [ctb],
-  Tanja Stadler [ctb]
-Repository: CRAN
-Date/Publication: 2019-03-15 10:43:33 UTC
+  Tanja Stadler [ths]
+Date/Publication: 2019-09-11 16:30:02 UTC

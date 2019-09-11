@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -54,7 +54,7 @@ NULL
 #' class attribute.}
 #' \item{Constancy (optional)}{These are the "_Fixed", "_Ones", "_Identity" and
 #' "_Zeros" classes.}
-#' \item{Transformation (optional)}{These are the "_Transformable", "_CholeskiFactor"
+#' \item{Transformation (optional)}{These are the "_Transformable", "_CholeskyFactor"
 #'  and "_Schur" classes. }
 #' \item{Other properties (optional)}{These are the "_NonNegative",
 #' "_WithNonNegativeDiagonal", "_LowerTriangular", "_AllEqual", "_ScalarDiagonal",
@@ -81,15 +81,176 @@ is.Global <- function(o) { inherits(o, "_Global") }
 #' @export
 is.ScalarParameter <- function(o) { inherits(o, "ScalarParameter") }
 
+#' @export
+PCMNumTraits.ScalarParameter <- function(model) {
+  0L
+}
+
+#' @export
+PCMNumRegimes.ScalarParameter <- function(obj) {
+  if(is.Global(obj)) {
+    0L
+  } else {
+    length(obj)
+  }
+}
+
+#' @export
+PCMExtractDimensions.ScalarParameter <- function(
+  obj,
+  dims = seq_len(PCMNumTraits(obj)),
+  nRepBlocks = 1L) {
+  obj
+}
+
+#' @export
+PCMExtractRegimes.ScalarParameter <- function(obj, regimes = seq_len(PCMNumRegimes(obj))) {
+  if(is.Global(obj)) {
+    obj
+  } else {
+    regimes <- as.integer(regimes)
+    if(isTRUE(any(regimes > PCMNumRegimes(obj) | regimes < 1))) {
+      stop(paste0(
+        "PCMExtractRegimes.ScalarParameter:: some of regimes are outside the",
+        " range 1:R; regimes=(", toString(regimes), "); R=", PCMNumRegimes(obj)))
+    } else {
+      # obj is local scope, so a matrix
+      obj2 <- obj[regimes]
+      class(obj2) <- class(obj)
+      attr(obj2, "description") <- attr(obj, "description", exact = TRUE)
+      obj2
+    }
+  }
+}
+
 #' @describeIn PCMParamType
 #'
 #' @export
 is.VectorParameter <- function(o) { inherits(o, "VectorParameter") }
 
+#' @export
+PCMNumTraits.VectorParameter <- function(model) {
+  if(is.Global(model)) {
+    length(model)
+  } else {
+    dim(model)[1L]
+  }
+}
+
+#' @export
+PCMNumRegimes.VectorParameter <- function(obj) {
+  if(is.Global(obj)) {
+    0L
+  } else {
+    dim(obj)[2L]
+  }
+}
+
+#' @export
+PCMExtractDimensions.VectorParameter <- function(
+  obj,
+  dims = seq_len(PCMNumTraits(obj)),
+  nRepBlocks = 1L) {
+  dims <- unique(as.integer(dims))
+  if(isTRUE(any(dims > PCMNumTraits(obj) | dims < 1))) {
+    stop(paste0(
+      "PCMExtractDimensions.VectorParameter:: some of dims are outside the",
+      " range 1:k; dims=(", toString(dims), "); k=", PCMNumTraits(obj)))
+  }
+  if(is.Global(obj)) {
+    obj2 <- obj[rep(dims, nRepBlocks)]
+  } else {
+    # obj is local scope, so a matrix
+    obj2 <- obj[rep(dims, nRepBlocks), , drop = FALSE]
+  }
+  class(obj2) <- class(obj)
+  attr(obj2, "description") <- attr(obj, "description", exact = TRUE)
+
+  obj2
+}
+
+#' @export
+PCMExtractRegimes.VectorParameter <- function(obj, regimes = seq_len(PCMNumRegimes(obj))) {
+  if(is.Global(obj)) {
+    obj
+  } else {
+    regimes <- as.integer(regimes)
+    if(isTRUE(any(regimes > PCMNumRegimes(obj) | regimes < 1))) {
+      stop(paste0(
+        "PCMExtractRegimes.VectorParameter:: some of regimes are outside the",
+        " range 1:R; regimes=(", toString(regimes), "); R=", PCMNumRegimes(obj)))
+    } else {
+      # obj is local scope, so a matrix
+      obj2 <- obj[, regimes, drop=FALSE]
+      class(obj2) <- class(obj)
+      attr(obj2, "description") <- attr(obj, "description", exact = TRUE)
+      obj2
+    }
+  }
+}
+
+
 #' @describeIn PCMParamType
 #'
 #' @export
 is.MatrixParameter <- function(o) { inherits(o, "MatrixParameter") }
+
+#' @export
+PCMNumTraits.MatrixParameter <- function(model) {
+  dim(model)[1L]
+}
+
+#' @export
+PCMNumRegimes.MatrixParameter <- function(obj) {
+  if(is.Global(obj)) {
+    0L
+  } else {
+    dim(obj)[3L]
+  }
+}
+
+#' @export
+PCMExtractDimensions.MatrixParameter <- function(
+  obj,
+  dims = seq_len(PCMNumTraits(obj)),
+  nRepBlocks = 1L) {
+  dims <- unique(as.integer(dims))
+  if(isTRUE(any(dims > PCMNumTraits(obj) | dims < 1))) {
+    stop(paste0(
+      "PCMExtractDimensions.MatrixParameter:: some of dims are outside the",
+      " range 1:k; dims=(", toString(dims), "); k=", PCMNumTraits(obj)))
+  }
+  obj2 <- if(is.Global(obj)) {
+    kronecker(diag(1, nRepBlocks), obj[dims, dims, drop = FALSE])
+  } else {
+    # obj is local scope, so an array
+    kronecker(diag(1, nRepBlocks), obj[dims, dims, , drop = FALSE])
+  }
+  class(obj2) <- class(obj)
+  attr(obj2, "description") <- attr(obj, "description", exact = TRUE)
+  attr(obj2, "dimnames") <- attr(obj, "dimnames", exact = TRUE)
+  obj2
+}
+
+#' @export
+PCMExtractRegimes.MatrixParameter <- function(obj, regimes = seq_len(PCMNumRegimes(obj))) {
+  if(is.Global(obj)) {
+    obj
+  } else {
+    regimes <- as.integer(regimes)
+    if(isTRUE(any(regimes > PCMNumRegimes(obj) | regimes < 1))) {
+      stop(paste0(
+        "PCMExtractRegimes.MatrixParameter:: some of regimes are outside the",
+        " range 1:R; regimes=(", toString(regimes), "); R=", PCMNumRegimes(obj)))
+    } else {
+      # obj is local scope, so a array
+      obj2 <- obj[, , regimes, drop=FALSE]
+      class(obj2) <- class(obj)
+      attr(obj2, "description") <- attr(obj, "description", exact = TRUE)
+      obj2
+    }
+  }
+}
 
 #' @describeIn PCMParamType
 #'
@@ -153,12 +314,12 @@ is.UpperTriangular <- function(o) { inherits(o, "_UpperTriangular") }
 #' @describeIn PCMParamType
 #'
 #' @export
-is.UpperTriangularWithDiagonal <- function(o) { inherits(o, "_UpperTriangularWithDiagonal") || inherits(o, "_CholeskiFactor") }
+is.UpperTriangularWithDiagonal <- function(o) { inherits(o, "_UpperTriangularWithDiagonal") || inherits(o, "_CholeskyFactor") }
 
 #' @describeIn PCMParamType
 #'
 #' @export
-is.WithNonNegativeDiagonal <- function(o) { inherits(o, "_WithNonNegativeDiagonal") || inherits(o, "_CholeskiFactor") }
+is.WithNonNegativeDiagonal <- function(o) { inherits(o, "_WithNonNegativeDiagonal") || inherits(o, "_CholeskyFactor") }
 
 # lower triangular excluding diagonal
 #' @describeIn PCMParamType
@@ -179,7 +340,7 @@ is.Omitted <- function(o) { inherits(o, "_Omitted") }
 #' @describeIn PCMParamType
 #'
 #' @export
-is.CholeskiFactor <- function(o) { inherits(o, "_CholeskiFactor") }
+is.CholeskyFactor <- function(o) { inherits(o, "_CholeskyFactor") }
 
 #' @describeIn PCMParamType
 #'
@@ -241,7 +402,7 @@ is.SemiPositiveDefinite <- function(o) { inherits(o, "_SemiPositiveDefinite") }
 #' or stored to vecParams from o (FALSE).
 #'
 #' @details This S3 generic function has both, a returned value and side effects.
-#' @return an integer equaling the number of elemnents read from vecParams.
+#' @return an integer equaling the number of elements read from vecParams.
 #' In the case of type=="custom", the number of indices bigger than offset returned by the function indices(offset, k).
 #' @export
 PCMParamLoadOrStore <- function(o, vecParams, offset, k, R, load, parentModel = NULL) {
@@ -790,6 +951,41 @@ PCMParamGetShortVector.default <- function(o, k, R, ...) {
   vec
 }
 
+#' Locate a named parameter in the short vector representation of a model
+#'
+#' @param o a PCM model object.
+#' @param accessExpr a character string used to access the parameter, e.g.
+#' \code{"$Theta[,,1]"} or \code{"[['Theta']][,,1]"}.
+#'
+#' @return an integer vector of length \code{PCMParamCount(o)} with NAs
+#' everywhere except at the coordinates corresponding to the parameter in
+#' question.
+#'
+#' @examples
+#'
+#' model <- PCM(PCMDefaultModelTypes()["C"], k = 3, regimes = c("a", "b"))
+#' # The parameter H is a diagonal 3x3 matrix. If this matrix is considered as
+#' # a vector the indices of its diagonal elements are 1, 5 and 9. These indices
+#' # are indicated as the non-NA entries in the returned vector.
+#'
+#' PCMParamLocateInShortVector(model, "$H[,,1]")
+#' PCMParamLocateInShortVector(model, "$H[,,'a']")
+#' PCMParamLocateInShortVector(model, "$H[,,'b']")
+#' @export
+PCMParamLocateInShortVector <- function(o, accessExpr) {
+  v <- PCMParamGetShortVector(o)
+  mask <- seq_len(length(eval(parse(text=paste0("o", accessExpr)))))
+  v[] <- NA
+  oNAs <- o
+
+  PCMParamLoadOrStore(
+    oNAs, vecParams = v, offset = 0, k = PCMNumTraits(o), R = PCMNumRegimes(o),
+    load = TRUE)
+
+  eval(parse(text = paste0("oNAs", accessExpr, "[] <- mask")))
+  as.integer(PCMParamGetShortVector(oNAs))
+}
+
 #' Set model parameters from a named list
 #' @param model a PCM model object
 #' @param params a named list with elements among the names found in model
@@ -799,6 +995,13 @@ PCMParamGetShortVector.default <- function(o, k, R, ...) {
 #' @param replaceWholeParameters logical, by default set to FALSE. If TRUE, the
 #' parameters will be completely replaced, meaning that their attributes (e.g.
 #' S3 class) will be replaced as well (dangerous).
+#' @param deepCopySubPCMs a logical indicating whether nested PCMs should be
+#'   'deep'-copied, meaning element by element, eventually preserving the
+#'   attributes as in \code{model}. By default this is set to FALSE, meaning
+#'   that sub-PCMs found in \code{params} will completely overwrite the
+#'   sub-PCMs of with the same name in \code{model}.
+#' @param failIfNamesInParamsDontExist logical indicating if an error should be
+#' raised if \code{params} contains elements not existing in model.
 #' @param ... other arguments that can be used by implementing methods.
 #' @return If inplace is TRUE, the function only has a side effect of setting
 #' the parameters of the model object in the calling environment; otherwise the
@@ -806,19 +1009,35 @@ PCMParamGetShortVector.default <- function(o, k, R, ...) {
 #' @importFrom utils str
 #' @export
 PCMParamSetByName <- function(
-  model, params, inplace = TRUE, replaceWholeParameters = FALSE, ...) {
+  model,
+  params,
+  inplace = TRUE,
+  replaceWholeParameters = FALSE,
+  deepCopySubPCMs = FALSE,
+  failIfNamesInParamsDontExist = TRUE,
+  ...) {
 
   UseMethod("PCMParamSetByName", model)
 }
 
 #' @export
 PCMParamSetByName.PCM <- function(
-  model, params, inplace = TRUE, replaceWholeParameters = FALSE, ...) {
+  model,
+  params,
+  inplace = TRUE,
+  replaceWholeParameters = FALSE,
+  deepCopySubPCMs = FALSE,
+  failIfNamesInParamsDontExist = TRUE,
+  ...) {
 
   for(name in names(params)) {
     if(! (name %in% names(model)) ) {
-      stop(paste0("ERR:02751:PCMBase:PCMParam.R:PCMParamSetByName.PCM:: ", name,
-                  " is not a settable parameter of the model."))
+      if(failIfNamesInParamsDontExist) {
+        stop(paste0("ERR:02751:PCMBase:PCMParam.R:PCMParamSetByName.PCM:: ", name,
+                    " is not a settable parameter of the model."))
+      } else {
+        next
+      }
     }
 
     if(is.PCM(model[[name]])) {
@@ -827,10 +1046,32 @@ PCMParamSetByName.PCM <- function(
       } else if(!identical(PCMNumTraits(model), PCMNumTraits(params[[name]])) ) {
         stop(paste0("ERR:02753:PCMBase:PCMParam.R:PCMParamSetByName.PCM:: model[['", name, "']] has a different number of traits (k) from params[['", name, "']]."))
       } else {
-        if(inplace) {
-          eval(substitute(model[[name]] <- params[[name]]), parent.frame())
+        if(deepCopySubPCMs) {
+          for(subName in names(params[[name]])) {
+            if(replaceWholeParameters) {
+              # This will overwrite the current attributes of model[[name]][[subName]]
+              if(inplace) {
+                eval(substitute(model[[name]][[subName]] <-
+                                  params[[name]][[subName]]), parent.frame())
+              } else {
+                model[[name]][[subName]] <- params[[name]][[subName]]
+              }
+            } else {
+              # This will keep the current attributes of model[[name]][[subName]]
+              if(inplace) {
+                eval(substitute(model[[name]][[subName]][] <-
+                                  params[[name]][[subName]]), parent.frame())
+              } else {
+                model[[name]][[subName]][] <- params[[name]][[subName]]
+              }
+            }
+          }
         } else {
-          model[[name]] <- params[[name]]
+          if(inplace) {
+            eval(substitute(model[[name]] <- params[[name]]), parent.frame())
+          } else {
+            model[[name]] <- params[[name]]
+          }
         }
       }
     } else {
@@ -848,7 +1089,7 @@ PCMParamSetByName.PCM <- function(
       }
 
       if(replaceWholeParameters) {
-        # This will keep the current attributes of model[[name]]
+        # This will overwrite the current attributes of model[[name]]
         if(inplace) {
           eval(substitute(model[[name]] <- params[[name]]), parent.frame())
         } else {
@@ -1147,18 +1388,18 @@ PCMDefaultObject.MatrixParameter <- function(spec, model, ...) {
 }
 
 #' @export
-PCMApplyTransformation._CholeskiFactor <- function(o, ...) {
+PCMApplyTransformation._CholeskyFactor <- function(o, ...) {
   # when assigning to o, we use o[] <-  instead of just o <- , in order to
   # preserve the attributes
   if(is.Global(o)) {
-    o[] <- o %*% t(o)
+    o[] <- t(as.matrix(o)) %*% as.matrix(o)
   } else {
     for(r in 1:dim(o)[3]) {
-      o[,,r] <- o[,,r] %*% t(o[,,r])
+      o[,,r] <- t(as.matrix(o[,,r])) %*% as.matrix(o[,,r])
     }
   }
   classes <- class(o)
-  classes <- classes[!(classes %in% c("_UpperTriangular", "_UpperTriangularWithDiagonal", "_CholeskiFactor", "_Transformable", "matrix"))]
+  classes <- classes[!(classes %in% c("_UpperTriangular", "_UpperTriangularWithDiagonal", "_CholeskyFactor", "_Transformable", "matrix"))]
   if(is.WithNonNegativeDiagonal(o)) {
     classes <- c(classes, "_SemiPositiveDefinite")
   }
@@ -1176,14 +1417,15 @@ PCMApplyTransformation._CholeskiFactor <- function(o, ...) {
 #' @export
 PCMApplyTransformation._Schur <- function(o, ...) {
   # Assuming o is a MatrixParameter, we transform each matrix M in o as follows:
-  # use the upper triangle without the diagonal of M as rotation angles for a Givens
-  # rotation to obtain an orthoganal matrix Q;
+  # use the upper triangle without the diagonal of M as rotation angles for a
+  # Givens rotation to obtain an orthoganal matrix Q;
   # Then, use the lower triangle with the diagonal of M as a matrix T
   # Return the product Q %*% t(T) %*% t(Q).
   # The returned matrix will have all of its eigenvalues equal to the elements
-  # on the diaogonal of M (and T). If M is upper triangular, then T will be diagonal
-  # and the returned matrix will be symmetric. If the elements on the diagonal
-  # of M are positive, so will be the eigenvalues of the returned matrix.
+  # on the diaogonal of M (and T). If M is upper triangular, then T will be
+  # diagonal and the returned matrix will be symmetric. If the elements on the
+  # diagonal of M are positive, so will be the eigenvalues of the returned
+  # matrix.
 
   transformMatrix <- function(M) {
     k <- nrow(M)
@@ -1201,7 +1443,7 @@ PCMApplyTransformation._Schur <- function(o, ...) {
     o[] <- transformMatrix(o)
   } else {
     for(r in 1:dim(o)[3]) {
-      o[,,r] <- transformMatrix(o[,,r])
+      o[,,r] <- transformMatrix(as.matrix(o[,,r]))
     }
   }
   classes <- class(o)
@@ -1221,4 +1463,18 @@ PCMApplyTransformation._Schur <- function(o, ...) {
   }
   class(o) <- classes
   o
+}
+
+GetSigma_x <- function(
+  o, name = "Sigma", r = 1,
+  transpose = getOption("PCMBase.Transpose.Sigma_x", FALSE)) {
+
+  name <- paste0(name, "_x")
+  S <- if(is.Global(o[[name]])) as.matrix(o[[name]]) else as.matrix(o[[name]][,, r])
+
+  if(transpose) {
+    t(S)
+  } else {
+    S
+  }
 }

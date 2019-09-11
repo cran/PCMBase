@@ -3,6 +3,30 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ape)
 library(PCMBase)
 
+if(!requireNamespace("ggtree")) {
+  message("Building the vignette requires ggtree R-package. Trying to install.")
+  status.ggtree <- try({
+    if (!requireNamespace("BiocManager", quietly = TRUE))
+      install.packages("BiocManager")
+    BiocManager::install("ggtree", version = "3.9")
+  }, silent = TRUE)
+  if(class(status.ggtree == "try-error")) {
+    stop(
+      "The ggtree installation did not succeed. The vignette cannot be built.")
+  }
+}
+
+## ------------------------------------------------------------------------
+# scroll to the right in the following listing to see the full model type names 
+# and their corresponding alias:
+PCMDefaultModelTypes()
+
+## ------------------------------------------------------------------------
+PCMFindMethod(PCMDefaultModelTypes()["A"], "PCMCond")
+# The complex maths is implemented in the function PCMCondVOU. You can see its 
+# R-code by typing :
+# PCMBase::PCMCondVOU
+
 ## ------------------------------------------------------------------------
 modelBM <- PCM(model = "BM", k = 2)
 
@@ -50,9 +74,53 @@ PCMParamLoadOrStore(modelBM.ab, param2, offset = 0, load=TRUE)
 
 print(modelBM.ab)
 
+## ---- results='asis'-----------------------------------------------------
+options(digits = 2)
+print(PCMTable(modelBM.ab), xtable = TRUE, type="html")
+
+## ------------------------------------------------------------------------
+model.OU.BM <- MixedGaussian(
+  k = 3, 
+  modelTypes = c(
+    BM = paste0("BM",
+    "__Omitted_X0",
+    "__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x",
+    "__Omitted_Sigmae_x"),
+    OU = paste0("OU",
+    "__Omitted_X0",
+    "__H",
+    "__Theta",
+    "__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x",
+    "__Omitted_Sigmae_x")), 
+  mapping = c(a = 2, b = 1), 
+  Sigmae_x = structure(
+    0, 
+    class = c("MatrixParameter", "_Omitted"), 
+    description = "upper triangular factor of the non-phylogenetic variance-covariance"))
+
+## ------------------------------------------------------------------------
+model.OU.BM$X0[] <- c(NA, NA, NA)
+model.OU.BM$`a`$H[,,1] <- cbind(
+  c(.1, -.7, .6), 
+  c(1.3, 2.2, -1.4), 
+  c(0.8, 0.2, 0.9))
+model.OU.BM$`a`$Theta[] <- c(1.3, -.5, .2)
+model.OU.BM$`a`$Sigma_x[,,1] <- cbind(
+  c(1, 0, 0), 
+  c(1.0, 0.5, 0), 
+  c(0.3, -.8, 1))
+
+model.OU.BM$`b`$Sigma_x[,,1] <- cbind(
+  c(0.8, 0, 0), 
+  c(1, 0.3, 0), 
+  c(0.4, 0.5, 0.3))
+
+## ---- results='asis'-----------------------------------------------------
+print(PCMTable(model.OU.BM), xtable = TRUE, type="html")
+
 ## ------------------------------------------------------------------------
 # make results reproducible
-set.seed(2)
+set.seed(2, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
 # number of regimes
 R <- 2
@@ -75,13 +143,12 @@ PCMTreeSetPartRegimes(
   part.regime = structure(c("a", "b"), names = as.character(c(N+1, splitNode))), 
   setPartition = TRUE)
 
-# Currently this is causing a failure of the pkgdown::build_site(), so we use the 
-# ape's tree-plotting function
-# PCMTreePlot(tree.ab)
-
 palette <- PCMColorPalette(2, c("a", "b"))
-plot(tree.ab, show.tip.label=FALSE, 
-     edge.color = palette[PCMTreeGetRegimesForEdges(tree.ab)])
+
+# Plot the tree with branches colored according to the regimes.
+# The following function call works only if the ggtree package is installed, 
+# which is not on CRAN:
+PCMTreePlot(tree.ab) + ggtree::geom_nodelab(size = 2)
 
 ## ------------------------------------------------------------------------
 traits <- PCMSim(tree.ab, modelBM.ab, modelBM.ab$X0)

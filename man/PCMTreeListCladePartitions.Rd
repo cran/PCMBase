@@ -5,7 +5,7 @@
 \title{A list of all possible clade partitions of a tree with a number of splitting nodes}
 \usage{
 PCMTreeListCladePartitions(tree, nNodes, minCladeSize = 0,
-  skipNodes = integer(0), tableAncestors = NULL, verbose = FALSE)
+  skipNodes = character(0), tableAncestors = NULL, verbose = FALSE)
 }
 \arguments{
 \item{tree}{a phylo object}
@@ -15,8 +15,9 @@ PCMTreeListCladePartitions(tree, nNodes, minCladeSize = 0,
 
 \item{minCladeSize}{integer indicating the minimum number of tips allowed in a clade.}
 
-\item{skipNodes}{integer vector indicating nodes that should not be used as
-partition nodes. By default, this is an empty vector.}
+\item{skipNodes}{an integer or character vector indicating the ids or labels
+of nodes that should not be used as partition nodes. By default, this is an
+empty character vector.}
 
 \item{tableAncestors}{NULL (default) or an integer matrix returned by a previous call
 to \code{PCMTreeTableAncestors(tree)}.}
@@ -25,7 +26,10 @@ to \code{PCMTreeTableAncestors(tree)}.}
 the console.}
 }
 \value{
-a list of integer \code{nNodes}-vectors.
+a list of integer \code{nNodes}-vectors. By default a full traversal
+of all partitions is done. It is possible to truncate the search to a limited
+number of partitions by setting the option PCMBase.MaxLengthListCladePartitions
+to a finite positive integer.
 }
 \description{
 A list of all possible clade partitions of a tree with a number of splitting nodes
@@ -37,4 +41,7 @@ This function generates partitions in which \code{nNode} of the blocks
 are monophyletic complete groups (clades), while the \code{(nNodes+1)}'th block
 is a subtree originating at the root with tips ending at the rooting nodes of
 the \code{nNode} clades, eventually containing a clade of tips.
+}
+\seealso{
+\code{\link{PCMOptions}}
 }

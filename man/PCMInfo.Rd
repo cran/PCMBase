@@ -2,7 +2,7 @@
 % Please edit documentation in R/PCM.R
 \name{PCMInfo}
 \alias{PCMInfo}
-\title{Meta-information about a tree associated with a PCM}
+\title{Meta-information about a tree and trait data associated with a PCM}
 \usage{
 PCMInfo(X, tree, model, SE = matrix(0, PCMNumTraits(model),
   PCMTreeNumTips(tree)), verbose = FALSE, preorder = NULL, ...)
@@ -11,7 +11,7 @@ PCMInfo(X, tree, model, SE = matrix(0, PCMNumTraits(model),
 \item{X}{a \code{k x N} numerical matrix with possible \code{NA} and \code{NaN} entries. Each
 column of X contains the measured trait values for one species (tip in tree).
 Missing values can be either not-available (\code{NA}) or not existing (\code{NaN}).
-Thse two values have are treated differently when calculating
+These two values have are treated differently when calculating
 likelihoods: see \code{\link{PCMPresentCoordinates}}.}
 
 \item{tree}{a phylo object with N tips.}
@@ -22,7 +22,7 @@ calculated (see also Details).}
 
 \item{SE}{a k x N matrix specifying the standard error for each measurement in
 X. Alternatively, a k x k x N cube specifying an upper triangular k x k
-Choleski factor of the variance covariance matrix for the measurement error
+factor of the variance covariance matrix for the measurement error
 for each node i=1, ..., N.
 Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.}
 
@@ -51,10 +51,13 @@ branch in tree;}
 \item{xi}{an integer vector of 0's and 1's corresponding to the rows in tree$edge
 indicating the presence of a jump at the corresponding branch;}
 \item{pc}{a logical matrix of dimension k x M denoting the present coordinates
-for each node;}
+for each node; in special cases this matrix can be edited by hand after calling
+PCMInfo and before passing the returned list to PCMLik. Otherwise, this matrix
+can be calculated in a custom way by specifying the option PCMBase.PCMPresentCoordinatesFun.
+See also \code{\link{PCMPresentCoordinates}} and \code{\link{PCMOptions}}. }
 This list is passed to \code{\link{PCMLik}}.
 }
 \description{
 This function pre-processes the given tree and data in order to
-create meta-information used during likelihood calculaiton.
+create meta-information used during likelihood calculation.
 }

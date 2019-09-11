@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov, Krzysztof Bartoszek
 #
 # This file is part of PCMBase.
 #
@@ -16,16 +16,50 @@
 # along with PCMBase.  If not, see <http://www.gnu.org/licenses/>.
 
 ## This code-file has been contributed by Krzysztof Bartoszek
-## It comes from the mvSLOUCH R package 
+## It comes from the mvSLOUCH R package
 ## https://cran.r-project.org/web/packages/mvSLOUCH/
 ## Some of the parametrizations here are described in detail in:
-## K. Bartoszek. Multivariate Aspects of Phylogenetic Comparative Methods. 
+## K. Bartoszek. Multivariate Aspects of Phylogenetic Comparative Methods.
 ## Licentiate Thesis, University of Gothenburg, 2011
 
 ## Added by Venelin Mitov
 # cause every message to result in an error
 .my_message <- .my_warning <- function(...) {
   stop(...)
+}
+
+#' Upper triangular factor of a symmetric positive definite matrix
+#'
+#' @description This function is an analog to the Cholesky decomposition.
+#'
+#' @param Sigma A symmetric positive definite k x k matrix that can be
+#' passed as argument to \code{\link{chol}}.
+#'
+#' @return an upper triangular matrix Sigma_x, such that
+#' Sigma = Sigma_x %*% t(Sigma_x)
+#' @examples
+#' # S is a symmetric positive definite matrix
+#' M<-matrix(rexp(9),3,3); S <- M %*% t(M)
+#'
+#' # This should return a zero matrix:
+#' UpperChol(S) %*% t(UpperChol(S)) - S
+#'
+#' # This should return a zero matrix too:
+#' t(chol(S)) %*% chol(S) - S
+#'
+#' # Unless S is diagonal, in the general case, this will return a
+#' # non-zero matrix:
+#' chol(S) %*% t(chol(S)) - S
+#' @seealso \code{\link{chol}}
+#' @export
+UpperChol <- function(Sigma) {
+  k <- nrow(Sigma)
+  P <- matrix(0, nrow = k, ncol = k)
+  ## create permutation matrix with 1s on the anti-diagonal
+  for(i in seq_len(k)){
+    P[k-i+1, i] <- 1
+  }
+  P %*% t(chol(P %*% Sigma %*% P)) %*% P
 }
 
 ## ------------- parametrization of symmetric positive definite matrix ------------------------------

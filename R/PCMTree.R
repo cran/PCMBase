@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -20,7 +20,7 @@
 #'
 #' @description PCMTree is class that inherits from the class 'phylo' in the
 #' R-package 'ape'. Thus, all the functions working on a phylo object would work
-#' in the same way if they recieve as argument an object of class 'PCMTree'. A
+#' in the same way if they receive as argument an object of class 'PCMTree'. A
 #' PCMTree object has the following members in addition to the regular members
 #' ('tip.label', 'node.label', 'edge', 'edge.length') found in a regular phylo
 #' object:
@@ -40,7 +40,7 @@
 #' can be reached without traversing another partition node. We name
 #' each part by the label of its most ancestral node, that is, the node in it,
 #' which is closest to the root fo the tree. The value of edge.part for an edge
-#' in the tree is the name of the part that contsin the node ot which the edge
+#' in the tree is the name of the part that contains the node to which the edge
 #' is pointing.}
 #' \item{part.regime }{a named vector of size the number of parts in the tree.
 #' The names correspond to part-names whereas the values denote the ids or
@@ -124,6 +124,13 @@ PCMTree <- function(tree) {
 
     if(is.null(tree$node.label)) {
       PCMTreeSetLabels(tree)
+    } else if(length(unique(tree$node.label)) != length(tree$node.label)) {
+      stop(
+        paste(
+          "PCMTree:: found duplicated labels in tree$node.label. This can cause",
+          "likelihood calculation errors. ",
+          "Please, ensure that all labels in node.label are unique or set ",
+          "tree$node.label to NULL."))
     }
 
     N <- PCMTreeNumTips(tree)
@@ -324,14 +331,22 @@ PCMTreeGetLabels <- function(tree) {
 #' Get the node numbers associated with tip- or node-labels in a tree
 #' @param tree a phylo object
 #' @param labels a character vector with valid tip or node labels from tree
+#' @param stopIfNotFound logical indicating if an error should be raised in case
+#' a label has not been found in the tree labels. Default: TRUE
 #' @return an integer vector giving the tip- or node- integer indices
-#'  corresponding to labels.
+#'  corresponding to labels. If stopIfNotFound is set to FALSE, this vector may
+#'  contain NAs for the labels that were not found.
+#'
+#' @examples
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#' PCMTreeMatchLabels(PCMTree(ape::rtree(20)), c("1", "15", "21", "39"))
+#' PCMTreeMatchLabels(PCMTree(ape::rtree(20)), c("1", "45"), stopIfNotFound = FALSE)
 #' @export
-PCMTreeMatchLabels <- function(tree, labels) {
+PCMTreeMatchLabels <- function(tree, labels, stopIfNotFound = TRUE) {
   allLabels <- PCMTreeGetLabels(tree)
   m <- match(labels, allLabels)
-  if(any(is.na(m))) {
-    stop("ERR:02660:PCMBase:PCMTree.R:PCMTreeMatchLabels:: some of the labels not found in PCMTreeGetLabels(tree).")
+  if(any(is.na(m)) && stopIfNotFound) {
+    stop("PCMTreeMatchLabels: some of the labels not found in PCMTreeGetLabels(tree).")
   }
   m
 }
@@ -660,9 +675,22 @@ PCMTreeGetPartsForNodes <- function(
 }
 
 #' Get the tips belonging to a part in a tree
-#' @param tree a phylo object with an edge.part member
-#' @param part a character or integer belonging to tree$edge.part
+#' @param tree a phylo object with an edge.regime member or a PCMTree object
+#' @param part a character or integer denoting a part name in the tree.
 #' @return an integer vector with the ids of the tips belonging to part
+#' @examples
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#' tree <- ape::rtree(10)
+#' regimes <- sample(letters[1:3], nrow(tree$edge), replace = TRUE)
+#' PCMTreeSetRegimesForEdges(tree, regimes)
+#' \donttest{
+#' PCMTreePlot(tree) + ggtree::geom_nodelab() + ggtree::geom_tiplab()
+#' }
+#' part <- PCMTreeGetPartNames(tree)[1]
+#' PCMTreeGetTipsInPart(tree, part)
+#' print(part)
+#'
+#' @seealso \link{PCMTreeGetTipsInRegime}, \link{PCMTreeGetPartNames}, \link{PCMRegimes}, \link{PCMTreeGetPartRegimes}, \link{PCMTreeSetPartRegimes}
 #' @export
 PCMTreeGetTipsInPart <- function(tree, part) {
 
@@ -672,6 +700,32 @@ PCMTreeGetTipsInPart <- function(tree, part) {
   tipEdges <- tree$edge[, 2] <= N & tree$edge.part == part
   tree$edge[tipEdges, 2]
 }
+
+
+#' Get the tips belonging to a regime in a tree
+#' @param tree a phylo object with an edge.regime member or a PCMTree object
+#' @param regime a character or integer denoting a regime in the tree.
+#' @return an integer vector with the ids of the tips belonging to regime.
+#' @examples
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#' tree <- ape::rtree(10)
+#' regimes <- sample(letters[1:3], nrow(tree$edge), replace = TRUE)
+#' PCMTreeSetRegimesForEdges(tree, regimes)
+#' \donttest{
+#' PCMTreePlot(tree) + ggtree::geom_nodelab() + ggtree::geom_tiplab()
+#' }
+#' regime <- PCMRegimes(tree)[1]
+#' PCMTreeGetTipsInRegime(tree, regime)
+#' print(regime)
+#'
+#' @seealso \link{PCMTreeGetTipsInPart}, \link{PCMTreeGetPartNames}, \link{PCMRegimes}, \link{PCMTreeGetPartRegimes}, \link{PCMTreeSetPartRegimes}, \link{PCMTreeGetPartition}
+#'
+#' @export
+PCMTreeGetTipsInRegime <- function(tree, regime) {
+  tipRegimes <- PCMTreeGetRegimesForNodes(tree)[seq_len(PCMTreeNumTips(tree))]
+  which(regime == tipRegimes)
+}
+
 
 #' Model regimes (i.e. colors) associated with the branches in a tree
 #' @param tree a PCMTree or a phylo object.
@@ -690,7 +744,7 @@ PCMTreeGetRegimesForEdges <- function(tree) {
 #' @param regimes a vector of the length equal to `nrow(tree$edge)`.
 #' @param inplace a logical indicating if the change should be done within the
 #' tree in the calling environment or a copy of the tree with modified regime
-#' assignment should be retrned.
+#' assignment should be returned.
 #' @return if inplace is TRUE, nothing, otherwise a modified copy of tree.
 #' @examples
 #' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
@@ -778,18 +832,34 @@ PCMTreeGetRegimesForNodes <- function(
 #' @param nNodes an integer giving the number of partitioning nodes. There would be
 #' \code{nNodes+1} blocks in each partition (see details).
 #' @param minCladeSize integer indicating the minimum number of tips allowed in a clade.
-#' @param skipNodes integer vector indicating nodes that should not be used as
-#' partition nodes. By default, this is an empty vector.
+#' @param skipNodes an integer or character vector indicating the ids or labels
+#' of nodes that should not be used as partition nodes. By default, this is an
+#' empty character vector.
 #' @param tableAncestors NULL (default) or an integer matrix returned by a previous call
 #' to \code{PCMTreeTableAncestors(tree)}.
 #' @param verbose a logical indicating if informative messages should be printed to
 #' the console.
 #'
-#' @return a list of integer \code{nNodes}-vectors.
+#'
+#' @return a list of integer \code{nNodes}-vectors. By default a full traversal
+#' of all partitions is done. It is possible to truncate the search to a limited
+#' number of partitions by setting the option PCMBase.MaxLengthListCladePartitions
+#' to a finite positive integer.
+#' @importFrom stats na.omit
+#'
+#' @seealso \code{\link{PCMOptions}}
 #' @export
 PCMTreeListCladePartitions <- function(
-  tree, nNodes, minCladeSize = 0, skipNodes = integer(0),
+  tree, nNodes, minCladeSize = 0, skipNodes = character(0),
   tableAncestors = NULL, verbose = FALSE) {
+
+  if(is.character(skipNodes)) {
+    skipNodes <- as.integer(na.omit(
+      PCMTreeMatchLabels(tree, skipNodes, stopIfNotFound = FALSE)))
+  } else {
+    skipNodes <- as.integer(skipNodes)
+  }
+
   envir <- new.env()
 
   envir$M <- PCMTreeNumNodes(tree)
@@ -817,7 +887,6 @@ PCMTreeListCladePartitions <- function(
   envir$numRemainingTips <- envir$N
 
   addToPartition <- function(partition, i, envir) {
-
     numTips <- sum(envir$listDesc[[i]] <= envir$N)
     if(envir$nodesInUse[i] ||
        numTips < envir$minCladeSize ||
@@ -846,14 +915,16 @@ PCMTreeListCladePartitions <- function(
         envir$listPartitions[[envir$nextPartition]] <- partition
         if(verbose && envir$nextPartition %% 1000 == 0) {
           cat("Generated ", envir$nextPartition, " partitions out of ",
-              envir$numTries, " ...\n")
+              envir$numTries, "tries ...\n")
         }
 
         envir$nextPartition <- envir$nextPartition + 1L
       } else {
         if(envir$numNodesInUse < envir$M) {
           for(iNext in (i+1):envir$M) {
-            addToPartition(partition, iNext, envir)
+            if(length(envir$listPartitions) < getOption("PCMBase.MaxLengthListCladePartitions", Inf)) {
+              addToPartition(partition, iNext, envir)
+            }
           }
         }
       }
@@ -863,11 +934,16 @@ PCMTreeListCladePartitions <- function(
     }
   }
 
-  for(i in 1:envir$M) {
-    if(verbose) {
-      cat("Trying with first node in partition: ", i, "...\n")
+  for(i in seq_len(envir$M)) {
+    if(length(envir$listPartitions) < getOption("PCMBase.MaxLengthListCladePartitions", Inf)) {
+      if(verbose) {
+        cat("Trying with first node in partition: ", i, "...\n")
+      }
+      addToPartition(c(), i, envir)
+      if(verbose) {
+        cat("Done with first node in partition: ", i, "...\n")
+      }
     }
-    addToPartition(c(), i, envir)
   }
 
   envir$listPartitions
@@ -878,18 +954,45 @@ PCMTreeListCladePartitions <- function(
 #' @param tree a phylo object with set labels for the internal nodes
 #' @param minCladeSize integer indicating the minimum number of tips allowed in
 #' one part.
+#' @param skipNodes an integer or character vector indicating the ids or labels
+#' of nodes that should not be used as partition nodes. By default, this is an
+#' empty character vector.
 #' @param tableAncestors NULL (default) or an integer matrix returned by a
 #' previous call to \code{PCMTreeTableAncestors(tree)}.
 #' @param verbose a logical indicating if informative messages should be printed to
 #' the console.
 #'
 #' @return a list of integer vectors.
+#' @examples
+#'
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#' tree <- PCMTree(ape::rtree(10))
+#'
+#' \donttest{
+#' PCMTreePlot(tree) + ggtree::geom_nodelab() + ggtree::geom_tiplab()
+#' }
+#'
+#' # list of all partitions into parts of at least 4 tips
+#' PCMTreeListAllPartitions(tree, 4)
+#'
+#' # list of all partitions into parts of at least 3 tips
+#' PCMTreeListAllPartitions(tree, 3)
+#'
+#' # list all partitions into parts of at least 3 tips, excluding the partitions
+#' # where node 16 is one of the partition nodes:
+#' PCMTreeListAllPartitions(tree, minCladeSize = 3, skipNodes = "16")
+#'
 #' @export
 PCMTreeListAllPartitions <- function(
   tree,
   minCladeSize,
+  skipNodes = character(),
   tableAncestors = NULL,
   verbose = FALSE) {
+
+  if(!is.character(skipNodes)) {
+    skipNodes <- PCMTreeGetLabels(tree)[skipNodes]
+  }
 
   if(is.null(tableAncestors)) {
     if(verbose) {
@@ -903,7 +1006,7 @@ PCMTreeListAllPartitions <- function(
   res <- PCMTreeListAllPartitionsInternal(
     tree = tree,
     minCladeSize = minCladeSize,
-    withoutNodesLabels = character(0),
+    withoutNodesLabels = skipNodes,
     tableAncestors = tableAncestors,
     verbose = verbose,
     level = 0L
@@ -940,8 +1043,8 @@ PCMTreeListAllPartitionsInternal <- function(
   partitionNodesLabels <- labels[
     unlist(PCMTreeListCladePartitions(
       tree = tree, nNodes = 1L, minCladeSize = minCladeSize,
-      skipNodes = PCMTreeMatchLabels(
-        tree, intersect(PCMTreeGetLabels(tree), withoutNodesLabels)),
+      skipNodes = as.integer(na.omit(PCMTreeMatchLabels(
+        tree, withoutNodesLabels, stopIfNotFound = FALSE))),
       tableAncestors = tableAncestors, verbose = FALSE))]
 
   if(verbose) {
@@ -1220,7 +1323,7 @@ PCMTreeBackbonePartition <- function(tree, partsToKeep = PCMTreeGetPartNames(tre
 #' @param nodes an integer vector of length L >= 2 denoting a set of nodes in
 #'  the tree.
 #' @param upperTriangle logical indicating if all duplicated entries and
-#'  diagonal entries sould be set to NA (by default TRUE).
+#'  diagonal entries should be set to NA (by default TRUE).
 #' @param returnVector logical indicating if a vector instead of a matrix
 #'  should be returned (corresponding to calling as.vector on the resulting
 #'  matrix and removing
@@ -1331,7 +1434,7 @@ PCMTreeMatrixNodesInSameRegime <- function(
 
 #' Jumps in modeled traits associated with branches in a tree
 #' @inheritParams PCMTreeNumTips
-#' @return an integer vector of 0's and 1's with entries correspondin to the
+#' @return an integer vector of 0's and 1's with entries corresponding to the
 #' denoting if a jump took place at the beginning of a branch.
 #' @export
 PCMTreeJumps <- function(tree) {
@@ -1710,7 +1813,7 @@ PCMTreeSplitAtNode <- function(tree, node, tableAncestors = PCMTreeTableAncestor
 #' @param returnList logical indicating if only the phylo object associated
 #'  with the clade should be returned. Defaults to \code{!is.null(X)}
 #' @return If returnList is FALSE, a phylo object associated with the clade,
-#'  otherise, a list with two named members :
+#'  otherwise, a list with two named members :
 #' \itemize{
 #' \item{tree}{the phylo object associated with the clade}
 #' \item{X}{the submatrix of X with columns corresponding to the tips in the clade}
@@ -1792,7 +1895,7 @@ PCMTreeExtractClade <- function(tree, cladeRootNode, tableAncestors = NULL, X=NU
 #' @param returnList logical indicating if a list of the phylo object
 #' associated with the tree after dropping the clade and the corresponding
 #' entries in X should be returned. Defaults to \code{!is.null(X)}
-#' @param errorOnMissing logical indicating if an error should be rased if
+#' @param errorOnMissing logical indicating if an error should be raised if
 #' cladeRootNode is not among the nodes in tree. Default FALSE, meaning that if
 #' cladeRootNode is not a node in tree the tree (and X if
 #' returnList is TRUE) is/are returned unchanged.
@@ -1954,7 +2057,7 @@ PCMTreeEdgeTimes <- function(tree) {
 
 #' Find the crossing points of an epoch-time with each lineage of a tree
 #' @param tree a phylo
-#' @param epoch a positive numeric ing tip-ward distance from the root
+#' @param epoch a positive numeric indicating tip-ward distance from the root
 #' @return a named list with an integer vector element "nodes" denoting the ending nodes for each
 #' branch crossing epoch and numeric vector element "positions" denoting the root-ward offset
 #' from each node in nodes.
@@ -2303,6 +2406,36 @@ PCMTreePlot <- function(
     plotTree + aes(color = regime) +
       scale_color_manual(name = "regime", values = palette)
   } else {
-    stop("ERR:026i0:PCMBase:PCMTree.R:PCMTreePlot:: Calling PCMTreePlot needs ggtree package to be installed from Bioconductor. Check the instructions at https://bioconductor.org/packages/release/bioc/html/ggtree.html. Ggtree was not on CRAN at the time of releasing PCMBase and is not declared as dependency in the PCMBase-description.")
+    stop("PCMTree.R:PCMTreePlot:: Calling PCMTreePlot needs ggtree package to be installed from Bioconductor. Check the instructions at https://bioconductor.org/packages/release/bioc/html/ggtree.html. Ggtree was not on CRAN at the time of releasing PCMBase and is not declared as dependency in the PCMBase-description.")
+  }
+}
+
+#' Phylogenetic Variance-covariance matrix
+#'
+#' This is a simplified wrapper for ape's \code{\link{vcv}} function. Setting
+#' the runtime option PCMBase.UsePCMVarForVCV to TRUE will switch to a
+#' computation of the matrix using the function \code{\link{PCMVar}}.
+#'
+#' @param tree a phylo object
+#' @return a N x N matrix. Assuming a BM model of evolution, this is a matrix
+#' in which element (i,j) is equal to the shared root-distance of the nodes i
+#' and j.
+#' @seealso \code{\link{vcv}} \code{\link{PCMVar}} \code{\link{PCMOptions}}
+#' @importFrom ape vcv
+#' @export
+PCMTreeVCV <- function(tree) {
+  if(getOption("PCMBase.UsePCMVarForVCV", FALSE)) {
+    # We use this model to build a phylogenetic variance covariance matrix of
+    # the tree. This is a matrix in which element (i,j) is equal to the shared
+    # root-distance of the nodes i and j.
+    modelCov <- PCM(
+      model = PCMDefaultModelTypes()["A"], regimes = PCMRegimes(tree), k = 1L)
+
+    modelCov$Sigma_x[] <- 1.0
+
+    # Phylogenetic variance covariance matrix
+    PCMVar(tree, modelCov, internal = FALSE)
+  } else {
+    vcv(tree)
   }
 }

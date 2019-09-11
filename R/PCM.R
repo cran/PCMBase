@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -48,18 +48,30 @@ PCMModels <- function(pattern = NULL, parentClass = NULL, ...) {
 #' options:
 #' \itemize{
 #' \item{\code{PCMBase.Value.NA }}{NA value for the likelihood; used in GaussianPCM to
-#' return this value in case of an error occuring
+#' return this value in case of an error occurring
 #' during likelihood calculation. By default, this is set to \code{as.double(NA)}.}
 #' \item{\code{PCMBase.Errors.As.Warnings }}{a logical flag indicating if errors
 #' (occuring, e.g. during likelihood calculation) should be treated as warnings
-#' and added as an attribute "error" to returne likelihood values. Default TRUE.}
+#' and added as an attribute "error" to attach to the likelihood values. Default TRUE.}
+#' \item{\item{PCMBase.Raise.Lik.Errors} }{Should numerical and other sort of
+#' errors occurring during likelihood calculation be raised either as errors or
+#' as warnings, depending on the option \code{PCMBase.Errors.As.Warnings}.
+#' Default TRUE. This option can be useful if too frequent warnings get raised
+#' during a model fit procedure.}
 #' \item{\code{PCMBase.Threshold.Lambda_ij }}{a 0-threshold for abs(Lambda_i + Lambda_j),
 #' where Lambda_i and Lambda_j are eigenvalues of the parameter matrix H of an OU or
 #' other model. Default 1e-8. See \code{\link{PCMPExpxMeanExp}}.}
+#' \item{\code{PCMBase.Threshold.EV }}{A 0-threshold for the eigenvalues of the
+#' matrix V for a given branch. The V matrix is considered singular if it has
+#' eigenvalues smaller than \code{PCMBase.Threshold.EV } or when the ratio
+#' min(svdV)/max(svdV) is below \code{PCMBase.Threshold.SV }. Default is 1e-5.
+#' Treatment of branches with singular V matrix is defined by the option
+#' \code{PCMBase.Skip.Singular}.}
 #' \item{\code{PCMBase.Threshold.SV }}{A 0-threshold for min(svdV)/max(svdV), where
-#' svdV is the vector of eigenvalues of the matrix V for a given branch. The V matrix
-#' is considered singular if it has eigenvalues equal to 0 or when the ratio
-#' min(svdV)/max(svdV) is below PCMBase.Threshold.SV. Default is 1e-6. Treatment
+#' svdV is the vector of singular values of the matrix V for a given branch.
+#' The V matrix is considered singular if it has eigenvalues smaller than
+#' \code{PCMBase.Threshold.EV } or when the ratio min(svdV)/max(svdV) is below
+#' PCMBase.Threshold.SV. Default is 1e-6. Treatment
 #' of branches with singular V matrix is defined by the option \code{PCMBase.Skip.Singular}.}
 #' \item{\code{PCMBase.Threshold.Skip.Singular }}{A double indicating if a branch of shorter
 #' length with singular matrix V should be skipped during likelihood calculation. Setting this
@@ -78,7 +90,30 @@ PCMModels <- function(pattern = NULL, parentClass = NULL, ...) {
 #' \item{\code{PCMBase.Lmr.mode }}{An integer code specifying the parallel likelihood calculation mode.}
 #' \item{\code{PCMBase.ParamValue.LowerLimit}}{Default lower limit value for parameters, default setting is -10.0.}
 #' \item{\code{PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal}}{Default lower limit value for parameters corresponding to non-negative diagonal elements of matrices, default setting is 0.0.}
-#' \item{\code{PCMBase.ParamValue.UpperLimit}}{Default upper limit value for parameters, default setting is 10.0.}
+#' \item{\code{PCMBase.ParamValue.UpperLimit} }{Default upper limit value for parameters, default setting is 10.0.}
+#' \item{\code{PCMBase.Transpose.Sigma_x} }{Should upper diagonal factors for variance-covariance rate matrices be transposed, e.g. should Sigma = t(Sigma_x) Sigma_x or, rather Sigma = Sigma_x t(Sigma_x)? Note that the two variants are not equal. The default is FALSE, meaning Sigma = Sigma_x t(Sigma_x). In this case, though Sigma_x is not the actual upper Cholesky factor of Sigma, i.e. chol(Sigma) != Sigma_x. See also \code{\link{chol}} and \code{\link{UpperChol}}. This option applies to parameters Sigma_x, Sigmae_x, Sigmaj_x and the measurement errors \code{SE[,,i]} for each measurement i when the argument \code{SE} is specified as a cube.}
+#' \item{\code{PCMBase.MaxLengthListCladePartitions} }{Maximum number of tree partitions returned by \code{\link{PCMTreeListCladePartitions}}. This option has the goal to interrupt the recursive search for new partitions in the case of calling PCMTreeListCladePartitions on a big tree with a small value of the maxCladeSize argument. By default this is set to Inf.}
+#' \item{\code{PCMBase.PCMPresentCoordinatesFun} }{A function with the same synopsis as \code{\link{PCMPresentCoordinates}} that can be specified in case of custom setting for the present coordinates for specific nodes of the tree. See \code{\link{PCMPresentCoordinates}}, and \code{\link{PCMInfo}}.}
+#' \item{\code{PCMBase.Use1DClasses} }{Logical indicating if 1D arithmetic operations
+#' should be used instead of multi-dimensional ones. This can speed-up computations
+#' in the case of a single trait. Currently, this feature is implemented only in
+#' the PCMBaseCpp R-package and only for some model types, such as OU and BM.
+#' Default: FALSE}
+#' \item{\code{PCMBase.PrintSubscript_u} }{Logical indicating if a subscript 'u'
+#' should be printed instead of a subscript 'x'. Used in \code{PCMTable}. Default: FALSE.}
+#' \item{\code{PCMBase.MaxNForGuessSigma_x} }{A real fraction number in the
+#' interval (0, 1) or an integer bigger than 1 controlling the
+#' number of tips to use for analytical calculation of the evolutionary rate
+#' matrix under a BM assumption. This option is used in the suggested PCMFit
+#' R-package. Default: 0.25. }
+#' \item{\code{PCMBase.UsePCMVarForVCV} }{Logical (default: FALSE) indicating
+#' if the function \code{\link{PCMTreeVCV}} should use \code{\link{PCMVar}}
+#' instead of ape's function \code{\link{vcv}} to calculate the phylogenetic
+#' variance covariance matrix under BM assumption. Note that setting this option
+#' to TRUE would slow down the function PCMTreeVCV considerably but may be more
+#' stable, particularly in the case of very big and deep trees, where previous
+#' ape's versions of the \code{\link{vcv}} function have thrown stack-overflow
+#' errors.}
 #' }
 #' @export
 #' @examples
@@ -95,7 +130,15 @@ PCMOptions <- function() {
        PCMBase.Lmr.mode = getOption("PCMBase.Lmr.mode", as.integer(11)),
        PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal = getOption("PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal", 0.0),
        PCMBase.ParamValue.LowerLimit = getOption("PCMBase.ParamValue.LowerLimit", -10.0),
-       PCMBase.ParamValue.UpperLimit = getOption("PCMBase.ParamValue.UpperLimit", 10.0)
+       PCMBase.ParamValue.UpperLimit = getOption("PCMBase.ParamValue.UpperLimit", 10.0),
+       PCMBase.Transpose.Sigma_x = getOption("PCMBase.Transpose.Sigma_x", FALSE),
+       PCMBase.MaxLengthListCladePartitions = getOption("PCMBase.MaxLengthListCladePartitions", Inf),
+       PCMBase.PCMPresentCoordinatesFun = getOption("PCMBase.PCMPresentCoordinatesFun", PCMPresentCoordinates),
+       PCMBase.Use1DClasses = getOption("PCMBase.Use1DClasses", FALSE),
+       PCMBase.Raise.Lik.Errors = getOption("PCMBase.Raise.Lik.Errors", TRUE),
+       PCMBase.PrintSuffix_u = getOption("PCMBase.PrintSuffix_u", FALSE),
+       PCMBase.MaxNForGuessSigma_x = getOption("PCMBase.MaxNForGuessSigma_x", 0.25),
+       PCMBase.UsePCMVarForVCV = getOption("PCMBase.UsePCMVarForVCV", FALSE)
        )
 }
 
@@ -299,7 +342,7 @@ is.PCM <- function(x) inherits(x, "PCM")
 #' @param model a PCM object used to extract attributes needed for creating a
 #' default object of class specified in \code{class(spec)}, such as the number of
 #' traits (k) or the regimes and the number of regimes;
-#' @param ... additional arguments that can be used by methdos.
+#' @param ... additional arguments that can be used by methods.
 #'
 #' @description This is an S3 generic. See, e.g. `PCMDefaultObject.MatrixParameter`.
 #' @return a parameter or a PCM object.
@@ -326,7 +369,7 @@ print.PCM <- function(x, ...) cat(format(x, ...), "\n")
 #' @export
 format.PCM <- function(x, ...) {
   if( !is.PCM(x) ) {
-    stop("ERR:02061:PCMBase:PCM.R:format.PCM:: x must inherit from S3 class PCM.")
+    stop("format.PCM:: x must inherit from S3 class PCM.")
   }
   spec <- attr(x, "spec", exact = TRUE)
 
@@ -413,7 +456,7 @@ PCMDescribe.PCM <- function(model, ...) {
 #' a structure defining the S3 class of the parameter and its verbal description.
 #' This is an S3 generic. See `PCMSpecify.OU` for an example method.
 #'
-#' @return a list specifying the paramters of a PCM.
+#' @return a list specifying the parameters of a PCM.
 #' @export
 PCMSpecify <- function(model, ...) {
   UseMethod("PCMSpecify", model)
@@ -480,8 +523,8 @@ PCMListDefaultParameterizations.default <- function(model, ...) {
 #' @description This function generates a data.table in which each column corresponds to
 #' one parameter of model and each row corresponds to one combination of parameterizations
 #' for the model parameters, such that the whole table corresponds to the Cartesian product
-#' of the lists found in `listParameterizations`. Usually, subsets of this table shold be
-#' passed to `PCMGenerateParameterizations`
+#' of the lists found in `listParameterizations`. Usually, subsets of this table
+#' should be passed to `PCMGenerateParameterizations`
 #' @return a data.table object.
 #'
 #' @importFrom data.table data.table as.data.table
@@ -692,7 +735,8 @@ PCMUnfixParameter <- function(model, name) {
 
 
 #' Number of traits modeled by a PCM
-#' @param model a PCM object
+#' @param model a PCM object or an a parameter object (the name of this argument
+#' could be misleading, because both, model and parameter objects are supported).
 #' @return an integer
 #' @export
 PCMNumTraits <- function(model) {
@@ -701,7 +745,7 @@ PCMNumTraits <- function(model) {
 
 #' @export
 PCMNumTraits.PCM <- function(model) {
-  attr(model, "k", exact = TRUE)
+  as.integer(attr(model, "k", exact = TRUE))
 }
 
 #' Get the regimes (aka colors) of a PCM or of a PCMTree object
@@ -776,7 +820,7 @@ PCMMapModelTypesToRegimes.PCM <- function(model, tree, ...) {
 
 #' Get a vector of all parameters (real and discrete) describing a model on a
 #' tree including the numerical parameters of each model regime, the integer ids
-#' of the spliting nodes defining the regimes on the tree and the integer ids of
+#' of the splitting nodes defining the regimes on the tree and the integer ids of
 #' the model classes associated with each regime.
 #'
 #' @details This is an S3 generic.
@@ -810,7 +854,7 @@ PCMGetVecParamsRegimesAndModels.PCM <- function(model, tree, ...) {
 #'
 #' @return a transformed version of o.
 #'
-#' @description This is an S3 generic. See `PCMApplyTransformation._CholeskiFactor`
+#' @description This is an S3 generic. See `PCMApplyTransformation._CholeskyFactor`
 #' for an example.
 #'
 #' @details This function returns the same object if it is not transformable.
@@ -821,7 +865,7 @@ PCMGetVecParamsRegimesAndModels.PCM <- function(model, tree, ...) {
 PCMApplyTransformation <- function(o, ...) {
   if(is.Transformable(o)) {
     # this if-statement prevents a transformation when it is not needed, e.g.
-    # in the case of a parameter, which is a CholeskiFactor but should not be
+    # in the case of a parameter, which is a _CholeskyFactor but should not be
     # converted into a positive definite matrix, either, because this is not needed,
     # i.e. the parameter is defined as an upper triangular matrix with a non-negative
     # diagonal, or because the conversion is done at a lower level.
@@ -840,7 +884,15 @@ PCMApplyTransformation.default <- function(o, ...) {
 #' @export
 PCMApplyTransformation.PCM <- function(o, ...) {
   if(is.Transformable(o)) {
-    PCMParamSetByName(o, lapply(o, PCMApplyTransformation, ...), replaceWholeParameters = TRUE)
+
+    # Previously, the following call was used but was too slow, particularly
+    # in the case of MixedGaussian models, because of their deeper nested
+    # structure:
+    # PCMParamSetByName(o, lapply(o, PCMApplyTransformation, ...), replaceWholeParameters = TRUE)
+    # The for loop below is faster, but does no checks on the transformed object:
+    for(i in seq_along(o)) {
+      o[[i]] <- PCMApplyTransformation(o[[i]], ...)
+    }
     classes <- class(o)
     classes <- classes[classes != "_Transformable"]
     classes <- c(classes, "_Transformed")
@@ -991,7 +1043,8 @@ PCMVar <- function(
 #' @param model a PCM model object
 #' @param W0 a numeric matrix denoting the initial k x k variance covariance matrix at the
 #'  root (default is the k x k zero matrix).
-#' @param SE a k x k matrix specifying the upper triangular Choleski factor of the measurement error variance-covariance matrix. The product
+#' @param SE a k x k matrix specifying the upper triangular factor of
+#' the measurement error variance-covariance matrix. The product
 #' SE %*% t(SE) is added to the variance calculated from the model.
 #' Default: SE = matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)).
 #' @param regime an integer or a character denoting the regime in model for
@@ -1056,7 +1109,8 @@ PCMVarAtTime <- function(
 #' @param X0 a numeric vector specifying an initial point in the trait space.
 #' Default is rep(0, PCMNumTraits(model))
 #' @param W0 a numeric k x k symmetric positive definite matrix or 0 matrix,
-#' specifying the initial variance covariance matrix at t0.
+#' specifying the initial variance covariance matrix at t0. By default, this is
+#' a k x k 0 matrix.
 #' @param tX,tVar numeric vectors of positive points in time sorted in
 #' increasing order. tX specifies the points in time at which to calculate the
 #' mean (conditional on X0). tVar specifies a subset of the points in tX at
@@ -1073,7 +1127,7 @@ PCMVarAtTime <- function(
 #' @param doPlot2D Should a ggplot object be produced and returned. This is
 #' possible only for two of the traits specified in dims.  Default: FALSE.
 #' @param plot a ggplot object. This can be specified when doPlot2D is TRUE and
-#' allows to add the plot of this trajector as a layer in an existing ggplot.
+#' allows to add the plot of this trajectory as a layer in an existing ggplot.
 #' Default: NULL
 #'
 #' @return if doPlot2D is TRUE, returns a ggplot. Otherwise a named list of two
@@ -1244,15 +1298,15 @@ PCMLikDmvNorm <- function(
 #' @param model an S3 object specifying the model (see Details).
 #' @param SE a k x N matrix specifying the standard error for each measurement in
 #' X. Alternatively, a k x k x N cube specifying an upper triangular k x k
-#' Choleski factor of the variance covariance matrix for the measurement error
+#' factor of the variance covariance matrix for the measurement error
 #' for each node i=1, ..., N.
 #' Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.
-#' @param metaI a named list containg meta-information about the data and the
+#' @param metaI a named list containing meta-information about the data and the
 #' model.
 #' @param verbose a logical indicating if informative messages should be written
 #' during execution.
 #'
-#' @details Internally, this function uses the \code{\link{PCMCond}} iimplementation
+#' @details Internally, this function uses the \code{\link{PCMCond}} implementation
 #'  for the given model class.
 #'
 #' @return numeric M x k matrix of values at all nodes of the tree, i.e. root,
@@ -1261,10 +1315,41 @@ PCMLikDmvNorm <- function(
 #' corresponding to the root and bigger than N+1 corresponding to internal nodes.
 #' The function will fail in case that the length of the argument vector X0 differs
 #' from the number of traits specified in \code{metaI$k}. Error message:
-#' "ERR:02002:PCMBase:PCM.R:PCMSim:: X0 must be of length ...".
+#' "PCMSim:: X0 must be of length ...".
 #'
 #' @importFrom mvtnorm rmvnorm
 #' @seealso \code{\link{PCMLik}} \code{\link{PCMInfo}} \code{\link{PCMCond}}
+#' @examples
+#' library(data.table)
+#' N <- 10
+#' L <- 100.0
+#' tr <- ape::stree(N)
+#' tr$edge.length <- rep(L, N)
+#' for(epoch in seq(1, L, by = 1.0)) {
+#'   tr <- PCMTreeInsertSingletonsAtEpoch(tr, epoch)
+#' }
+#'
+#' model <- PCMBaseTestObjects$model_MixedGaussian_ab
+#'
+#' PCMTreeSetPartRegimes(tr, c(`11` = 'a'), setPartition = TRUE)
+#'
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#' X <- PCMSim(tr, model, X0 = rep(0, 3))
+#'
+#' dt <- NULL
+#' for(epoch in seq(0, L, by = 1)) {
+#'   nodes <- PCMTreeLocateEpochOnBranches(tr, epoch)$nodes
+#'   dtEpoch <- as.data.table(t(X[, nodes]))
+#'   dtEpoch[, t:=epoch]
+#'   if(epoch == 0) {
+#'     dtEpoch[, lineage:="root"]
+#'   } else {
+#'     dtEpoch[, lineage:=gsub("i.*x", "x", PCMTreeGetLabels(tr)[nodes], perl = TRUE)]
+#'   }
+#'
+#'   dt <- rbindlist(list(dt, dtEpoch))
+#' }
+#'
 #' @export
 PCMSim <- function(
   tree, model, X0,
@@ -1278,7 +1363,7 @@ PCMSim <- function(
 
 #' Likelihood of a multivariate Gaussian phylogenetic comparative model with non-interacting lineages
 #'
-#' @description The likelihood of a PCM represets the probability density function
+#' @description The likelihood of a PCM represents the probability density function
 #'   of observed trait values (data) at the tips of a tree given the tree and
 #'   the model parameters. Seen as a function of the model parameters, the
 #'   likelihood is used to fit the model to the observed trait data and the
@@ -1293,7 +1378,7 @@ PCMSim <- function(
 #' @param X a \code{k x N} numerical matrix with possible \code{NA} and \code{NaN} entries. Each
 #'   column of X contains the measured trait values for one species (tip in tree).
 #'   Missing values can be either not-available (\code{NA}) or not existing (\code{NaN}).
-#'   Thse two values have are treated differently when calculating
+#'   These two values have are treated differently when calculating
 #'   likelihoods: see \code{\link{PCMPresentCoordinates}}.
 #' @param tree a phylo object with N tips.
 #' @param model an S3 object specifying both, the model type (class, e.g. "OU") as
@@ -1301,12 +1386,14 @@ PCMSim <- function(
 #'   calculated (see also Details).
 #' @param SE a k x N matrix specifying the standard error for each measurement in
 #' X. Alternatively, a k x k x N cube specifying an upper triangular k x k
-#' Choleski factor of the variance covariance matrix for the measurement error
+#' factor of the variance covariance matrix for the measurement error
 #' for each node i=1, ..., N.
 #' Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.
 #' @param metaI a list returned from a call to \code{PCMInfo(X, tree, model, SE)},
-#'   containing meta-data such as N, M and k.
-#' @param log logical indicating whether a log-liklehood should be calculated. Default
+#'   containing meta-data such as N, M and k. Alternatively, this can be a
+#'   function object that returns such a list, e.g. the function\code{PCMInfo}
+#'   or the function \code{PCMInfoCpp} from the \code{PCMBaseCpp} package.
+#' @param log logical indicating whether a log-likelehood should be calculated. Default
 #'  is TRUE.
 #' @param verbose logical indicating if some debug-messages should printed.
 #'
@@ -1318,12 +1405,12 @@ PCMSim <- function(
 #' model parameters is calculated by maximizing the quadratic polynomial
 #' 'X0 * L_root * X0 + m_root * X0 + r_root'.}
 #' \item{error}{A named list containing error information if a numerical or other
-#' logical error occured during likelihood calculation (this is a list returned by
+#' logical error occurred during likelihood calculation (this is a list returned by
 #'  \code{\link{PCMParseErrorMessage}}.}
 #'  If an error occured during likelihood calculation, the default behavior is to
 #'  return NA with a non-NULL error attribute. This behavior can be changed in
 #'  using global options:
-#'  \item{"PCMBase.Value.NA"}{Allows to specify a different NA value such as \code{-Inf} or \code{-1e20} which can be used in compbination with \code{log = TRUE} when
+#'  \item{"PCMBase.Value.NA"}{Allows to specify a different NA value such as \code{-Inf} or \code{-1e20} which can be used in combination with \code{log = TRUE} when
 #'   using \code{optim} to maximize the log-likelihood;}
 #'  \item{"PCMBase.Errors.As.Warnings"}{Setting this option to FALSE will cause any
 #'  error to result in calling the \code{\link{stop}} R-base function. If not caught
@@ -1348,27 +1435,60 @@ PCMLik <- function(
   UseMethod("PCMLik", model)
 }
 
+#' Tracing the log-likelihood calculation of a model over each node of the tree
+#'
+#' @description This is an S3 generic function providing tracing information
+#' for the likelihood calculation for a given tree, data and model parameters.
+#' Useful for illustration or for debugging purpose.
+#'
+#' @inheritParams PCMLik
+#'
+#' @return The returned object will, in general, depend on the type of model and
+#' the algorithm used for likelihood calculation. For a G_LInv model and
+#' pruning-wise likelihood calculation, the returned object will be a data.table
+#' with columns corresponding to the node-state variables, e.g. the quadratic
+#' polynomial coefficients associated with each node in the tree.
+#' @seealso \code{\link{PCMInfo}} \code{\link{PCMAbCdEf}} \code{\link{PCMLmr}} \code{\link{PCMSim}} \code{\link{PCMCond}} \code{\link{PCMParseErrorMessage}}
+#' @export
+PCMLikTrace <- function(
+  X, tree, model,
+  SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
+  metaI = PCMInfo(
+    X = X, tree = tree, model = model, SE = SE, verbose = verbose),
+  log = TRUE,
+  verbose = FALSE) {
+
+  UseMethod("PCMLikTrace", model)
+}
+
 #' @export
 logLik.PCM <- function(object, ...) {
   if(!is.PCM(object)) {
-    stop("ERR:02031:PCMBase:PCM.R:logLik.PCM:: object must inherit from class PCM.")
+    stop("logLik.PCM:: object must inherit from class PCM.")
   }
 
   X <- attr(object, "X", exact = TRUE)
   if( !is.matrix(X) ) {
-    stop("ERR:02032:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object, it should have a k x N numeric matrix attribute called 'X'.")
+    stop("logLik.PCM:: When calling logLik.PCM on a model object, it should have a k x N numeric matrix attribute called 'X'.")
   }
   SE <- attr(object, "SE", exact = TRUE)
-  if( !is.matrix(SE) ) {
-    stop("ERR:02033:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object, it should have a k x N numeric matrix attribute called 'SE'.")
+  if( !(is.matrix(SE) || length(dim(SE)) == 3) ) {
+    warning("logLik.PCM:: When calling logLik.PCM on a model object, it should have a (k x N) numeric matrix or a (k x k x N) numeric cube attribute called 'SE'. Setting SE to a (k x N) zero matrix.")
+    SE <- X * 0.0
   }
   tree <- attr(object, "tree", exact = TRUE)
   if( !inherits(tree, "phylo") ) {
-    stop("ERR:02034:PCMBase:PCM.R:logLik.PCM:: When calling logLik.PCM on a model object should have an attribute called 'tree' of class phylo.")
+    stop("logLik.PCM:: When calling logLik.PCM on a model object should have an attribute called 'tree' of class phylo.")
   }
 
-  if(is.function(attr(object, "PCMInfoFun", exact = TRUE))) {
-    value <- PCMLik(X, tree, object, SE, metaI = attr(object, "PCMInfoFun", exact = TRUE)(X, tree, object, SE), log = TRUE)
+  if(is.function(attr(object, "PCMInfoFun", exact = TRUE)) ) {
+    value <- PCMLik(
+      X, tree, object, SE, metaI = attr(object, "PCMInfoFun", exact = TRUE)(X, tree, object, SE), log = TRUE)
+  } else if(is.list(attr(object, "PCMInfoFun", exact = TRUE))) {
+    # In this case, it is assumed that attr(object, "PCMInfoFun", exact = TRUE) is
+    # the result from calling the PCMInfoFun on the model (object) X, tree and data.
+    value <- PCMLik(
+      X, tree, object, SE, metaI = attr(object, "PCMInfoFun", exact = TRUE), log = TRUE)
   } else {
     value <- PCMLik(X, tree, object, SE, log = TRUE)
   }
@@ -1395,26 +1515,33 @@ logLik.PCM <- function(object, ...) {
 #' for a given trait, if all of its descendants have this coordinate set to FALSE.}
 #' }
 #' These two cases have different effect on the likelihood calculation: missing
-#' measurements (NA) are integrated out at the parent nodes; while non-existent traits (NaN)
-#' are treated as reduced dimensionality of the vector at the parent node.
+#' measurements (NA) are integrated out at the parent nodes; while non-existent
+#' traits (NaN) are treated as reduced dimensionality of the vector at the
+#' parent node.
 #'
 #' @param X numeric k x N matrix of observed values, with possible NA entries. The
 #' columns in X are in the order of tree$tip.label
 #' @param tree a phylo object
 #' @param metaI  The result of calling PCMInfo.
-#' @return a k x M logical matrix which can be passed as a pc argument to the PCMLik
-#' function. The function fails in case when all traits are NAs for some of the tips.
+#' @return a k x M logical matrix. The function fails in case when all traits are NAs for some of the tips.
 #' In that case an error message is issued
-#' "ERR:02001:PCMBase:PCM.R:PCMPresentCoordinates:: Some tips have 0
-#' present coordinates. Consider removing these tips.".
+#' "PCMPresentCoordinates:: Some tips have 0 present coordinates. Consider
+#' removing these tips.".
 #' @seealso \code{\link{PCMLik}}
 #' @export
 PCMPresentCoordinates <- function(X, tree, metaI) {
 
-  N <- metaI$N
-  M <- metaI$M
-  k <- metaI$k
-  postorder <- rev(metaI$preorder)
+  if(is.null(metaI)) {
+    N <- PCMTreeNumTips(tree)
+    M <- PCMTreeNumNodes(tree)
+    k <- nrow(X)
+    postorder <- PCMTreePostorder(tree)
+  } else {
+    N <- metaI$N
+    M <- metaI$M
+    k <- metaI$k
+    postorder <- rev(metaI$preorder)
+  }
 
   edge <- tree$edge
 
@@ -1428,34 +1555,35 @@ PCMPresentCoordinates <- function(X, tree, metaI) {
 
       if(i <= N) {
         # all es pointing to tips
-        # here we count NAs as present because they are integrated out at the parent nodes
+        # here we count NAs as present because they are integrated out at the
+        # parent nodes.
         pc[, i] <- !is.nan(X[, i])
       } else {
-        # edges pointing to internal nodes, for which all children nodes have been
-        # visited
-        # here we do nothing
+        # edges pointing to internal nodes, for which all children nodes have
+        # been visited here we do nothing.
       }
 
       #update parent pc
       pc[, j] <- pc[, j] | pc[, i]
     }
     # at the end correct the present coordinates for the traits at the tips which
-    # are NA but not NaN : Both NAs and NaNs result in FALSE at a tip;
-    # only coordinates for which all descending tips have NaN are FALSE at internal nodes
-    pc[, 1:N] <- !is.na(X[, 1:N])
+    # are NA but not NaN: Both NAs and NaNs result in FALSE at a tip;
+    # only coordinates for which all descending tips have NaN are FALSE at
+    # internal nodes.
+    pc[, seq_len(N)] <- !is.na(X[, seq_len(N)])
 
     if(any(rowSums(pc) == 0)) {
-      stop("ERR:02001:PCMBase:PCM.R:PCMPresentCoordinates:: Some tips
-           have 0 present coordinates. Consider removing these tips.")
+      stop("PCMPresentCoordinates:: Some tips have 0 present coordinates.
+           Consider removing these tips.")
     }
   }
   pc
 }
 
-#' Meta-information about a tree associated with a PCM
+#' Meta-information about a tree and trait data associated with a PCM
 #'
 #' @description This function pre-processes the given tree and data in order to
-#' create meta-information used during likelihood calculaiton.
+#' create meta-information used during likelihood calculation.
 #' @inheritParams PCMLik
 #' @param preorder an integer vector of row-indices in tree$edge matrix as returned
 #' by PCMTreePreorder. This can be given for performance speed-up when several
@@ -1478,7 +1606,10 @@ PCMPresentCoordinates <- function(X, tree, metaI) {
 #' \item{xi}{an integer vector of 0's and 1's corresponding to the rows in tree$edge
 #' indicating the presence of a jump at the corresponding branch;}
 #' \item{pc}{a logical matrix of dimension k x M denoting the present coordinates
-#' for each node;}
+#' for each node; in special cases this matrix can be edited by hand after calling
+#' PCMInfo and before passing the returned list to PCMLik. Otherwise, this matrix
+#' can be calculated in a custom way by specifying the option PCMBase.PCMPresentCoordinatesFun.
+#' See also \code{\link{PCMPresentCoordinates}} and \code{\link{PCMOptions}}. }
 #' This list is passed to \code{\link{PCMLik}}.
 #'
 #' @export
@@ -1517,9 +1648,12 @@ PCMInfo.PCM <- function(
     }
   } else if(is.array(SE) && identical(unname(dim(SE)), c(k, k, N)) ) {
     # SE is k x k x N array
-    for(i in seq_len(N)) {
-      VE[, , i] <- SE[, , i] %*% t(SE[, , i])
+    if(getOption("PCMBase.Transpose.Sigma_x", FALSE)) {
+      for(i in seq_len(N)) VE[, , i] <- t(SE[, , i]) %*% SE[, , i]
+    } else {
+      for(i in seq_len(N)) VE[, , i] <- SE[, , i] %*% t(SE[, , i])
     }
+
   } else {
     stop("SE should be a k x N matrix or a k x k x N array.")
   }
@@ -1549,12 +1683,15 @@ PCMInfo.PCM <- function(
   )
   res <- c(res, PCMOptions())
 
-  res$pc <- PCMPresentCoordinates(X, tree, res)
+  PCMPresentCoordinatesFun <- getOption(
+    "PCMBase.PCMPresentCoordinatesFun", PCMPresentCoordinates)
+  res$pc <- PCMPresentCoordinatesFun(X, tree, res)
+  res$NA_double_ <- NA_real_
 
   res
 }
 
-#' Create a likelhood function of a numerical vector parameter
+#' Create a likelihood function of a numerical vector parameter
 #' @inheritParams PCMLik
 #' @param positiveValueGuard positive numerical value (default Inf), which
 #' serves as a guard for numerical error. Values exceeding
@@ -1592,3 +1729,115 @@ PCMCreateLikelihood <- function(
   }
 }
 
+#' Find the S3 method for a given PCM object or class-name and an S3 generic
+#' @param x a character string denoting a PCM S3 class name (e.g. "OU"), or a
+#' PCM object.
+#' @param method a character string denoting the name of an S3 generic function.
+#' Default: "PCMCond".
+#' @return a function object corresponding to the S3 method found or an error is
+#' raised if no such function is found for the specified object and method.
+#'
+#' @importFrom utils getS3method
+#' @export
+PCMFindMethod <- function(x, method = "PCMCond") {
+  if(is.character(x)) {
+    o <- try(PCM(x), silent = TRUE)
+    if(inherits(o, "try-error")) {
+      stop(
+        paste0(
+          "PCMFindMethod:: ", toString(o), " PCM constructor called on x",
+          "='", x, "'")
+      )
+    }
+  } else if(is.PCM(x)) {
+    o <- x
+  } else {
+    stop(
+      paste0(
+        "PCMFindMethod:: x should be a character string denoting a",
+        "PCM class name or a PCM object."))
+  }
+
+  cls <- c(class(o), 'default')
+  results <- lapply(cls, function(y) try(getS3method(method, y), silent = TRUE))
+  Find(function (x) class(x) != 'try-error', results)
+}
+
+#' Given a PCM or a parameter object, extract an analogical object for a subset
+#' of the dimensions (traits) in the original object.
+#'
+#' @details This is an S3 generic
+#' @param obj a PCM or a parameter object.
+#' @param dims an integer vector; should be a subset or equal to
+#' \code{seq_len(PCMNumTraits(obj))} (the default).
+#' @param nRepBlocks a positive integer specifying if the specified dimensions
+#' should be replicated to obtain a higher dimensional model, where the parameter
+#' matrices are block-diagonal with blocks corresponding to dims. Default: 1L.
+#' @return an object of the same class as obj with a subset of obj's dimensions
+#' multiplied \code{nRepBlocks} times.
+#' @export
+PCMExtractDimensions <- function(
+  obj,
+  dims = seq_len(PCMNumTraits(obj)),
+  nRepBlocks = 1L) {
+  UseMethod("PCMExtractDimensions", obj)
+}
+
+#' @export
+PCMExtractDimensions.PCM <- function(
+  obj,
+  dims = seq_len(PCMNumTraits(obj)),
+  nRepBlocks = 1L) {
+  dims <- unique(dims)
+  if( !isTRUE(all(dims %in% seq_len(PCMNumTraits(obj)))) ) {
+    stop("PCMExtractDimensions.PCM:: Some dims are outside 1:PCMNumTraits(obj).")
+  }
+  obj2 <- lapply(obj, PCMExtractDimensions, dims = dims, nRepBlocks = nRepBlocks)
+  attributes(obj2) <- attributes(obj)
+  attr(obj2, "k") <- as.integer(length(dims) * nRepBlocks)
+  attr(attr(obj2, "spec"), "k") <- as.integer(length(dims) * nRepBlocks)
+  for(name in names(attr(obj2, "spec"))) {
+    if(is.PCM(attr(obj2, "spec")[[name]])) {
+      attr(attr(obj2, "spec")[[name]], "k") <- as.integer(length(dims) * nRepBlocks)
+    }
+  }
+  attr(obj2, "p") <- PCMParamCount(obj2)
+  if(!is.null(attr(obj, "X"))) {
+    attr(obj2, "X") <- attr(obj, "X")[rep(dims, nRepBlocks), , drop = FALSE]
+  }
+  if(!is.null(attr(obj, "SE"))) {
+    attr(obj2, "SE") <- if(is.matrix(attr(obj, "SE"))) {
+      attr(obj, "SE")[rep(dims, nRepBlocks), , drop = FALSE]
+    } else {
+      kronecker(diag(1, nRepBlocks), attr(obj, "SE"))
+    }
+  }
+  if(!is.null(attr(obj, "tree"))) {
+    attr(obj2, "tree") <- attr(obj, "tree")
+  }
+  obj2
+}
+
+#' Given a PCM or a parameter object, extract an analogical object for a subset
+#' of the regimes in the original object.
+#'
+#' @details This is an S3 generic
+#' @param obj a PCM or a parameter object.
+#' @param regimes an integer vector; should be a subset or equal to
+#' \code{seq_len(PCMNumRegimes(obj))} (the default).
+#' @return an object of the same class as obj with a subset of obj's regimes
+#' @export
+PCMExtractRegimes <- function(obj, regimes = seq_len(PCMNumRegimes(obj))) {
+  UseMethod("PCMExtractRegimes", obj)
+}
+
+#' @export
+PCMExtractRegimes.PCM <- function(obj, regimes = seq_len(PCMNumRegimes(obj))) {
+  obj2 <- lapply(obj, PCMExtractRegimes, regimes = regimes)
+  attributes(obj2) <- attributes(obj)
+  attr(obj2, "regimes") <- attr(obj2, "regimes")[regimes]
+  attr(obj2, "p") <- PCMParamCount(obj2)
+  attr(attr(obj2, "spec"), "regimes") <- attr(attr(obj2, "spec"), "regimes")[regimes]
+
+  obj2
+}

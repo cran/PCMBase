@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016-2019 Venelin Mitov, Georgios Asimomitis
 #
 # This file is part of PCMBase.
 #
@@ -30,10 +30,10 @@ PCMCond.BM <- function(
   tree, model, r = 1, metaI = PCMInfo(NULL, tree, model, verbose = verbose),
   verbose=FALSE) {
 
-  Sigma_x <- if(is.Global(model$Sigma_x)) as.matrix(model$Sigma_x) else as.matrix(model$Sigma_x[,, r])
+  Sigma_x <- GetSigma_x(model, "Sigma", r)
   Sigma <- Sigma_x %*% t(Sigma_x)
   if(!is.null(model$Sigmae_x)) {
-    Sigmae_x <- if(is.Global(model$Sigmae_x)) as.matrix(model$Sigmae_x) else as.matrix(model$Sigmae_x[,,r])
+    Sigmae_x <- GetSigma_x(model, "Sigmae", r)
     Sigmae <- Sigmae_x %*% t(Sigmae_x)
   } else {
     Sigmae <- NULL
@@ -53,8 +53,8 @@ PCMCond.BM <- function(
 PCMDescribeParameters.BM <- function(model, ...) {
   list(
     X0 = "trait values at the root",
-    Sigma_x = "Choleski factor of the unit-time variance rate",
-    Sigmae_x = "Choleski factor of the non-heritable variance or the variance of the measurement error")
+    Sigma_x = "factor of the unit-time variance rate",
+    Sigmae_x = "factor of the non-heritable variance or the variance of the measurement error")
 }
 
 #' @export
@@ -95,6 +95,8 @@ PCMListDefaultParameterizations.BM <- function(model, ...) {
       ),
 
     Sigmae_x = list(
+      c("MatrixParameter", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal"),
+      c("MatrixParameter", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal", "_Global"),
       c("MatrixParameter", "_Omitted"))
   )
 }
@@ -105,9 +107,9 @@ PCMSpecify.BM <- function(model, ...) {
     X0 = structure(0.0, class = c('VectorParameter', '_Global'),
                    description = 'trait values at the root'),
     Sigma_x = structure(0.0, class = c('MatrixParameter', '_UpperTriangularWithDiagonal', '_WithNonNegativeDiagonal'),
-                        description = 'Choleski factor of the unit-time variance rate'),
+                        description = 'factor of the unit-time variance rate'),
     Sigmae_x = structure(0.0, class = c('MatrixParameter', '_UpperTriangularWithDiagonal', '_WithNonNegativeDiagonal'),
-                         description = 'Choleski factor of the non-heritable variance or the variance of the measurement error'))
+                         description = 'factor of the non-heritable variance or the variance of the measurement error'))
   attributes(spec) <- attributes(model)
   if(is.null(names(spec))) names(spec) <- c('X0', 'Sigma_x', 'Sigmae_x')
   if(any(sapply(spec, is.Transformable))) class(spec) <- c(class(spec), '_Transformable')

@@ -1,4 +1,4 @@
-# Copyright 2018 Venelin Mitov
+# Copyright 2016 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -99,6 +99,32 @@ PCMParamCount.MixedGaussian <- function(
   p
 }
 
+#' @export
+PCMExtractRegimes.MixedGaussian <- function(obj, regimes = seq_len(PCMNumRegimes(obj))) {
+  regimes.obj <- PCMRegimes(obj)
+  regimes.obj2 <- regimes.obj[regimes]
+
+  names.obj2 <- setdiff(names(obj), setdiff(regimes.obj, regimes.obj2))
+  obj2 <- obj[names.obj2]
+
+  for(na in names(attributes(obj))) {
+    if(na != "names") {
+      attr(obj2, na) <- attr(obj, na)
+    }
+  }
+
+  attr(obj2, "regimes") <- regimes.obj2
+  attr(obj2, "mapping") <- attr(obj2, "mapping")[regimes.obj2]
+  attr(obj2, "p") <- PCMParamCount(obj2)
+
+  names.spec.obj2 <- setdiff(names(attr(obj, "spec")), setdiff(regimes.obj, regimes.obj2))
+  attr(obj2, "spec") <- attr(obj2, "spec")[names.spec.obj2]
+
+  class(obj2)[1L] <- class(attr(obj2, "spec"))[1L] <-
+    paste0("MixedGaussian", "_", do.call(paste0, as.list(regimes.obj2)))
+
+  obj2
+}
 
 #' Create a multi-regime Gaussian model (MixedGaussian)
 #' @param k integer defining the number of traits.
@@ -116,7 +142,7 @@ PCMParamCount.MixedGaussian <- function(
 #' should be a character vector). If it is not a named vector then the positions
 #' of the elements correspond to the regimes in their order given by the
 #' function \code{\link{PCMTreeGetPartNames}} called on a tree object.
-#' @param className a character string definingn a valid S3 class name for the
+#' @param className a character string defining a valid S3 class name for the
 #' resulting MixedGaussian object. If not specified, a className is generated
 #' using the expression
 #' \code{ paste0("MixedGaussian_", do.call(paste0, as.list(mapping)))}.
@@ -133,7 +159,7 @@ PCMParamCount.MixedGaussian <- function(
 #' GaussianPCM and PCM.
 #'
 #' @details If X0 is not NULL it has no sense to use model-types including X0 as
-#' a parameter (e.g. use BM1 or BM3 insted of BM or BM2). Similarly if Sigmae_x
+#' a parameter (e.g. use BM1 or BM3 instead of BM or BM2). Similarly if Sigmae_x
 #' is not NULL there is no meaning in using model-types including Sigmae_x as a
 #' parameter, (e.g. use OU2 or OU3 instead of OU or OU1).
 #' @seealso \code{\link{PCMTreeGetPartNames}}
@@ -151,7 +177,7 @@ MixedGaussian <- function(
   Sigmae_x = structure(
     0.0,
     class = c("MatrixParameter", "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal", "_Global"),
-    description = "Upper triangular Choleski factor of the non-phylogenetic variance-covariance")) {
+    description = "Upper triangular factor of the non-phylogenetic variance-covariance")) {
 
   regimes <- if(is.null(names(mapping))) {
     seq_len(length(mapping))
@@ -163,7 +189,7 @@ MixedGaussian <- function(
     if(any(is.na(mapping2))) {
       stop(
         paste0(
-          "ERR:02511:PCMBase:MixedGaussian.R:MixedGaussian:: some of the models in mapping not found in modelTypes: ",
+          "MixedGaussian.R:MixedGaussian:: some of the models in mapping not found in modelTypes: ",
           "modelTypes = ", toString(modelTypes),
           ", mapping =", toString(mapping)))
     } else {
