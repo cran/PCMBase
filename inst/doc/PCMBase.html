@@ -13,7 +13,7 @@
 
 <meta name="author" content="Venelin Mitov" />
 
-<meta name="date" content="2019-09-11" />
+<meta name="date" content="2019-12-12" />
 
 <title>Getting Started with the PCMBase R-package</title>
 
@@ -304,7 +304,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Getting Started with the PCMBase R-package</h1>
 <h4 class="author">Venelin Mitov</h4>
-<h4 class="date">2019-09-11</h4>
+<h4 class="date">2019-12-12</h4>
 
 
 <div id="TOC">
@@ -352,7 +352,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <p>Given a number of traits <span class="math inline">\(k\)</span>, a <em>model</em> is defined as a set of parameters with dimensionality possibly depending on <span class="math inline">\(k\)</span> and a rule stating how these parameters are used to calculate the model likelihood for an observed tree and data and/or to simulate data along a tree. Often, we use the term <em>model type</em> to denote a family of models sharing the same rule.</p>
 <div id="the-mathcalg_linv-family-of-models" class="section level2">
 <h2>The <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family of models</h2>
-<p>Currently, PCMBase supports Gaussian model types from the so called <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family <span class="citation">(Mitov et al. 2018)</span>. Specifically, these are models representing branching stochastic processes and satisfying the following two conditions <span class="citation">(Mitov et al. 2018)</span>:</p>
+<p>Currently, PCMBase supports Gaussian model types from the so called <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family <span class="citation">(Mitov et al. 2019)</span>. Specifically, these are models representing branching stochastic processes and satisfying the following two conditions <span class="citation">(Mitov et al. 2019)</span>:</p>
 <ol style="list-style-type: decimal">
 <li>after a branching point on the tree the traits evolve independently in the two descending lineages,</li>
 <li><p>the distribution of the trait <span class="math inline">\(\vec{X}\)</span>, at time <span class="math inline">\(t\)</span> conditional on the value at time <span class="math inline">\(s &lt; t\)</span> is Gaussian with the mean and variance satisfying</p>
@@ -374,7 +374,7 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 <li><span class="math inline">\(\vec{\theta}\)</span> (coded <code>Theta</code>) : a <span class="math inline">\(k\)</span>-vector of long-term optimal trait values;</li>
 <li><span class="math inline">\(\mathbf{\Sigma}_{\chi}\)</span> : (coded <code>Sigma_x</code>) : a <span class="math inline">\(k\times k\)</span> matrix denoting the an upper triangular factor or the stochastic drift variance-covariances; <!-- - $\mathbf{\Sigma}_{e,\chi}$ (coded `Sigmae_x`) : a $k\times k$ matrix denoting the Choleski factor of the non-genetic (non-heritable) variance covariance; --></li>
 </ul>
-<p>The rule defining how the parameters of the OU-model are used to calculate the model likelihood and to simulate data consists in the definition of the functions <span class="math inline">\(\vec{\omega}\)</span> and matrices <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> <span class="citation">(Mitov et al. 2018)</span>: <span class="math display">\[\begin{equation}\label{eq:mammals:omegaPhiVOU}
+<p>The rule defining how the parameters of the OU-model are used to calculate the model likelihood and to simulate data consists in the definition of the functions <span class="math inline">\(\vec{\omega}\)</span> and matrices <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> <span class="citation">(Mitov et al. 2019)</span>: <span class="math display">\[\begin{equation}\label{eq:mammals:omegaPhiVOU}
 \begin{array}{l}
 \vec{\omega}_{s,t}=\bigg(\mathbf{I}-\text{Exp}\big(-(t-s)\mathbf{H}\big)\bigg)\vec{\theta} \\
 \mathbf{\Phi}_{s,t}=\text{Exp}(-(t-s)\mathbf{H}) \\
@@ -435,7 +435,7 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 ##     }
 ##     list(omega = omega, Phi = Phi, V = V)
 ## }
-## &lt;bytecode: 0x7fd6569c5968&gt;
+## &lt;bytecode: 0x7f984722c3a8&gt;
 ## &lt;environment: namespace:PCMBase&gt;</code></pre>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co"># The complex maths is implemented in the function PCMCondVOU. You can see its </span></a>
 <a class="sourceLine" id="cb5-2" data-line-number="2"><span class="co"># R-code by typing :</span></a>
@@ -534,9 +534,9 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 <a class="sourceLine" id="cb21-2" data-line-number="2">param2 &lt;-<span class="st"> </span><span class="kw">jitter</span>(param)</a>
 <a class="sourceLine" id="cb21-3" data-line-number="3"></a>
 <a class="sourceLine" id="cb21-4" data-line-number="4"><span class="kw">print</span>(param2)</a></code></pre></div>
-<pre><code>##  [1]  5.013931720  1.993378620  1.619876640 -0.012779860  2.390579854
-##  [6]  1.603150874  0.781602530  2.395348730  0.083986269  0.004465769
-## [11]  0.381373566  0.088781899  0.001338384  0.413765714</code></pre>
+<pre><code>##  [1]  5.008761192  1.990376950  1.603405013 -0.012832534  2.395188545
+##  [6]  1.608661221  0.781383785  2.383642879  0.118070898  0.007425979
+## [11]  0.417418954  0.115023730  0.002073991  0.402772201</code></pre>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co"># set the new parameter vector</span></a>
 <a class="sourceLine" id="cb23-2" data-line-number="2"><span class="kw">PCMParamLoadOrStore</span>(modelBM.ab, param2, <span class="dt">offset =</span> <span class="dv">0</span>, <span class="dt">load=</span><span class="ot">TRUE</span>)</a></code></pre></div>
 <pre><code>## [1] 14</code></pre>
@@ -544,32 +544,32 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 <pre><code>## Brownian motion model
 ## S3 class: BM, GaussianPCM, PCM; k=2; p=14; regimes: a, b. Parameters/sub-models:
 ## X0 (VectorParameter, _Global, numeric; trait values at the root):
-## [1] 5.013932 1.993379
+## [1] 5.008761 1.990377
 ## Sigma_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; factor of the unit-time variance rate):
 ## , , a
 ## 
 ##          [,1]        [,2]
-## [1,] 1.619877 -0.01277986
-## [2,] 0.000000  2.39057985
+## [1,] 1.603405 -0.01283253
+## [2,] 0.000000  2.39518854
 ## 
 ## , , b
 ## 
 ##          [,1]      [,2]
-## [1,] 1.603151 0.7816025
-## [2,] 0.800000 2.3953487
+## [1,] 1.608661 0.7813838
+## [2,] 0.800000 2.3836429
 ## 
 ## Sigmae_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; factor of the non-heritable variance or the variance of the measurement error):
 ## , , a
 ## 
-##            [,1]        [,2]
-## [1,] 0.08398627 0.004465769
-## [2,] 0.00000000 0.381373566
+##           [,1]        [,2]
+## [1,] 0.1180709 0.007425979
+## [2,] 0.0000000 0.417418954
 ## 
 ## , , b
 ## 
 ##           [,1]        [,2]
-## [1,] 0.0887819 0.001338384
-## [2,] 0.0000000 0.413765714
+## [1,] 0.1150237 0.002073991
+## [2,] 0.0000000 0.402772201
 ## 
 ## </code></pre>
 </div>
@@ -614,10 +614,10 @@ a
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 2.62 &amp; -0.03 \\ -0.03 &amp; 5.71 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 2.57 &amp; -0.03 \\ -0.03 &amp; 5.74 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; 0.00 \\ 0.00 &amp; 0.15 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; 0.00 \\ 0.00 &amp; 0.17 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
@@ -629,10 +629,10 @@ b
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 3.18 &amp; 3.15 \\ 3.15 &amp; 6.38 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 3.20 &amp; 3.15 \\ 3.15 &amp; 6.32 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; 0.00 \\ 0.00 &amp; 0.17 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; 0.00 \\ 0.00 &amp; 0.16 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 </table>
@@ -817,7 +817,7 @@ BM
 <h1>References</h1>
 <div id="refs" class="references">
 <div id="ref-Mitov:2018fl">
-<p>Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja Stadler. 2018. “Fast likelihood evaluation for multivariate phylogenetic comparative methods: the PCMBase R package.” <em>arXiv.org</em>, September, arXiv:1809.09014. <a href="http://arxiv.org/abs/1809.09014">http://arxiv.org/abs/1809.09014</a>.</p>
+<p>Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja Stadler. 2019. “Fast likelihood calculation for multivariate Gaussian phylogenetic models with shifts.” <em>Theor. Popul. Biol.</em>, December. <a href="https://doi.org/10.1016/j.tpb.2019.11.005">https://doi.org/10.1016/j.tpb.2019.11.005</a>.</p>
 </div>
 </div>
 </div>

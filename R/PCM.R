@@ -91,7 +91,7 @@ PCMModels <- function(pattern = NULL, parentClass = NULL, ...) {
 #' \item{\code{PCMBase.ParamValue.LowerLimit}}{Default lower limit value for parameters, default setting is -10.0.}
 #' \item{\code{PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal}}{Default lower limit value for parameters corresponding to non-negative diagonal elements of matrices, default setting is 0.0.}
 #' \item{\code{PCMBase.ParamValue.UpperLimit} }{Default upper limit value for parameters, default setting is 10.0.}
-#' \item{\code{PCMBase.Transpose.Sigma_x} }{Should upper diagonal factors for variance-covariance rate matrices be transposed, e.g. should Sigma = t(Sigma_x) Sigma_x or, rather Sigma = Sigma_x t(Sigma_x)? Note that the two variants are not equal. The default is FALSE, meaning Sigma = Sigma_x t(Sigma_x). In this case, though Sigma_x is not the actual upper Cholesky factor of Sigma, i.e. chol(Sigma) != Sigma_x. See also \code{\link{chol}} and \code{\link{UpperChol}}. This option applies to parameters Sigma_x, Sigmae_x, Sigmaj_x and the measurement errors \code{SE[,,i]} for each measurement i when the argument \code{SE} is specified as a cube.}
+#' \item{\code{PCMBase.Transpose.Sigma_x} }{Should upper diagonal factors for variance-covariance rate matrices be transposed, e.g. should Sigma = t(Sigma_x) Sigma_x or, rather Sigma = Sigma_x t(Sigma_x)? Note that the two variants are not equal. The default is FALSE, meaning Sigma = Sigma_x t(Sigma_x). In this case, Sigma_x is not the actual upper Cholesky factor of Sigma, i.e. chol(Sigma) != Sigma_x. See also \code{\link{chol}} and \code{\link{UpperTriFactor}}. This option applies to parameters Sigma_x, Sigmae_x, Sigmaj_x and the measurement errors \code{SE[,,i]} for each measurement i when the argument \code{SE} is specified as a cube.}
 #' \item{\code{PCMBase.MaxLengthListCladePartitions} }{Maximum number of tree partitions returned by \code{\link{PCMTreeListCladePartitions}}. This option has the goal to interrupt the recursive search for new partitions in the case of calling PCMTreeListCladePartitions on a big tree with a small value of the maxCladeSize argument. By default this is set to Inf.}
 #' \item{\code{PCMBase.PCMPresentCoordinatesFun} }{A function with the same synopsis as \code{\link{PCMPresentCoordinates}} that can be specified in case of custom setting for the present coordinates for specific nodes of the tree. See \code{\link{PCMPresentCoordinates}}, and \code{\link{PCMInfo}}.}
 #' \item{\code{PCMBase.Use1DClasses} }{Logical indicating if 1D arithmetic operations
@@ -276,6 +276,9 @@ PCM.PCM <- function(
   }
 
   obj <- PCMDefaultObject(spec, model, ...)
+  if(!is.null(params)) {
+    PCMParamSetByName(obj, params, ...)
+  }
 
   if(is.null(attr(obj, "k", exact = TRUE))) {
     attr(obj, "k") <- as.integer(k)
@@ -300,10 +303,6 @@ PCM.PCM <- function(
 
   if(is.null(attr(obj, "spec", exact = TRUE))) {
     attr(obj, "spec") <- spec
-  }
-
-  if(!is.null(params)) {
-    PCMParamSetByName(obj, params, ...)
   }
 
   if(!is.null(vecParams)) {
@@ -374,7 +373,7 @@ format.PCM <- function(x, ...) {
   spec <- attr(x, "spec", exact = TRUE)
 
   res <- paste0(
-    PCMDescribe(x, ...),
+    PCMDescribe(x, ...)[[1L]],
     "\nS3 class: ", toString(class(x)), "; ",
     "k=", attr(x, "k", exact = TRUE), "; p=", PCMParamCount(x, ...), "; ",
     "regimes: ", toString(attr(x, "regimes")), ". Parameters/sub-models:\n")
@@ -410,7 +409,7 @@ format.PCM <- function(x, ...) {
       strList <- list(sep = "\n")
     }
     res <- paste0(res, name, " (", toString(type),
-                  if(!is.null(description)) paste0("; ", description) else "", "):\n",
+                  if(!is.null(description)) paste0("; ", description[[1L]]) else "", "):\n",
                   do.call(paste, strList))
     res <- paste0(res, "\n")
   }
@@ -443,7 +442,11 @@ PCMDescribe <- function(model, ...) {
 
 #' @export
 PCMDescribe.PCM <- function(model, ...) {
-  "PCM base class model with no parameters; serves as a basis for PCM model classes"
+  if(!is.null(attr(model, "description", exact = TRUE))) {
+    attr(model, "description", exact = TRUE)
+  } else {
+    "PCM base class model with no parameters; serves as a basis for PCM model classes"
+  }
 }
 
 
@@ -612,7 +615,7 @@ PCMGenerateParameterizations <- function(
 
     sourcePCMParentClasses <- paste0(
       nameFunPCMParentClasses, " <- function(model) ",
-      PCMCharacterVectorToRExpression(parentClasses))
+      AsRExpression(parentClasses))
 
     sourcePCMSpecify <- paste0(
       nameFunPCMSpecify, " <- function(model, ...) {\n",
@@ -621,9 +624,9 @@ PCMGenerateParameterizations <- function(
       sourcePCMSpecify <- paste0(
         sourcePCMSpecify,
         paramNames[j], " = structure(0.0, class = ",
-        PCMCharacterVectorToRExpression(tableParameterizations[i][[paramNames[j]]][[1]]),
+        AsRExpression(tableParameterizations[i][[paramNames[j]]][[1]]),
         ",\n",
-        "description = '", paramDescriptions[j], "')")
+        "description = ", AsRExpression(paramDescriptions[[j]]), ")")
       if(j < length(paramNames)) {
         sourcePCMSpecify <- paste0(
           sourcePCMSpecify, ",\n")
@@ -636,7 +639,7 @@ PCMGenerateParameterizations <- function(
       sourcePCMSpecify,
       "attributes(spec) <- attributes(model)\n",
       "if(is.null(names(spec))) names(spec) <- ",
-      PCMCharacterVectorToRExpression(paramNames), "\n",
+      as.character(list(paramNames)), "\n",
       "if(any(sapply(spec, is.Transformable))) class(spec) <- c(class(spec), '_Transformable')\n",
       "spec\n",
       "}")
@@ -699,6 +702,326 @@ PCMGenerateModelTypes <- function(
       },
       sourceFile = sourceFile)
   }
+}
+
+#' A vector of access-code strings to all members of a named list
+#' @param l a named list object.
+#' @param recursive logical indicating if list members should be gone through
+#'  recursively. TRUE by default.
+#' @param format a character string indicating the format for accessing a member.
+#' Acceptable values are \code{c("$", "$'", '$"', '$`', "[['", '[["', '[[`')} of which
+#' the first one is taken as default.
+#' @return a vector of character strings denoting each named member of the list.
+#' @examples
+#' PCMListMembers(PCMBaseTestObjects$model_MixedGaussian_ab)
+#' PCMListMembers(PCMBaseTestObjects$model_MixedGaussian_ab, format = '$`')
+#' PCMListMembers(PCMBaseTestObjects$tree.ab, format = '$`')
+#' @export
+PCMListMembers <- function(
+  l, recursive = TRUE, format = c("$", "$'", '$"', '$`', "[['", '[["', '[[`')) {
+
+  openers = c("$", "$'", '$"', '$`', "[['", '[["', '[[`')
+  closers <- structure(c("", "'", '"', '`', "']]", '"]]', '`]]'), names = openers)
+  if(!format[[1L]] %in% openers) {
+    stop("PCMListMembers::The argument format should be one of ",
+         toString(openers), ".\n")
+  }
+  op <- format[[1L]]
+  cl <- closers[format[[1]]]
+
+  ListMembersInternal <- function(ll) {
+    res <- character(0L)
+
+    if(is.list(ll)) {
+      for(n in names(ll)) {
+        res <- c(res, paste0(op, n, cl))
+        if(recursive && is.list(ll[[n]])) {
+          res <- c(res, paste0(op, n, cl, ListMembersInternal(ll[[n]])))
+        }
+      }
+    }
+    res
+  }
+
+  ListMembersInternal(l)
+}
+
+#' Find the members in a list matching a member expression
+#'
+#' @param object a list containing named elements.
+#' @param member a member expression. Member expressions are character strings
+#' denoting named elements in a list object (see examples).
+#' @param enclos a character string containing the special symbol '?'. This
+#' symbol is to be replaced by matching expressions. The result of this
+#' substitution can be anything but, usually would be a valid R expression.
+#' Default: "?".
+#' @param q a quote symbol, Default: \code{"'"}.
+#' @param ... additional arguments passed to \code{\link{grep}}. For example,
+#' these could be \code{ignore.case=TRUE} or \code{perl=TRUE}.
+#' @return a named character vector, with names corresponding to the matched
+#' member quoted expressions (using the argument \code{q} as a quote symbol),
+#' and values corresponding to the '\code{enclos}-ed' expressions after
+#' substituting the '?'.
+#' @seealso \code{\link{PCMListMembers}}
+#' @examples
+#' model <- PCMBaseTestObjects$model_MixedGaussian_ab
+#' MatchListMembers(model, "Sigma_x", "diag(model?[,,1L])")
+#' MatchListMembers(model, "S.*_x", "diag(model?[,,1L])")
+#' MatchListMembers(model, "Sigma_x", "model?[,,1L][upper.tri(model?[,,1L])]")
+#' MatchListMembers(model, "a$Sigma_x", "model?[,,1L][upper.tri(model?[,,1L])]")
+#'
+#' @export
+MatchListMembers <- function(object, member, enclos = "?", q = "'", ...) {
+  if(member != "") {
+    member <- gsub('[[', '$', member, fixed = TRUE)
+    member <- gsub(']]', '', member, fixed = TRUE)
+    member <- gsub("'", "", member, fixed = TRUE)
+    member <- gsub('`', "", member, fixed = TRUE)
+    member <- gsub('"', "", member, fixed = TRUE)
+    ms <- lapply(
+      strsplit(member, split = "$", fixed = TRUE)[[1L]],
+      function(s) if(!s=="") paste0(q, s, q) else "")
+    ms$sep <- "\\$"
+    member <- do.call(paste, ms)
+    ms <- grep(member, x = PCMListMembers(object, format = paste0("$", q)), value = TRUE, ...)
+    sapply(ms, function(m) gsub('?', m, enclos, fixed = TRUE))
+  } else {
+    character(0L)
+  }
+}
+
+#' Value of an attribute of an object or values for an attribute found in its members
+#' @param name attribute name.
+#' @param object a PCM model object or a PCMTree object.
+#' @param member a member expression. Member expressions are character strings
+#' denoting named elements in a list object (see examples). Default: "".
+#' @param ... additional arguments passed to \code{\link{MatchListMembers}}.
+#' @return if member is an empty string, \code{attr(object, name)}. Otherwise, a named list
+#' containing the value for the attribute for each member in \code{object}
+#' matched by \code{member}.
+#' @examples
+#' PCMGetAttribute("class", PCMBaseTestObjects$model_MixedGaussian_ab)
+#' PCMGetAttribute(
+#'   "dim", PCMBaseTestObjects$model_MixedGaussian_ab,
+#'   member = "$Sigmae_x")
+#' @export
+PCMGetAttribute <- function(name, object, member = "", ...) {
+  if(member == "") {
+    attr(object, name)
+  } else {
+    members <- MatchListMembers(object, member, ...)
+    if(length(members) == 0L) {
+      stop("PCMGetAttribute::Could not match the member expression.")
+    } else {
+      res <- list()
+      for(m in members) {
+        res[[m]] <- eval(parse(text = paste0("attr(object", m, ", '", name, "')")))
+      }
+      res
+    }
+  }
+}
+
+#' Set an attribute of a named member in a PCM or other named list object
+#' @param name a character string denoting the attribute name.
+#' @param value the value for the attribute.
+#' @param object a PCM or a list object.
+#' @param member a member expression. Member expressions are character strings
+#' denoting named elements in a list object (see examples). Default: "".
+#' @param spec a logical (TRUE by default) indicating if the attribute should
+#' also be set in the corresponding member of the spec attribute (this is for
+#' PCM objects only).
+#' @param inplace logical (TRUE by default) indicating if the attribute should
+#'  be set to the object in the current environment, or a modified object should
+#'  be returned.
+#' @param ... additional arguments passed to \code{\link{MatchListMembers}}.
+#' @return if inplace is TRUE (default) nothing is returned. Otherwise, a
+#' modified version of object is returned.
+#' @details Calling this function can affect the attributes of multiple members
+#' matched by the \code{member} argument.
+#' @examples
+#' model <- PCMBaseTestObjects$model_MixedGaussian_ab
+#' PCMSetAttribute("class", c("MatrixParameter", "_Fixed"), model, "H")
+#' @export
+PCMSetAttribute <- function(
+  name, value, object, member = "", spec = TRUE, inplace = TRUE, ...) {
+
+  if(member == "") {
+    if(inplace) {
+      eval(substitute(attr(object, name) <- value), parent.frame())
+      if(is.PCM(object) && spec) {
+        eval(substitute(
+          attr(attr(object, "spec"), name) <- value),
+          parent.frame())
+      }
+    } else {
+      attr(object, name) <- value
+      if(is.PCM(object) && spec) {
+        attr(attr(object, "spec"), name) <- value
+      }
+      object
+    }
+  } else {
+    members <- MatchListMembers(object, member, q = "", ...)
+    if(length(members) == 0L) {
+      warning("PCMSetAttribute::Could not match the member expression.")
+    } else {
+      if(inplace) {
+          for(m in members) {
+            ms <- strsplit(m, split = "$", fixed = TRUE)[[1L]][-1L]
+            if(length(ms) == 1L) {
+              eval(substitute(
+                attr(object[[ms[1]]], name) <- value),
+                parent.frame())
+              if(is.PCM(object) && spec) {
+                eval(substitute(
+                  attr(attr(object, "spec")[[ms[1]]], name) <- value),
+                  parent.frame())
+              }
+            } else if(length(ms) == 2L) {
+              eval(substitute(
+                attr(object[[ms[1]]][[ms[2]]], name) <- value),
+                parent.frame())
+              if(is.PCM(object) && spec) {
+                eval(substitute(
+                  attr(attr(object, "spec")[[ms[1]]][[ms[2]]], name) <- value),
+                  parent.frame())
+              }
+            } else if(length(ms) == 3L) {
+              eval(substitute(
+                attr(object[[ms[1L]]][[ms[2L]]][[ms[3L]]], name) <- value),
+                parent.frame())
+              if(is.PCM(object) && spec) {
+                eval(substitute(
+                  attr(attr(object, "spec")[[ms[1]]][[ms[2]]][[ms[3L]]], name) <- value),
+                  parent.frame())
+              }
+            } else {
+              stop("PCMSetAttribute:: Nested levels beyond 3 are not supported")
+            }
+          }
+      } else {
+        for(m in members) {
+          for(m in members) {
+            ms <- strsplit(m, split = "$", fixed = TRUE)[[1L]][-1L]
+            if(length(ms) == 1L) {
+              attr(object[[ms[1]]], name) <- value
+            } else if(length(ms) == 2L) {
+              attr(object[[ms[1]]][[ms[2]]], name) <- value
+            } else if(length(ms) == 3L) {
+              attr(object[[ms[1L]]][[ms[2L]]][[ms[3L]]], name) <- value
+            } else {
+              stop("PCMSetAttribute:: Nested levels beyond 3 are not supported")
+            }
+          }
+        }
+        object
+      }
+    }
+  }
+}
+
+#' Add a value to a list-valued attribute of a member or members matching a pattern
+#' @inheritParams PCMSetAttribute
+#' @param enclos a character string containing the special symbol '?'. This
+#' symbol is to be replaced by matching expressions. The result of this
+#' substitution can be anything but, usually would be a valid R expression.
+#' Default: "?".
+#' @return if \code{inplace} is \code{TRUE} no value is returned. Otherwise, a
+#' modified version of \code{object} is returned.
+#' @export
+PCMAddToListAttribute <- function(
+  name, value, object, member = "", enclos = "?", spec = TRUE, inplace = TRUE, ...) {
+
+  value$enclos <- enclos
+  if(is.null(member) || member == "") {
+    values <- PCMGetAttribute(name, object)
+    if(is.null(values)) {
+      values <- list()
+    } else {
+      values <- list(values)
+    }
+    values[[length(values) + 1L]] <- value
+
+    if(inplace) {
+      eval(substitute(PCMSetAttribute(
+        name = name, value = values, object = object, spec = spec)),
+        parent.frame())
+    } else {
+      PCMSetAttribute(
+        name = name, value = values, object = object, spec = spec)
+      object
+    }
+  } else {
+    membersEnclos <- MatchListMembers(object, member, enclos = enclos, ...)
+
+    if(length(membersEnclos) == 0L) {
+      warning(
+        "PCMAddAttribute:: no members matched by member argument (",
+        member, "), so nothing to do.")
+    } else {
+      for(i in seq_along(membersEnclos)) {
+        m <- names(membersEnclos)[i]
+        mE <- unname(membersEnclos[i])
+
+        # PCMGetAttribute returns an empty list or a named list with 1 element
+        # corresponding to the list attribute for member m.
+        values <- PCMGetAttribute(name, object, m)
+        if(length(values) == 0L) {
+          # empty list
+          values <- list(value)
+        } else {
+          # a list with 1 element
+          values <- c(values[[1L]], list(value))
+        }
+
+        if(inplace) {
+          eval(substitute(PCMSetAttribute(
+            name = name, value = values, object = object, member = m, spec = spec)),
+            parent.frame())
+        } else {
+          PCMSetAttribute(
+            name = name, value = values, object = object, member = m, spec = spec)
+          object
+        }
+      }
+    }
+  }
+}
+
+#' Combine all member attributes of a given name into a list
+#' @param object a named list object.
+#' @param name a character string denoting the name of the attribute.
+#' @return a list of attribute values
+#' @export
+PCMCombineListAttribute <- function(object, name) {
+  attrs <- list()
+  if(is.list(attr(object, name, exact = TRUE))) {
+    attrs <- attr(object, name, exact = TRUE)
+    for(i in seq_along(attrs)) {
+      if(!is.null(attrs[[i]]$enclos)) {
+        attrs[[i]]$pos <- which(!is.na(
+          PCMParamLocateInShortVector(object, "", attrs[[i]]$enclos)))
+      }
+      attrs[[i]]$member <- ""
+    }
+  }
+  members <- PCMListMembers(object, recursive = TRUE, format = "$`")
+  for(m in members) {
+    memberAttrs <- eval(parse(text = paste0(
+      "attr(object", m, ", '", name, "', exact = TRUE)")))
+
+    if(is.list(memberAttrs)) {
+      # update 'pos' fields in memberAttrs based on m and their 'enclos' fields.
+      for(i in seq_along(memberAttrs)) {
+        memberAttrs[[i]]$pos <- which(!is.na(
+          PCMParamLocateInShortVector(object, m, memberAttrs[[i]]$enclos)))
+        memberAttrs[[i]]$member <- m
+      }
+      attrs <- c(attrs, memberAttrs)
+    }
+  }
+  attrs
 }
 
 #' Fix a parameter in a PCM model
@@ -811,7 +1134,7 @@ PCMMapModelTypesToRegimes <- function(model, tree, ...) {
 
 #' @export
 PCMMapModelTypesToRegimes.PCM <- function(model, tree, ...) {
-  uniqueRegimes <- PCMTreeGetPartNames(tree)
+  uniqueRegimes <- PCMRegimes(tree)
   res <- rep(1, length(uniqueRegimes))
   names(res) <- as.character(uniqueRegimes)
   res
@@ -821,7 +1144,7 @@ PCMMapModelTypesToRegimes.PCM <- function(model, tree, ...) {
 #' Get a vector of all parameters (real and discrete) describing a model on a
 #' tree including the numerical parameters of each model regime, the integer ids
 #' of the splitting nodes defining the regimes on the tree and the integer ids of
-#' the model classes associated with each regime.
+#' the model types associated with each regime.
 #'
 #' @details This is an S3 generic.
 #' In the default implementation, the last entry in the returned vector is the
@@ -1006,6 +1329,9 @@ PCMMeanAtTime <- function(
 #'  root (default is the k x k zero matrix).
 #' @param internal a logical indicating if the per-node variance-covariances matrices for
 #' the internal nodes should be returned (see Value). Default FALSE.
+#' @param diagOnly a logical indicating if only the variance
+#' blocks for the nodes should be calculated. By default this is set to FALSE,
+#' meaning that the co-variances are calculated for all couples of nodes.
 #' @return If internal is FALSE, a (k x N) x (k x N) matrix W, such that k x k block
 #' \code{W[((i-1)*k)+(1:k), ((j-1)*k)+(1:k)]} equals the expected
 #' covariance matrix between tips i and j. Otherwise, a list with an element 'W' as described above and
@@ -1034,7 +1360,7 @@ PCMVar <- function(
   W0 = matrix(0.0, PCMNumTraits(model), PCMNumTraits(model)),
   SE = matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree)),
   metaI=PCMInfo(NULL, tree, model, verbose = verbose),
-  internal = FALSE, verbose = FALSE)  {
+  internal = FALSE, diagOnly = FALSE, verbose = FALSE)  {
   UseMethod("PCMVar", model)
 }
 
@@ -1320,7 +1646,6 @@ PCMLikDmvNorm <- function(
 #' @importFrom mvtnorm rmvnorm
 #' @seealso \code{\link{PCMLik}} \code{\link{PCMInfo}} \code{\link{PCMCond}}
 #' @examples
-#' library(data.table)
 #' N <- 10
 #' L <- 100.0
 #' tr <- ape::stree(N)
@@ -1336,19 +1661,6 @@ PCMLikDmvNorm <- function(
 #' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
 #' X <- PCMSim(tr, model, X0 = rep(0, 3))
 #'
-#' dt <- NULL
-#' for(epoch in seq(0, L, by = 1)) {
-#'   nodes <- PCMTreeLocateEpochOnBranches(tr, epoch)$nodes
-#'   dtEpoch <- as.data.table(t(X[, nodes]))
-#'   dtEpoch[, t:=epoch]
-#'   if(epoch == 0) {
-#'     dtEpoch[, lineage:="root"]
-#'   } else {
-#'     dtEpoch[, lineage:=gsub("i.*x", "x", PCMTreeGetLabels(tr)[nodes], perl = TRUE)]
-#'   }
-#'
-#'   dt <- rbindlist(list(dt, dtEpoch))
-#' }
 #'
 #' @export
 PCMSim <- function(
@@ -1403,13 +1715,14 @@ PCMSim <- function(
 #' the likelihood value was calculated. If the model contains a member called X0, this
 #' vector is used; otherwise the value of X0 maximizing the likelihood for the given
 #' model parameters is calculated by maximizing the quadratic polynomial
-#' 'X0 * L_root * X0 + m_root * X0 + r_root'.}
-#' \item{error}{A named list containing error information if a numerical or other
-#' logical error occurred during likelihood calculation (this is a list returned by
-#'  \code{\link{PCMParseErrorMessage}}.}
-#'  If an error occured during likelihood calculation, the default behavior is to
+#' 'X0 * L_root * X0 + m_root * X0 + r_root';}
+#' \item{error}{A character string with information if a numerical or other
+#' logical error occurred during likelihood calculation.}
+#' }
+#' If an error occured during likelihood calculation, the default behavior is to
 #'  return NA with a non-NULL error attribute. This behavior can be changed in
 #'  using global options:
+#'\describe{
 #'  \item{"PCMBase.Value.NA"}{Allows to specify a different NA value such as \code{-Inf} or \code{-1e20} which can be used in combination with \code{log = TRUE} when
 #'   using \code{optim} to maximize the log-likelihood;}
 #'  \item{"PCMBase.Errors.As.Warnings"}{Setting this option to FALSE will cause any
@@ -1422,7 +1735,24 @@ PCMSim <- function(
 #'   can be provided explicitly, because this is not supposed to change during a
 #'   model inference procedure such as likelihood maximization.
 #'
-#' @seealso \code{\link{PCMInfo}} \code{\link{PCMAbCdEf}} \code{\link{PCMLmr}} \code{\link{PCMSim}} \code{\link{PCMCond}} \code{\link{PCMParseErrorMessage}}
+#' @seealso \code{\link{PCMInfo}} \code{\link{PCMAbCdEf}} \code{\link{PCMLmr}} \code{\link{PCMSim}} \code{\link{PCMCond}}
+#' @examples
+#' N <- 10
+#' L <- 100.0
+#' tr <- ape::stree(N)
+#' tr$edge.length <- rep(L, N)
+#' for(epoch in seq(1, L, by = 1.0)) {
+#'   tr <- PCMTreeInsertSingletonsAtEpoch(tr, epoch)
+#' }
+#'
+#' model <- PCMBaseTestObjects$model_MixedGaussian_ab
+#'
+#' PCMTreeSetPartRegimes(tr, c(`11` = 'a'), setPartition = TRUE)
+#'
+#' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+#' X <- PCMSim(tr, model, X0 = rep(0, 3))
+#'
+#' PCMLik(X, tr, model)
 #' @export
 PCMLik <- function(
   X, tree, model,

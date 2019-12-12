@@ -2,7 +2,7 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 [![Travis build
-status](https://travis-ci.org/venelin/PCMBase.svg?branch=master)](https://travis-ci.org/venelin/PCMBase)
+status](https://travis-ci.com/venelin/PCMBase.svg?branch=master)](https://travis-ci.com/venelin/PCMBase)
 [![Coverage
 status](https://codecov.io/gh/venelin/PCMBase/branch/master/graph/badge.svg)](https://codecov.io/github/venelin/PCMBase?branch=master)
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/PCMBase?color=blue)](https://cran.r-project.org/package=PCMBase)
@@ -90,11 +90,12 @@ from the [PCMBase web-page](https://venelin.github.io/PCMBase/).
     Framework](https://venelin.github.io/PCMBase/articles/PCMCreateModel.html)
     guide
 
-The research article “Fast likelihood evaluation for multivariate
-phylogenetic comparative methods: the PCMBase R package” provides a
-general overview of PCMBase. The article is currently undergoing peer
-review for a publication and is available as a preprint from
-[arxiv](https://arxiv.org/abs/1809.09014).
+The research article “Fast likelihood calculation for multivariate
+Gaussian phylogenetic models with shifts”, published in *Theoretical
+Population Biology* provides a thorough description of the likelihood
+calculation algorithm currently implemented in PCMBase. Appendix A of
+this article gives an overview of the modular structure and the features
+of the package.
 
 The PCMBase source code is located in the [PCMBase github
 repository](https://github.com/venelin/PCMBase).
@@ -107,10 +108,10 @@ list](https://github.com/venelin/PCMBase/issues).
 To give credit to the PCMBase package in a publication, please cite the
 following article:
 
-Mitov, V., Bartoszek, K., Asimomitis, G., & Stadler, T. (2018, September
-24). Fast likelihood evaluation for multivariate phylogenetic
-comparative methods: the PCMBase R package. arXiv.org.
-<https://arxiv.org/abs/1809.09014>.
+Mitov, V., Bartoszek, K., Asimomitis, G., & Stadler, T. (2019). Fast
+likelihood calculation for multivariate Gaussian phylogenetic models
+with shifts. Theor. Popul. Biol.
+<https://doi.org/10.1016/j.tpb.2019.11.005>
 
 # Used R-packages
 
@@ -120,7 +121,7 @@ The PCMBase R-package uses the following 3rd party R-packages:
     v1.12.2 (Dowle and Srinivasan 2019);
   - For algebraic manipulation: expm v0.999.4 (Goulet et al. 2018),
     mvtnorm v1.0.11 (Genz et al. 2018);
-  - For plotting: ggtree v1.15.3 (Yu and Lam 2019), ggplot2 v3.2.0
+  - For plotting: ggtree v1.15.3 (Yu and Lam 2019), ggplot2 v3.2.1
     (Wickham et al. 2018);
   - For unit-testing: testthat v2.1.1 (Wickham 2018), covr v3.2.1
     (Hester 2018);

@@ -1,9 +1,26 @@
 ---
 title: "NEWS about the PCMBase R-package"
 author: "Venelin Mitov"
-date: "11 September, 2019"
+date: "12 December, 2019"
 output: html_document
 ---
+
+# PCMBase 1.2.11
+- Updated package citation pointing to the recently published article: Mitov et al. 2019. Fast likelihood calculation for multivariate Gaussian phylogenetic models with shifts. Theoretical Population Biology. https://doi.org/10.1016/j.tpb.2019.11.005.
+- Fixed an issue causing a CRAN-check failure on one of the flavors: https://www.r-project.org/nosvn/R.check/r-devel-linux-x86_64-debian-clang/PCMBase-00check.html
+- Added functions PCMListMembers, MatchListMembers, PCMSetAttribute, PCMGetAttribute.
+- Added examples and improved documentation of the functions PCMLik and UpperTriFactor. 
+- Fixed a bug in the parsing of error messages (attribute error of the result
+from calling PCMLik).
+- Fixed a bug in PCMTreeListCladePartitions. This bug was manifesting only when nNodes > 1. Hence, previous usages in PCMFit R-package are not affected.
+- Added argument countOnly to PCMTreeListCladePartitions.
+- Added new functions PCMListMembers, MatchListMembers, PCMGetAttribute, 
+PCMSetAttribute.
+- Minor enhancement in the MixedGaussian constructor allowing to provide
+a list of PCM objects as modelTypes argument.
+- Added an argument diagOnly to PCMVar. 
+- Added an argument enclos in PCMParamLocateInShortVector.
+- Additions to the documentation.
 
 # PCMBase 1.2.10
 - Speedup of PCMApplyTransformation in the case of mixed Gaussian models. 

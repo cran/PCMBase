@@ -36,13 +36,13 @@
 #' passed as argument to \code{\link{chol}}.
 #'
 #' @return an upper triangular matrix Sigma_x, such that
-#' Sigma = Sigma_x %*% t(Sigma_x)
+#' Sigma = Sigma_x \%*\% t(Sigma_x)
 #' @examples
 #' # S is a symmetric positive definite matrix
 #' M<-matrix(rexp(9),3,3); S <- M %*% t(M)
 #'
 #' # This should return a zero matrix:
-#' UpperChol(S) %*% t(UpperChol(S)) - S
+#' UpperTriFactor(S) %*% t(UpperTriFactor(S)) - S
 #'
 #' # This should return a zero matrix too:
 #' t(chol(S)) %*% chol(S) - S
@@ -50,9 +50,10 @@
 #' # Unless S is diagonal, in the general case, this will return a
 #' # non-zero matrix:
 #' chol(S) %*% t(chol(S)) - S
-#' @seealso \code{\link{chol}}
+#' @seealso \code{\link{chol}};
+#' @seealso the option \code{PCMBase.Transpose.Sigma_x} in \code{\link{PCMOptions}}.
 #' @export
-UpperChol <- function(Sigma) {
+UpperTriFactor <- function(Sigma) {
   k <- nrow(Sigma)
   P <- matrix(0, nrow = k, ncol = k)
   ## create permutation matrix with 1s on the anti-diagonal

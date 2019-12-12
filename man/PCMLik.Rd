@@ -44,13 +44,14 @@ a numerical value with named attributes as follows:
 the likelihood value was calculated. If the model contains a member called X0, this
 vector is used; otherwise the value of X0 maximizing the likelihood for the given
 model parameters is calculated by maximizing the quadratic polynomial
-'X0 * L_root * X0 + m_root * X0 + r_root'.}
-\item{error}{A named list containing error information if a numerical or other
-logical error occurred during likelihood calculation (this is a list returned by
- \code{\link{PCMParseErrorMessage}}.}
- If an error occured during likelihood calculation, the default behavior is to
+'X0 * L_root * X0 + m_root * X0 + r_root';}
+\item{error}{A character string with information if a numerical or other
+logical error occurred during likelihood calculation.}
+}
+If an error occured during likelihood calculation, the default behavior is to
  return NA with a non-NULL error attribute. This behavior can be changed in
  using global options:
+\describe{
  \item{"PCMBase.Value.NA"}{Allows to specify a different NA value such as \code{-Inf} or \code{-1e20} which can be used in combination with \code{log = TRUE} when
   using \code{optim} to maximize the log-likelihood;}
  \item{"PCMBase.Errors.As.Warnings"}{Setting this option to FALSE will cause any
@@ -78,6 +79,24 @@ For efficiency, the argument \code{metaI}
   can be provided explicitly, because this is not supposed to change during a
   model inference procedure such as likelihood maximization.
 }
+\examples{
+N <- 10
+L <- 100.0
+tr <- ape::stree(N)
+tr$edge.length <- rep(L, N)
+for(epoch in seq(1, L, by = 1.0)) {
+  tr <- PCMTreeInsertSingletonsAtEpoch(tr, epoch)
+}
+
+model <- PCMBaseTestObjects$model_MixedGaussian_ab
+
+PCMTreeSetPartRegimes(tr, c(`11` = 'a'), setPartition = TRUE)
+
+set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
+X <- PCMSim(tr, model, X0 = rep(0, 3))
+
+PCMLik(X, tr, model)
+}
 \seealso{
-\code{\link{PCMInfo}} \code{\link{PCMAbCdEf}} \code{\link{PCMLmr}} \code{\link{PCMSim}} \code{\link{PCMCond}} \code{\link{PCMParseErrorMessage}}
+\code{\link{PCMInfo}} \code{\link{PCMAbCdEf}} \code{\link{PCMLmr}} \code{\link{PCMSim}} \code{\link{PCMCond}}
 }
