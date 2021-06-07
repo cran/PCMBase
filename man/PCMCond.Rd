@@ -4,8 +4,13 @@
 \alias{PCMCond}
 \title{Conditional distribution of a daughter node given its parent node}
 \usage{
-PCMCond(tree, model, r = 1, metaI = PCMInfo(NULL, tree, model, verbose
-  = verbose), verbose = FALSE)
+PCMCond(
+  tree,
+  model,
+  r = 1,
+  metaI = PCMInfo(NULL, tree, model, verbose = verbose),
+  verbose = FALSE
+)
 }
 \arguments{
 \item{tree}{a phylo object with N tips.}
@@ -18,8 +23,9 @@ calculated (see also Details).}
 
 \item{metaI}{a list returned from a call to \code{PCMInfo(X, tree, model, SE)},
 containing meta-data such as N, M and k. Alternatively, this can be a
-function object that returns such a list, e.g. the function\code{PCMInfo}
-or the function \code{PCMInfoCpp} from the \code{PCMBaseCpp} package.}
+character string naming a function or a function object that returns such
+a list, e.g. the function\code{PCMInfo} or the function \code{PCMInfoCpp}
+from the \code{PCMBaseCpp} package.}
 
 \item{verbose}{logical indicating if some debug-messages should printed.}
 }

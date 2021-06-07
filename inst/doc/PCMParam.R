@@ -1,9 +1,9 @@
-## ----setup---------------------------------------------------------------
+## ----setup--------------------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(abind)
 library(PCMBase)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 OU <- PCM("OU", k = 3, regimes = c("a", "b"))
 class(OU$X0)
 class(OU$H)
@@ -11,7 +11,7 @@ class(OU$Theta)
 class(OU$Sigma_x)
 class(OU$Sigmae_x)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 OU2 <- PCM(
   paste0(
     "OU_", 
@@ -27,7 +27,7 @@ class(OU2$Theta)
 class(OU2$Sigma_x)
 class(OU2$Sigmae_x)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 BMOU <- MixedGaussian(
   k = 3, 
   modelTypes = c(
@@ -42,7 +42,7 @@ class(BMOU$Sigmae_x)
 names(BMOU$a)
 names(BMOU$b)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 BMOU2 <- MixedGaussian(
   k = 3, 
   modelTypes = c(
@@ -71,7 +71,7 @@ names(BMOU2$b)
 PCMParamCount(BMOU)
 PCMParamCount(BMOU2)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 M <- structure(
   rbind(c(0.2, 0.5, 1.2),
         c(0, 0.1, 0.02),
@@ -81,7 +81,7 @@ M <- structure(
 Mtransf <- PCMApplyTransformation(M)
 Mtransf
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # Diagonal
 Hs1 <- structure(
   rbind(c(0.2, 0, 0),
@@ -112,7 +112,7 @@ PCMApplyTransformation(Hs3)
 eigen(PCMApplyTransformation(Hs3))$values
 
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 modelObject <- PCM("BM", k = 2L, regimes = c("a", "b", "c"))
 
 # let's assign some values to the model parameters:
@@ -121,19 +121,19 @@ PCMParamLoadOrStore(modelObject, vec, offset = 0, load=TRUE)
 
 str(modelObject)
 
-## ---- results='asis'-----------------------------------------------------
-options(digits = 0)
+## ---- results='asis'----------------------------------------------------------
+options(digits = 1)
 print(
   PCMTable(modelObject, addTransformed = FALSE, removeUntransformed = FALSE), 
   xtable = TRUE, type='html')
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMModels(parentClass = "BM")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMListParameterizations(structure(0.0, class="BM"))$Sigmae_x
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # 1. Filter the list of parametrizations to avoid generating too many S3 methods.
 # (note that we could do the same type of filtering for the other parameters).
 listParameterizationsBM <- PCMListParameterizations(structure(0.0, class="BM"))
@@ -150,10 +150,10 @@ print(dtParameterizations)
 PCMGenerateParameterizations(structure(0.0, class="BM"), 
                              tableParameterizations = dtParameterizations[])
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMModels("BM")
 
-## ---- results='asis'-----------------------------------------------------
+## ---- results='asis'----------------------------------------------------------
 BMModelGlobalSigmae <- paste0(
   "BM" , 
   "__Global_X0", 

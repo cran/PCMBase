@@ -1,4 +1,4 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(ape)
 library(PCMBase)
@@ -10,41 +10,41 @@ if(!requireNamespace("ggtree")) {
       install.packages("BiocManager")
     BiocManager::install("ggtree", version = "3.9")
   }, silent = TRUE)
-  if(class(status.ggtree == "try-error")) {
+  if(class(status.ggtree) == "try-error") {
     stop(
       "The ggtree installation did not succeed. The vignette cannot be built.")
   }
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # scroll to the right in the following listing to see the full model type names 
 # and their corresponding alias:
 PCMDefaultModelTypes()
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMFindMethod(PCMDefaultModelTypes()["A"], "PCMCond")
 # The complex maths is implemented in the function PCMCondVOU. You can see its 
 # R-code by typing :
 # PCMBase::PCMCondVOU
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 modelBM <- PCM(model = "BM", k = 2)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 modelBM
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 modelBM.ab <- PCM("BM", k = 2, regimes = c("a", "b"))
 modelBM.ab
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 modelBM.ab$X0[] <- c(5, 2)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMParamCount(modelBM)
 PCMParamCount(modelBM.ab)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # in regime 'a' the traits evolve according to two independent BM processes (starting from the global vecto X0).
 modelBM.ab$Sigma_x[,, "a"] <- rbind(c(1.6, 0),
                                   c(0, 2.4))
@@ -56,7 +56,7 @@ modelBM.ab$Sigma_x[,, "b"] <- rbind(c(1.6, .8),
 modelBM.ab$Sigmae_x[,, "b"] <- rbind(c(.1, 0),
                                    c(0, .4))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 param <- double(PCMParamCount(modelBM.ab))
 
 # load the current model parameters into param
@@ -74,11 +74,11 @@ PCMParamLoadOrStore(modelBM.ab, param2, offset = 0, load=TRUE)
 
 print(modelBM.ab)
 
-## ---- results='asis'-----------------------------------------------------
+## ---- results='asis'----------------------------------------------------------
 options(digits = 2)
 print(PCMTable(modelBM.ab), xtable = TRUE, type="html")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 model.OU.BM <- MixedGaussian(
   k = 3, 
   modelTypes = c(
@@ -98,7 +98,7 @@ model.OU.BM <- MixedGaussian(
     class = c("MatrixParameter", "_Omitted"), 
     description = "upper triangular factor of the non-phylogenetic variance-covariance"))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 model.OU.BM$X0[] <- c(NA, NA, NA)
 model.OU.BM$`a`$H[,,1] <- cbind(
   c(.1, -.7, .6), 
@@ -115,10 +115,10 @@ model.OU.BM$`b`$Sigma_x[,,1] <- cbind(
   c(1, 0.3, 0), 
   c(0.4, 0.5, 0.3))
 
-## ---- results='asis'-----------------------------------------------------
+## ---- results='asis'----------------------------------------------------------
 print(PCMTable(model.OU.BM), xtable = TRUE, type="html")
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # make results reproducible
 set.seed(2, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
@@ -150,13 +150,13 @@ palette <- PCMColorPalette(2, c("a", "b"))
 # which is not on CRAN:
 PCMTreePlot(tree.ab) + ggtree::geom_nodelab(size = 2)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 traits <- PCMSim(tree.ab, modelBM.ab, modelBM.ab$X0)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMLik(traits, tree.ab, modelBM.ab)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # a function of a numerical parameter vector:
 likFun <- PCMCreateLikelihood(traits, tree.ab, modelBM.ab)
 

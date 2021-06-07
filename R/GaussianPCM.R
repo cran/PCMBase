@@ -20,6 +20,15 @@ PCMParentClasses.GaussianPCM <- function(model) {
   "PCM"
 }
 
+#' Check if an object is a `GaussianPCM`
+#' @param x any object
+#' @return TRUE if x inherits from the S3 class `GaussianPCM`, FALSE otherwise.
+#'
+#' @export
+is.GaussianPCM <- function(x) {
+  inherits(x, "GaussianPCM")
+}
+
 #' @inherit PCMCond
 #' @return For GaussianPCM models, a named list with the following members:
 #' \item{omega}{d}
@@ -291,6 +300,8 @@ PCMSim.GaussianPCM <- function(
     X = NULL, tree = tree, model = model, SE = SE, verbose = verbose),
   verbose = FALSE) {
 
+  tree <- PCMTree(tree)
+
   if(is.Transformable(model)) {
     model <- PCMApplyTransformation(model)
   }
@@ -299,7 +310,8 @@ PCMSim.GaussianPCM <- function(
     stop(paste('GaussianPCM.R:PCMSim:: X0 must be of length', metaI$k, '.'))
   }
 
-  values <- matrix(0, nrow=metaI$k, ncol=dim(tree$edge)[1]+1)
+  values <- matrix(0, nrow = metaI$k, ncol = dim(tree$edge)[1]+1,
+                   dimnames = list(NULL, PCMTreeGetLabels(tree)))
   values[, metaI$N + 1] <- X0
 
   preord <- metaI$preorder
@@ -363,9 +375,18 @@ PCMLik.GaussianPCM <- function(
     model <- PCMApplyTransformation(model)
   }
 
-  if(is.function(metaI)) {
-    metaI <- metaI(
-      X = X, tree = tree, model = model, SE = SE, verbose = verbose)
+  metaI <- if(is.character(metaI)) {
+    metaIFun <- try(eval(parse(text = metaI)), silent = TRUE)
+    if(!is.function(metaIFun)) {
+      warning(paste0("PCMLik.GaussianPCM:: Could not find function ", metaI,
+                     ". Using PCMBase::PCMInfo."))
+      metaIFun <- PCMInfo
+    }
+    metaI <- metaIFun(X = X, tree = tree, model = model, SE = SE)
+  } else if(is.function(metaI)) {
+    metaI(X = X, tree = tree, model = model, SE = SE)
+  } else {
+    metaI
   }
 
   # will change this value if there is no error
@@ -462,11 +483,17 @@ PCMLik.GaussianPCM <- function(
       X0[k0] <- model$X0[k0]
     }
 
-    loglik <- try(X0[k0] %*% L0[k0,k0,drop=FALSE] %*% X0[k0] + m0[k0] %*% X0[k0] + r0, silent = TRUE)
+    loglik <- try(
+      X0[k0] %*% L0[k0,k0,drop=FALSE] %*% X0[k0] + m0[k0] %*% X0[k0] + r0,
+      silent = TRUE)
+
     if(inherits(loglik, "try-error")) {
       err <- paste0(
-        "PCMLik.GaussianPCM:: There was a problem calculating loglik from X0 and the coefficients L,m,r. ", "X0=", toString(X0), "L0=", toString(L0), "; m0=", toString(m0), "; r0=", r0,
-        ". Error message from call to X0 %*% L0 %*% X0 + m0 %*% X0 + r0:", loglik, "\n")
+        "PCMLik.GaussianPCM:: There was a problem calculating loglik from X0 and the coefficients L,m,r. ",
+        "X0=", toString(X0), "L0=", toString(L0), "; m0=", toString(m0),
+        "; r0=", r0,
+        ". Error message from call to X0 %*% L0 %*% X0 + m0 %*% X0 + r0:",
+        loglik, "\n")
 
       errL <- PCMParseErrorMessage(err)
       if(getOption("PCMBase.Raise.Lik.Errors", TRUE)) {
@@ -488,7 +515,11 @@ PCMLik.GaussianPCM <- function(
 
     if(inherits(value, "try-error")) {
       err <- paste0(
-        "PCMLik.GaussianPCM:: There was a problem calculating value from loglik=", toString(loglik), ". Error message from call to as.vector(if(log) loglik else exp(loglik)):", value, "; print(model):",
+        "PCMLik.GaussianPCM:: There was a problem calculating value from loglik=",
+        toString(loglik),
+        ". Error message from call to as.vector(if(log) loglik else exp(loglik)):",
+        value,
+        "; print(model):",
         do.call(paste, c(as.list(capture.output(print(model))), list(sep="\n"))))
 
       errL <- PCMParseErrorMessage(err)
@@ -566,7 +597,7 @@ PCMLikTrace.GaussianPCM <- function(
         trace[[name]]
       } else if(is.array(trace[[name]]) && length(dim(trace[[name]])) == 3) {
         lapply(seq_len(dim(trace[[name]])[3]), function(i) {
-          trace[[name]][,,i]
+          as.matrix(trace[[name]][,,i])
         })
       } else if(is.array(trace[[name]]) && length(dim(trace[[name]])) == 2) {
         lapply(seq_len(dim(trace[[name]])[2]), function(i) {
@@ -620,7 +651,7 @@ PCMLikTrace.GaussianPCM <- function(
       }
       x
     }
-    x <- as.character(x)
+    x <- as.character(round(x, digits = getOption("digits", default = 2)))
     mat <- xtable(
       as.matrix(x), align=rep("", ncol(as.matrix(x)) + 1),
       digits = getOption("digits", default = 2))
@@ -752,19 +783,6 @@ PCMLikTrace.GaussianPCM <- function(
   traceTable[, `\\hat{X}_i`:=lapply(seq_len(.N), function(nodeId) {
     if(nodeId <= metaI$N) {
       "ND"
-    # } else if(nodeId == metaI$N+1) {
-    #   if(is.null(model$X0) || isTRUE(all(is.na(model$X0)))) {
-    #     # set the root value to the one that maximizes the likelihood
-    #     X0 <- try(solve(
-    #       a=L_i[[nodeId]] + t(L_i[[nodeId]]),
-    #       b = -m_i[[nodeId]]), silent = TRUE)
-    #     if(inherits(X0, "try-error")) {
-    #       X0 <- rep(NA_real_, PCMNumTraits(model))
-    #     }
-    #     X0
-    #   } else {
-    #     model$X0
-    #   }
     } else {
       x <- rep(NaN, PCMNumTraits(model))
       if(any(is.finite(k_i[[nodeId]]))) {
@@ -791,29 +809,20 @@ PCMLikTrace.GaussianPCM <- function(
     } else {
       X0 <- `\\hat{X}_i`[[nodeId]]
 
-      # if(nodeId == metaI$N+1) {
-      #   # root node
-      #   ll <- try(X0 %*% L_i[[nodeId]] %*% X0 + m_i[[nodeId]] %*% X0 + r_i[[nodeId]], silent = TRUE)
-      #   if(inherits(ll, "try-error")) {
-      #     ll <- NA_real_
-      #   }
-      #   ll
-      # } else {
-        # internal node
-        ll <- try(
-          X0[k_i[[nodeId]]] %*%
-            L_i[[nodeId]][k_i[[nodeId]],k_i[[nodeId]], drop=FALSE] %*%
-            X0[k_i[[nodeId]]] +
+      # internal node
+      ll <- try(
+        X0[k_i[[nodeId]]] %*%
+          L_i[[nodeId]][k_i[[nodeId]],k_i[[nodeId]], drop=FALSE] %*%
+          X0[k_i[[nodeId]]] +
 
           m_i[[nodeId]][k_i[[nodeId]]] %*% X0[k_i[[nodeId]]] +
 
           r_i[[nodeId]],
-          silent = TRUE)
-        if(inherits(ll, "try-error")) {
-          ll <- NA_real_
-        }
-        ll
-      #}
+        silent = TRUE)
+      if(inherits(ll, "try-error")) {
+        ll <- NA_real_
+      }
+      ll
     }
   })]
 
@@ -1048,7 +1057,9 @@ PCMLmr.default <- function(
         r[i] <- with(AbCdEf, t(X[ki,i]) %*% A[ki,ki,i] %*% X[ki,i] +
                        t(X[ki,i]) %*% b[ki,i] + f[i])
 
-        m[kj,i] <- with(AbCdEf, d[kj,i] + matrix(E[kj,ki,i], sum(kj), sum(ki)) %*% X[ki,i])
+        m[kj,i] <- with(
+          AbCdEf,
+          d[kj,i] + matrix(E[kj,ki,i], sum(kj), sum(ki)) %*% X[ki,i])
       }
     } else {
       # edge pointing to internal nodes, for which all children

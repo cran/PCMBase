@@ -73,13 +73,13 @@ PCMModels <- function(pattern = NULL, parentClass = NULL, ...) {
 #' \code{PCMBase.Threshold.EV } or when the ratio min(svdV)/max(svdV) is below
 #' PCMBase.Threshold.SV. Default is 1e-6. Treatment
 #' of branches with singular V matrix is defined by the option \code{PCMBase.Skip.Singular}.}
-#' \item{\code{PCMBase.Threshold.Skip.Singular }}{A double indicating if a branch of shorter
+#' \item{\code{PCMBase.Threshold.Skip.Singular }}{A double indicating if an internal branch of shorter
 #' length with singular matrix V should be skipped during likelihood calculation. Setting this
 #' option to a higher value, together with a TRUE value for the option PCMBase.Skip.Singular
 #' will result in tolerating some parameter values resulting in singular variance covariance
 #' matrix of the transition distribution. Default 1e-4.}
-#' \item{\code{PCMBase.Skip.Singular }}{A logical value indicating whether branches with
-#' singular matrix V and shorter than \code{getOption("PCMBase.Threshold.Singular.Skip")}
+#' \item{\code{PCMBase.Skip.Singular }}{A logical value indicating whether internal branches with
+#' singular matrix V and shorter than \code{getOption("PCMBase.Threshold.Skip.Singular")}
 #'  should be skipped during likelihood calculation, adding their children
 #' L,m,r values to their parent node. Default TRUE. Note, that setting this option to FALSE
 #' may cause some models to stop working, e.g. the White model. Setting this option to FALSE
@@ -87,9 +87,9 @@ PCMModels <- function(pattern = NULL, parentClass = NULL, ...) {
 #' 0-length branches.}
 #' \item{\code{PCMBase.Tolerance.Symmetric }}{A double specifying the tolerance in tests
 #' for symmetric matrices. Default 1e-8; see also \code{\link{isSymmetric}}.}
-#' \item{\code{PCMBase.Lmr.mode }}{An integer code specifying the parallel likelihood calculation mode.}
-#' \item{\code{PCMBase.ParamValue.LowerLimit}}{Default lower limit value for parameters, default setting is -10.0.}
-#' \item{\code{PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal}}{Default lower limit value for parameters corresponding to non-negative diagonal elements of matrices, default setting is 0.0.}
+#' \item{\code{PCMBase.Lmr.mode} }{An integer code specifying the parallel likelihood calculation mode.}
+#' \item{\code{PCMBase.ParamValue.LowerLimit} }{Default lower limit value for parameters, default setting is -10.0.}
+#' \item{\code{PCMBase.ParamValue.LowerLimit.NonNegativeDiagonal} }{Default lower limit value for parameters corresponding to non-negative diagonal elements of matrices, default setting is 0.0.}
 #' \item{\code{PCMBase.ParamValue.UpperLimit} }{Default upper limit value for parameters, default setting is 10.0.}
 #' \item{\code{PCMBase.Transpose.Sigma_x} }{Should upper diagonal factors for variance-covariance rate matrices be transposed, e.g. should Sigma = t(Sigma_x) Sigma_x or, rather Sigma = Sigma_x t(Sigma_x)? Note that the two variants are not equal. The default is FALSE, meaning Sigma = Sigma_x t(Sigma_x). In this case, Sigma_x is not the actual upper Cholesky factor of Sigma, i.e. chol(Sigma) != Sigma_x. See also \code{\link{chol}} and \code{\link{UpperTriFactor}}. This option applies to parameters Sigma_x, Sigmae_x, Sigmaj_x and the measurement errors \code{SE[,,i]} for each measurement i when the argument \code{SE} is specified as a cube.}
 #' \item{\code{PCMBase.MaxLengthListCladePartitions} }{Maximum number of tree partitions returned by \code{\link{PCMTreeListCladePartitions}}. This option has the goal to interrupt the recursive search for new partitions in the case of calling PCMTreeListCladePartitions on a big tree with a small value of the maxCladeSize argument. By default this is set to Inf.}
@@ -174,17 +174,17 @@ PCMOptions <- function() {
 #' is called on the created object of class \code{model}.
 #' @param ... additional parameters intended for use by sub-classes of the PCM
 #' class.
-#' @return an object of S3 class as defined by the argument model.
+#' @return an object of S3 class as defined by the argument \code{model}.
 #'
 #' @details This is an S3 generic. The PCMBase package defines three methods for
 #' it:
 #' \itemize{
-#' \item{PCM.PCM:}{A default constructor for any object with a class inheriting
+#' \item{PCM.PCM: }{A default constructor for any object with a class inheriting
 #' from "PCM".}
-#' \item{PCM.character:}{A default PCM constructor from a character string
+#' \item{PCM.character: }{A default PCM constructor from a character string
 #' specifying the type of model.}
-#' \item{PCM.default:}{A default constructor called when no other constructor is
-#' found. When called this constructor raises an error message.}
+#' \item{PCM.default: }{A default constructor called when no other constructor
+#' is found. When called this constructor raises an error message.}
 #' }
 #' @seealso \code{\link{MixedGaussian}}
 #'
@@ -262,7 +262,8 @@ PCM.default <- function(
   model, modelTypes = class(model)[1], k = 1L, regimes = 1L,
   params = NULL, vecParams = NULL, offset = 0L,
   spec = NULL, ...) {
-  stop(paste0("ERR:02091:PCMBase:PCM.R:PCM.default:: You should provide a PCM object, but provided a ", class(model)[1]))
+  stop(paste0("PCM.default:: The type of the model argument is not supported: ",
+              toString(class(model))))
 }
 
 #' @export
@@ -661,12 +662,12 @@ PCMGenerateParameterizations <- function(
 #' @description This function calls `PCMListParameterizations` or
 #' `PCMListDefaultParameterizations` and generates the corresponding
 #' `PCMParentClasses` and `PCMSpecify` methods in the global environment.
-#' @param baseTypes a character vector specifying base S3-class names for which
-#' the default parametrizations (sub-classes) will be generated. Defaults to
-#' `c("BM", "OU")`.
-#' @param parametrizations a character string specifying which one of
-#' `PCMListParameterizations` or `PCMListDefaultParameterizations` should be used.
-#' This argument should be one of:
+#' @param baseTypes a named list with character string elements among
+#' \code{c("default", "all")} and names specifying base S3-class names for which
+#' the parametrizations (sub-classes) will be generated. Defaults to
+#' \code{list(BM="default", OU = "default", White = "all")}. The element value
+#' specifies which one of `PCMListParameterizations` or
+#' `PCMListDefaultParameterizations` should be used:
 #' \itemize{
 #' \item{"all"}{for calling `PCMListParameterizations`}
 #' \item{"default"}{for calling `PCMListDefaultParameterizations`}
@@ -679,9 +680,16 @@ PCMGenerateParameterizations <- function(
 #' @seealso PCMListDefaultParameterizations
 #' @export
 PCMGenerateModelTypes <- function(
-  baseTypes = c("BM", "OU"),
-  parametrizations = c("default", "all"),
+  baseTypes = list(BM="default", OU = "default", White = "all"),
   sourceFile = NULL) {
+
+  if(!is.list(baseTypes)) {
+    stop(paste0(
+      "PCMGenerateModelTypes:: baseTypes should be a list with ",
+      'with character string elements among c("default", "all") and names ',
+      'specifying base S3-class names for which the parametrizations ',
+      '(sub-classes) will be generated.'))
+  }
 
   if( !is.null(sourceFile) ) {
     write(paste0(
@@ -691,11 +699,11 @@ PCMGenerateModelTypes <- function(
       file = sourceFile)
   }
 
-  for(bt in baseTypes) {
+  for(bt in names(baseTypes)) {
     o <- structure(0.0, class=bt)
     PCMGenerateParameterizations(
       o,
-      listParameterizations = if(parametrizations[[1]] == "all") {
+      listParameterizations = if(baseTypes[[bt]] == "all") {
         PCMListParameterizations(o)
       } else {
         PCMListDefaultParameterizations(o)
@@ -1687,11 +1695,13 @@ PCMSim <- function(
 #'   Below we denote by N the number of tips, by M the total number of nodes in the
 #'   tree including tips, internal and root node, and by k - the number of traits.
 #'
-#' @param X a \code{k x N} numerical matrix with possible \code{NA} and \code{NaN} entries. Each
-#'   column of X contains the measured trait values for one species (tip in tree).
-#'   Missing values can be either not-available (\code{NA}) or not existing (\code{NaN}).
-#'   These two values have are treated differently when calculating
-#'   likelihoods: see \code{\link{PCMPresentCoordinates}}.
+#' @param X a \code{k x N} numerical matrix with possible \code{NA} and
+#' \code{NaN} entries. For \code{i=1,..., N}, the column \code{i} of X contains
+#' the measured trait values for species \code{i} (the tip with integer
+#' identifier equal to \code{i} in \code{tree}). Missing values can be either
+#' not-available (\code{NA}) or not existing (\code{NaN}). These two values are
+#' treated differently when calculating likelihoods (see
+#' \code{\link{PCMPresentCoordinates}}).
 #' @param tree a phylo object with N tips.
 #' @param model an S3 object specifying both, the model type (class, e.g. "OU") as
 #'   well as the concrete model parameter values at which the likelihood is to be
@@ -1699,12 +1709,25 @@ PCMSim <- function(
 #' @param SE a k x N matrix specifying the standard error for each measurement in
 #' X. Alternatively, a k x k x N cube specifying an upper triangular k x k
 #' factor of the variance covariance matrix for the measurement error
-#' for each node i=1, ..., N.
+#' for each tip \code{i=1, ..., N}. When \code{SE} is a matrix, the k x k
+#' measurement error variance matrix for a tip \code{i} is calculated as
+#' \code{VE[, , i] <- diag(SE[, i] * SE[, i], nrow = k)}. When \code{SE} is a
+#' cube, the way how the measurement variance matrix for a tip \code{i} is
+#' calculated depends on the runtime option \code{PCMBase.Transpose.Sigma_x}
+#' as follows:
+#' \describe{
+#' \item{if \code{getOption("PCMBase.Transpose.Sigma_x", FALSE) == FALSE} (default): }{VE[, , i] <- SE[, , i] \%*\% t(SE[, , i])}
+#' \item{if \code{getOption("PCMBase.Transpose.Sigma_x", FALSE) == TRUE}: }{VE[, , i] <- t(SE[, , i]) \%*\% SE[, , i]}
+#' }
+#' Note that the above behavior is consistent with the treatment of the model
+#' parameters \code{Sigma_x}, \code{Sigmae_x} and \code{Sigmaj_x}, which are
+#' also specified as upper triangular factors.
 #' Default: \code{matrix(0.0, PCMNumTraits(model), PCMTreeNumTips(tree))}.
 #' @param metaI a list returned from a call to \code{PCMInfo(X, tree, model, SE)},
 #'   containing meta-data such as N, M and k. Alternatively, this can be a
-#'   function object that returns such a list, e.g. the function\code{PCMInfo}
-#'   or the function \code{PCMInfoCpp} from the \code{PCMBaseCpp} package.
+#'   character string naming a function or a function object that returns such
+#'   a list, e.g. the function\code{PCMInfo} or the function \code{PCMInfoCpp}
+#'   from the \code{PCMBaseCpp} package.
 #' @param log logical indicating whether a log-likelehood should be calculated. Default
 #'  is TRUE.
 #' @param verbose logical indicating if some debug-messages should printed.
@@ -1738,12 +1761,7 @@ PCMSim <- function(
 #' @seealso \code{\link{PCMInfo}} \code{\link{PCMAbCdEf}} \code{\link{PCMLmr}} \code{\link{PCMSim}} \code{\link{PCMCond}}
 #' @examples
 #' N <- 10
-#' L <- 100.0
-#' tr <- ape::stree(N)
-#' tr$edge.length <- rep(L, N)
-#' for(epoch in seq(1, L, by = 1.0)) {
-#'   tr <- PCMTreeInsertSingletonsAtEpoch(tr, epoch)
-#' }
+#' tr <- PCMTree(ape::rtree(N))
 #'
 #' model <- PCMBaseTestObjects$model_MixedGaussian_ab
 #'
@@ -1811,9 +1829,22 @@ logLik.PCM <- function(object, ...) {
     stop("logLik.PCM:: When calling logLik.PCM on a model object should have an attribute called 'tree' of class phylo.")
   }
 
-  if(is.function(attr(object, "PCMInfoFun", exact = TRUE)) ) {
+  if( is.character(attr(object, "PCMInfoFun", exact = TRUE)) ) {
+    metaIFun <- try(
+      eval(parse(text = attr(object, "PCMInfoFun", exact = TRUE))),
+      silent = TRUE)
+    if(!is.function(metaIFun)) {
+      warning(paste0("logLik.PCM:: The expression ",
+                     attr(object, "PCMInfoFun", exact = TRUE),
+                     " does not evaluate to a function. Using PCMInfo"))
+      metaIFun <- PCMInfo
+    }
     value <- PCMLik(
-      X, tree, object, SE, metaI = attr(object, "PCMInfoFun", exact = TRUE)(X, tree, object, SE), log = TRUE)
+      X, tree, object, SE, metaI = metaIFun(X, tree, object, SE), log = TRUE)
+  } else if(is.function(attr(object, "PCMInfoFun", exact = TRUE)) ) {
+    value <- PCMLik(
+      X, tree, object, SE, metaI = attr(object, "PCMInfoFun", exact = TRUE)(
+        X, tree, object, SE), log = TRUE)
   } else if(is.list(attr(object, "PCMInfoFun", exact = TRUE))) {
     # In this case, it is assumed that attr(object, "PCMInfoFun", exact = TRUE) is
     # the result from calling the PCMInfoFun on the model (object) X, tree and data.
@@ -1985,7 +2016,7 @@ PCMInfo.PCM <- function(
     }
 
   } else {
-    stop("SE should be a k x N matrix or a k x k x N array.")
+    stop("PCMInfo:: SE should be a k x N matrix or a k x k x N array.")
   }
 
   res <- list(
@@ -2041,9 +2072,20 @@ PCMCreateLikelihood <- function(
   metaI = PCMInfo(X, tree, model, SE),
   positiveValueGuard = Inf) {
 
-  if(is.function(metaI)) {
-    metaI <- metaI(X, tree, model, SE)
+  metaI <- if(is.character(metaI)) {
+    metaIFun <- try(eval(parse(text = metaI)), silent = TRUE)
+    if(!is.function(metaIFun)) {
+      warning(paste0("PCMCreateLikelihood:: The expression ", metaI,
+                     " does not evaluate to a function. Using PCMInfo."))
+      metaIFun <- PCMInfo
+    }
+    metaI <- metaIFun(X = X, tree = tree, model = model, SE = SE)
+  } else if(is.function(metaI)) {
+    metaI(X = X, tree = tree, model = model, SE = SE)
+  } else {
+    metaI
   }
+
   value.NA <- PCMOptions()$PCMBase.Value.NA
 
   function(p, log = TRUE) {

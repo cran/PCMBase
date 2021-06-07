@@ -15,7 +15,7 @@ bibliography: REFERENCES.bib
 ---
 
 <!--
-# Copyright 2016 Venelin Mitov
+# Copyright 2016-2021 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -225,7 +225,7 @@ str(modelObject)
 Now let's print the model parameters as a table:
 
 ```{r, results='asis'}
-options(digits = 0)
+options(digits = 1)
 print(
   PCMTable(modelObject, addTransformed = FALSE, removeUntransformed = FALSE), 
   xtable = TRUE, type='html')

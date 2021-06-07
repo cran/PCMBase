@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(abind)
 library(ape)
@@ -11,23 +11,23 @@ if(!requireNamespace("ggtree")) {
       install.packages("BiocManager")
     BiocManager::install("ggtree", version = "3.9")
   }, silent = TRUE)
-  if(class(status.ggtree == "try-error")) {
+  if(class(status.ggtree) == "try-error") {
     stop(
       "The ggtree installation did not succeed. The vignette cannot be built.")
   }
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMParentClasses.BM_drift <- function(model) {
   c("GaussianPCM", "PCM")
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMDescribe.BM_drift <- function(model, ...) {
   "Brownian motion model with drift"
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMCond.BM_drift <- function(
   tree, model, r = 1, metaI = PCMInfo(NULL, tree, model, verbose = verbose),
   verbose=FALSE) {
@@ -60,7 +60,7 @@ PCMCond.BM_drift <- function(
   list(omega = omega, Phi = Phi, V = V)
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMDescribeParameters.BM_drift <- function(model, ...) {
   list(
     X0 = "trait values at the root",
@@ -70,7 +70,7 @@ PCMDescribeParameters.BM_drift <- function(model, ...) {
 		or the variance of the measurement error")
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMListParameterizations.BM_drift <- function(model, ...) {
   list(
     X0 = list(
@@ -100,7 +100,7 @@ PCMListParameterizations.BM_drift <- function(model, ...) {
   )
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMListDefaultParameterizations.BM_drift <- function(model, ...) {
   list(
     X0 = list(
@@ -121,7 +121,7 @@ PCMListDefaultParameterizations.BM_drift <- function(model, ...) {
   )
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 PCMSpecify.BM_drift <- function(model, ...) {
   spec <- list(
     X0 = structure(0.0, class = c('VectorParameter', '_Global'),
@@ -141,7 +141,7 @@ PCMSpecify.BM_drift <- function(model, ...) {
   spec
 }
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 X0 <- c(5, 2, 1) ## root state
   
 ## in regime a traits evolve independently
@@ -164,7 +164,7 @@ PCMBase_model_BM_drift <- PCM("BM_drift", k = 3, regimes = c("a", "b"),
 params = list(X0 = X0,h_drift = h_drift[,,drop=FALSE],
 Sigma_x = Sigma_x[,,,drop=FALSE],Sigmae_x = Sigmae_x[,,,drop=FALSE]))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # make results reproducible
 set.seed(2, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
@@ -196,16 +196,16 @@ palette <- PCMColorPalette(2, c("a", "b"))
 # which is not on CRAN:
 PCMTreePlot(tree.ab) + ggtree::geom_nodelab(size = 2)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 mData<-PCMSim(tree.ab, PCMBase_model_BM_drift, X0)[,1:N] ## we only want the tip data
 ## NOTE that observations from different species are in the columns NOT in the rows as 
 ## in other software
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 log_lik<- PCMLik(mData, tree.ab, PCMBase_model_BM_drift)
 print(log_lik[1]) ## we just want to print the log-likelihood without the attributes
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 ## create an vector of appropriate length to store the vectorized model parameters
 v_param <- double(PCMParamCount(PCMBase_model_BM_drift))
 

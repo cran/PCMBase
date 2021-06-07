@@ -123,7 +123,16 @@ PCMTree <- function(tree) {
     class(tree) <- c("PCMTree", class(tree))
 
     if(is.null(tree$node.label)) {
-      PCMTreeSetLabels(tree)
+      if(!is.null(tree$tip.label)) {
+        PCMTreeSetLabels(
+          tree, labels = c(as.character(tree$tip.label),
+                           as.character(seq(PCMTreeNumTips(tree) + 1L,
+                                            PCMTreeNumNodes(tree), by = 1L))))
+      } else {
+        # set tip and node labels to 1:M
+        PCMTreeSetLabels(tree)
+      }
+
     } else if(length(unique(tree$node.label)) != length(tree$node.label)) {
       stop(
         paste(
@@ -313,19 +322,55 @@ PCMTreeSetLabels <- function(
   }
 }
 
-#' Get a vector of the tip and node labels in a tree
+#' Node labels of a tree
+#'
+#' Get the character labels of the tips, root and internal nodes in the tree
+#' (see Functions below).
+#'
+#' @describeIn PCMTreeGetLabels Get all labels in the order (tips,root,internal).
+#'
 #' @param tree a phylo object
 #' @return a character vector
 #' @export
 PCMTreeGetLabels <- function(tree) {
   if(!inherits(tree, "phylo")) {
     stop(
-      "ERR:02650:PCMBase:PCMTree.R:PCMTreeGetLabels:: argument tree should be a phylo.")
+      "PCMTreeGetLabels:: argument tree should be a phylo.")
   }
   if(is.null(tree$node.label)) {
-    stop("ERR:02651:PCMBase:PCMTree.R:PCMTreeGetLabels:: the tree has no node.label member assigned.")
+    stop("PCMTreeGetLabels:: the tree has no node.label member assigned.")
   }
   c(tree$tip.label, tree$node.label)
+}
+
+#' @describeIn PCMTreeGetLabels Get the root label
+#' @export
+PCMTreeGetRootLabel <- function(tree) {
+  if(is.null(tree$node.label)) {
+    stop("PCMTreeGetRootLabel:: the tree has no node.label member assigned.")
+  } else {
+    tree$node.label[1L]
+  }
+}
+
+#' @describeIn PCMTreeGetLabels Get the internal node labels
+#' @export
+PCMTreeGetNodeLabels <- function(tree) {
+  if(is.null(tree$node.label)) {
+    stop("PCMTreeGetNodeLabels:: the tree has no node.label member assigned.")
+  } else {
+    tree$node.label[-1L]
+  }
+}
+
+#' @describeIn PCMTreeGetLabels Get the tip labels
+#' @export
+PCMTreeGetTipLabels <- function(tree) {
+  if(is.null(tree$tip.label)) {
+    stop("PCMTreeGetTipLabels:: the tree has no tip.label member assigned.")
+  } else {
+    tree$tip.label
+  }
 }
 
 #' Get the node numbers associated with tip- or node-labels in a tree
@@ -339,8 +384,8 @@ PCMTreeGetLabels <- function(tree) {
 #'
 #' @examples
 #' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
-#' PCMTreeMatchLabels(PCMTree(ape::rtree(20)), c("1", "15", "21", "39"))
-#' PCMTreeMatchLabels(PCMTree(ape::rtree(20)), c("1", "45"), stopIfNotFound = FALSE)
+#' PCMTreeMatchLabels(PCMTree(ape::rtree(20)), c("t1", "t15", "21", "39"))
+#' PCMTreeMatchLabels(PCMTree(ape::rtree(20)), c("t1", "45"), stopIfNotFound = FALSE)
 #' @export
 PCMTreeMatchLabels <- function(tree, labels, stopIfNotFound = TRUE) {
   allLabels <- PCMTreeGetLabels(tree)
@@ -822,12 +867,11 @@ PCMTreeGetRegimesForNodes <- function(
 
 #' A list of all possible clade partitions of a tree with a number of splitting nodes
 #'
-#' @details Each subset of \code{nNodes} distinct internal or tip nodes
-#' defines a partitioning of the branches of the tree into \code{nNodes+1} blocks.
-#' This function generates partitions in which \code{nNode} of the blocks
-#' are monophyletic complete groups (clades), while the \code{(nNodes+1)}'th block
-#' is a subtree originating at the root with tips ending at the rooting nodes of
-#' the \code{nNode} clades, eventually containing a clade of tips.
+#' Each subset of \code{nNodes} distinct internal or tip nodes
+#' defines a partition of the branches of the tree into \code{nNodes+1} blocks
+#' called parts. This function generates partitions where each part has
+#' \code{nNodes} splitting nodes and contains at least \code{minCladeSize} tips.
+#'
 #' @param tree a phylo object
 #' @param nNodes an integer giving the number of partitioning nodes. There would be
 #' \code{nNodes+1} blocks in each partition (see details).
@@ -1464,41 +1508,49 @@ PCMTreePreorder <- function(tree) {
   # number of tips
   N <- length(tree$tip.label)
 
-  # total number of nodes in the tree is the number of edges + 1 for the root
-  M <- dim(tree$edge)[1]+1
+  if(dim(tree$edge)[1L]) {
+    # a proper tree with at least one edge
 
-  ordFrom <- order(tree$edge[,1])
+    # total number of nodes in the tree is the number of edges + 1 for the root
+    M <- dim(tree$edge)[1L]+1L
 
-  # we need the ordered edges in order to easily traverse all edges starting
-  # from a given node
-  iFrom <- match(seq_len(M), tree$edge[ordFrom, 1])
+    ordFrom <- order(tree$edge[, 1L])
 
-  # the result is a vector of edge indices in the breadth-first search order
-  res <- vector(mode='integer', length = M-1)
+    # we need the ordered edges in order to easily traverse all edges starting
+    # from a given node
+    iFrom <- match(seq_len(M), tree$edge[ordFrom, 1])
 
-  # node-indices at the current level (start from the root)
-  cn <- N+1
-  j <- 1
-  while(length(cn)>0) {
-    cnNext <- c()
-    for(n in cn) {
-      # if not a tip
-      if(n > N) {
-        # indices in ordFrom of edges starting from the current node
-        if(n < M) {
-          es <- iFrom[n]:(iFrom[n+1]-1)
-        } else {
-          es <- iFrom[n]:(M-1)
+    # the result is a vector of edge indices in the breadth-first search order
+    res <- vector(mode='integer', length = M-1)
+
+    # node-indices at the current level (start from the root)
+    cn <- N+1
+    j <- 1
+    while(length(cn)>0) {
+      cnNext <- c()
+      for(n in cn) {
+        # if not a tip
+        if(n > N) {
+          # indices in ordFrom of edges starting from the current node
+          if(n < M) {
+            es <- iFrom[n]:(iFrom[n+1]-1)
+          } else {
+            es <- iFrom[n]:(M-1)
+          }
+          jNext <- j+length(es)
+          res[j:(jNext-1)] <- ordFrom[es]
+          j <- jNext
+          cnNext <- c(cnNext, tree$edge[ordFrom[es], 2])
         }
-        jNext <- j+length(es)
-        res[j:(jNext-1)] <- ordFrom[es]
-        j <- jNext
-        cnNext <- c(cnNext, tree$edge[ordFrom[es], 2])
       }
+      cn <- cnNext
     }
-    cn <- cnNext
+    res
+  } else {
+    # a tree with no edges (i.e. a single tip-tree)
+    integer(0L)
   }
-  res
+
 }
 
 #' Post-order tree traversal
@@ -1786,12 +1838,17 @@ PCMTreeSplitAtNode <- function(tree, node, tableAncestors = PCMTreeTableAncestor
     if( !(nodeLab %in% names(partRegimesClade)) ) {
       partRegimesClade <- c(regimeSplitNode, partRegimesClade)
     }
-    PCMTreeSetPartRegimes(clade, partRegimesClade, setPartition = TRUE)
+    if(nrow(clade$edge) > 0L) {
+      PCMTreeSetPartRegimes(clade, partRegimesClade, setPartition = TRUE)
+    }
 
     rest <- PCMTree(rest)
     partRegimesRest <-
       partRegimes[intersect(names(partRegimes), PCMTreeGetLabels(rest))]
-    PCMTreeSetPartRegimes(rest, partRegimesRest, setPartition = TRUE)
+    if(nrow(rest$edge) > 0L) {
+      PCMTreeSetPartRegimes(rest, partRegimesRest, setPartition = TRUE)
+    }
+
 
     if(!is.null(X)) {
       Xclade <- X[, clade$tip.label, drop = FALSE]
@@ -1937,7 +1994,9 @@ PCMTreeExtractClade <- function(tree, cladeRootNode, tableAncestors = NULL, X=NU
 PCMTreeDropClade <- function(tree, cladeRootNode, tableAncestors = NULL, X=NULL, returnList = !is.null(X), errorOnMissing = FALSE) {
   if(is.character(cladeRootNode)) {
     if(!is.character(tree$node.label)) {
-      stop(paste0("ERR:02630:PCMBase:PCMTree.R:PCMTreeClade:", cladeRootNode, ": cladeRootNode is a character string but tree$node.label is missing or not a character vector."))
+      stop(paste0("PCMTreeDropClade:", cladeRootNode,
+                  ": cladeRootNode is a character string but tree$node.label ",
+                  "is missing or not a character vector."))
     } else {
       whichNode <- which(tree$node.label == cladeRootNode)
       whichTip <- which(tree$tip.label == cladeRootNode)
@@ -1964,12 +2023,15 @@ PCMTreeDropClade <- function(tree, cladeRootNode, tableAncestors = NULL, X=NULL,
   if(is.na(cladeRootNodeNumber)) {
     skipSplit <- TRUE
     if(errorOnMissing) {
-      err <- paste0("ERR:02631:PCMBase:PCMTree.R:PCMTreeClade:", cladeRootNode, ": cladeRootNode of character-type was not found in tree$node.label")
+      err <- paste0("PCMTreeDropClade::", cladeRootNode,
+                    ": cladeRootNode of character-type was not found in tree$node.label")
     }
   } else if(cladeRootNodeNumber <= 0 || cladeRootNodeNumber > PCMTreeNumNodes(tree)) {
     skipSplit <- TRUE
     if(errorOnMissing) {
-      err <- paste0("ERR:02632:PCMBase:PCMTree.R:PCMTreeClade:", cladeRootNode, ": cladeRootNode of integer should be between 1 and M=", PCMTreeNumNodes(tree), " (the number of nodes in the tree).")
+      err <- paste0("PCMTreeDropClade::", cladeRootNode,
+                    ": cladeRootNode of integer should be between 1 and M=",
+                    PCMTreeNumNodes(tree), " (the number of nodes in the tree).")
     }
   }
 
@@ -1991,6 +2053,36 @@ PCMTreeDropClade <- function(tree, cladeRootNode, tableAncestors = NULL, X=NULL,
   res
 }
 
+#' @importFrom ape bind.tree
+#' @export
+`+.PCMTree` <- function(x, y) {
+  if( !is.PCMTree(y) ) {
+    if( !inherits(y, "phylo") ) {
+      stop("+.PCMTree:: y should be a PCMTree or a phylo object.")
+    } else {
+      y <- PCMTree(y)
+    }
+  }
+
+  if(PCMTreeNumNodes(y) > 1L) {
+    z <- bind.tree(x, y, position = if(is.null(x$root.edge)) 0 else x$root.edge)
+  } else {
+    tipy <- PCMTree(structure(
+      list(
+        edge = rbind(c(2, 1)),
+        tip.label = y$tip.label,
+        edge.length = if(is.null(y$root.edge)) 0.0 else y$root.edge,
+        Nnode=1L),
+      class="phylo"))
+    z <- bind.tree(x, tipy, position = if(is.null(x$root.edge)) 0 else x$root.edge)
+  }
+
+  z.part.regime <- c(PCMTreeGetPartRegimes(x), PCMTreeGetPartRegimes(y))
+  z.part.regime <- z.part.regime[
+    intersect(PCMTreeGetLabels(z), names(z.part.regime))]
+  PCMTreeSetPartRegimes(z, z.part.regime, setPartition = TRUE, inplace = TRUE)
+  z
+}
 
 #' Perfrorm nested extractions or drops of clades from a tree
 #' @param tree a phylo object with named tips and internal nodes
@@ -2029,17 +2121,52 @@ PCMTreeDropClade <- function(tree, cladeRootNode, tableAncestors = NULL, X=NULL,
 #'   bluePart2, palette=c(a = "red", b = "green", c = "blue", d = "magenta")) +
 #'   ggtree::geom_nodelab(angle = 45) + ggtree::geom_tiplab(angle = 45)
 #' }
+#' greenPart <- PCMTreeEvalNestedEDxOnTree("E(tree,28)", tree)
+#'
+#' bgParts <- bluePart+greenPart
+#'
+#' \donttest{
+#' PCMTreePlot(
+#'   greenPart, palette=c(a = "red", b = "green", c = "blue", d = "magenta")) +
+#'   ggtree::geom_nodelab(angle = 45) + ggtree::geom_tiplab(angle = 45)
+#' PCMTreePlot(
+#'   bluePart + greenPart, palette=c(a = "red", b = "green", c = "blue", d = "magenta")) +
+#'   ggtree::geom_nodelab(angle = 45) + ggtree::geom_tiplab(angle = 45)
+#' PCMTreePlot(
+#'   greenPart + bluePart, palette=c(a = "red", b = "green", c = "blue", d = "magenta")) +
+#'   ggtree::geom_nodelab(angle = 45) + ggtree::geom_tiplab(angle = 45)
+#' PCMTreePlot(
+#'   bgParts, palette=c(a = "red", b = "green", c = "blue", d = "magenta")) +
+#'   ggtree::geom_nodelab(angle = 45) + ggtree::geom_tiplab(angle = 45)
+#' }
 #' @export
 PCMTreeEvalNestedEDxOnTree <- function(expr, tree) {
 
   tableAncestors <- PCMTreeTableAncestors(tree)
   env <- new.env()
 
-  env$E <- function(x,node) {
-    PCMTreeExtractClade(tree = x, cladeRootNode = as.character(node), tableAncestors = tableAncestors)
+  env$A <- function(...) {
+
   }
-  env$D <- function(x,node) {
-    PCMTreeDropClade(tree = x, cladeRootNode = as.character(node), tableAncestors = tableAncestors)
+  # Extract the clade in x rooted at node
+  env$E <- function(x,node,l=0.0) {
+    res <- PCMTreeExtractClade(
+      tree = x, cladeRootNode = as.character(node),
+      tableAncestors = tableAncestors)
+    if(l > 0.0) {
+      res$root.edge <- l
+    }
+    res
+  }
+  # Drop the clade in x rooted at node
+  env$D <- function(x,node,l=0.0) {
+    res <- PCMTreeDropClade(
+      tree = x, cladeRootNode = as.character(node),
+      tableAncestors = tableAncestors)
+    if(l>0.0) {
+      res$root.edge <- l
+    }
+    res
   }
   env$x <- tree
   eval(parse(text=expr), envir = env)
@@ -2089,7 +2216,7 @@ PCMTreeLocateMidpointsOnBranches <- function(tree, threshold = 0) {
   list(nodes = nodes, positions = positions)
 }
 
-#' Insert singleton nodes on chosen edges
+#' Insert tips or singleton nodes on chosen edges
 #'
 #' @param tree a phylo object
 #' @param nodes an integer vector denoting the terminating nodes of the edges
@@ -2099,7 +2226,21 @@ PCMTreeLocateMidpointsOnBranches <- function(tree, threshold = 0) {
 #'  function several times with the longest position first and so on .
 #' @param positions a positive numeric vector of the same length as nodes
 #'  denoting the root-ward distances from nodes at which the singleton nodes
-#'  should be inserted.
+#'  should be inserted. For PCMTreeInsertTipsOrSingletons this can contains 0's and
+#'  is set by default to rep(0, length(nodes)).
+#' @param singleton (PCMTreeInsertTipsOrSingletons only) a logical indicating if a
+#' singleton node should be inserted and no tip node should be inserted.
+#' @param tipBranchLengths (PCMTreeInsertTipsOrSingletons only) positive numeric vector of the
+#' length of \code{nodes}, denoting the lengths of the new edges leading to tips.
+#' @param nodeLabels (PCMTreeInsertSingletons and PCMTreeInsertTipsOrSingletons) a
+#' character vector of the same length as \code{nodes}, indicating the names of
+#' the newly inserted nodes. These names are ignored where \code{positions} is 0. This
+#' argument is optional and default node labels will be assigned if this is not specified or set
+#' to NULL. If specified, then it should not contain node-labels already present in the tree.
+#' @param tipLabels (PCMTreeInsertTipsOrSingletons only) a character vector of the same length as
+#' \code{nodes} of the new tip-labels. This
+#' argument is optional and default tip labels will be assigned if this is not specified or set
+#' to NULL. If specified, then it should not contain tip-labels already present in the tree.
 #' @param epoch a numeric indicating a distance from the root at which a
 #' singleton node should be inserted in all lineages that are alive at that
 #' time.
@@ -2109,8 +2250,8 @@ PCMTreeLocateMidpointsOnBranches <- function(tree, threshold = 0) {
 #' that this condition is checked only in `PCMTreeInsertSingletonsAtEpoch`.
 #'
 #' @importFrom ape bind.tree drop.tip
-#' @return a modified version of tree with inserted singleton nodes at the
-#'  specified locations
+#' @return a modified copy of tree.
+#'
 #' @seealso \code{\link{PCMTreeEdgeTimes}} \code{\link{PCMTreeLocateEpochOnBranches}} \code{\link{PCMTreeLocateMidpointsOnBranches}}
 #' @examples
 #' set.seed(1, kind = "Mersenne-Twister", normal.kind = "Inversion")
@@ -2174,89 +2315,7 @@ PCMTreeLocateMidpointsOnBranches <- function(tree, threshold = 0) {
 #' }
 #' @export
 PCMTreeInsertSingletons <- function(tree, nodes, positions) {
-
-  tree <- PCMTree(tree)
-
-  M <- PCMTreeNumNodes(tree)
-  N <- PCMTreeNumTips(tree)
-  originalLabels <- PCMTreeGetLabels(tree)
-
-  if(is.character(nodes)) {
-    nodes <- match(nodes, originalLabels)
-  }
-  if(any(is.na(nodes)) ||
-     max(nodes, na.rm = TRUE) > PCMTreeNumNodes(tree) ||
-     min(nodes, na.rm = TRUE) < 1L) {
-    stop(paste0(
-      "PCMTreeInsertSingletons:: Some of the nodes were NA or they could not",
-      "be matched against nodes in tree."))
-  }
-
-  PCMTreeSetLabels(tree, paste0("x_", PCMTreeGetLabels(tree)))
-
-  names(originalLabels) <- PCMTreeGetLabels(tree)
-  partRegimeWithXLabels <- PCMTreeGetPartRegimes(tree)
-
-  edgeNames <- PCMTreeGetLabels(tree)[tree$edge[, 2]]
-
-  edgeTimes <- PCMTreeEdgeTimes(tree)
-  rownames(edgeTimes) <- edgeNames
-
-  # which edges should be processed
-  names(nodes) <- names(positions) <- PCMTreeGetLabels(tree)[nodes]
-  edgesToCut <- tree$edge[, 2] %in% nodes
-  edgesToCutNames <- edgeNames[edgesToCut]
-
-  tipTree <- list(edge = matrix(c(2, 1), nrow = 1, ncol = 2),
-                  tip.label = "y_1",
-                  node.label = "y_2",
-                  edge.length = c(1.0),
-                  Nnode = 1)
-  class(tipTree) <- "phylo"
-
-  for(edgeName in edgesToCutNames) {
-    # find the number of the ending node for the edge. DON'T USE CASHED LABELS
-    # HERE, but use PCMTreeGetLabels(tree)!
-    node <- match(edgeName, PCMTreeGetLabels(tree))
-
-    # find the position (root-ward offset from node) where to cut
-
-    # add, then drop the tipTree using ape's functions
-    tree <- bind.tree(tree, tipTree, node, positions[edgeName])
-    tree <- drop.tip(tree, "y_1", collapse.singles = FALSE)
-
-    # inserted edge
-    edgeNameNew <- paste0(
-      "i_",
-      round(edgeTimes[edgeName, 2] - positions[edgeName], 2), "_", edgeName)
-
-    tree$node.label[is.na(tree$node.label)] <- edgeNameNew
-
-    # The edge leading to the new internal node take the same part as ITS
-    # DAUGHTER edge.
-    # If the edge we just cut was leading to a partition node, then this
-    # node is no more a partition node, because the newly inserted node is
-    # its parent and it has to becomes the partition node.
-    # Also the part should be renamed. The regime for the (now renamed) part is
-    # preserved.
-    idxPartNodeInPartRegimes <- match(edgeName, names(partRegimeWithXLabels))
-    if(!is.na(idxPartNodeInPartRegimes)) {
-      names(partRegimeWithXLabels)[idxPartNodeInPartRegimes] <- edgeNameNew
-    }
-  }
-
-  PCMTreeSetPartRegimes(
-    tree, part.regime = partRegimeWithXLabels, setPartition = TRUE)
-
-  # restore original node labels
-  restoredOriginalLabels <- PCMTreeGetLabels(tree)
-  m <- match(restoredOriginalLabels, names(originalLabels))
-  restoredOriginalLabels[!is.na(m)] <- originalLabels[m[!is.na(m)]]
-
-  # restore original node-names for all old nodes
-  PCMTreeSetLabels(tree, labels = unname(restoredOriginalLabels))
-
-  tree
+  PCMTreeInsertTipsOrSingletons(tree, nodes, positions, singleton = TRUE)
 }
 
 #' @describeIn PCMTreeInsertSingletons
@@ -2293,6 +2352,154 @@ PCMTreeInsertSingletonsAtEpoch <- function(tree, epoch, minLength = 0.1) {
   }
 
 }
+
+#' @describeIn PCMTreeInsertSingletons
+#'
+#' @export
+PCMTreeInsertTipsOrSingletons <- function(
+  tree, nodes, positions = rep(0, length(nodes)),
+  singleton = FALSE, tipBranchLengths = 0.01, nodeLabels = NULL, tipLabels = NULL) {
+
+  tree <- PCMTree(tree)
+
+  M <- PCMTreeNumNodes(tree)
+  N <- PCMTreeNumTips(tree)
+  originalLabels <- PCMTreeGetLabels(tree)
+
+  if(is.character(nodes)) {
+    nodes <- match(nodes, originalLabels)
+  }
+  if(any(is.na(nodes)) ||
+     max(nodes, na.rm = TRUE) > PCMTreeNumNodes(tree) ||
+     min(nodes, na.rm = TRUE) < 1L) {
+    stop(paste0(
+      "PCMTreeInsertTipsOrSingletons:: Some of the nodes were NA or they could not",
+      "be matched against nodes in tree."))
+  }
+
+  if(!is.null(nodeLabels)) {
+    if(!(is.character(nodeLabels) && length(nodeLabels) == length(nodes))) {
+      stop(paste0(
+        "PCMTreeInsertTipsOrSingletons:: nodeLabels should be NULL or a character ",
+        "vector of the same length as nodes"))
+    }
+    if(length(intersect(nodeLabels, originalLabels)) > 0) {
+      stop(paste0(
+        "PCMTreeInsertTipsOrSingletons:: some labels in nodeLabels are already used as labels in the tree."))
+    }
+  }
+
+  if(!is.null(tipLabels)) {
+    if(!(is.character(tipLabels) && length(tipLabels) == length(nodes))) {
+      stop(paste0(
+        "PCMTreeInsertTipsOrSingletons:: tipLabels should be NULL or a character ",
+        "vector of the same length as nodes"))
+    }
+    if(length(intersect(tipLabels, originalLabels)) > 0) {
+      stop(paste0(
+        "PCMTreeInsertTipsOrSingletons:: some labels in tipLabels are already used as labels in the tree."))
+    }
+  }
+
+  if(!is.numeric(tipBranchLengths)) {
+    stop("PCMTreeInsertTipsOrSingletons:: tipBranchLengths should be positive numeric of length 1 or equal to the length of nodes.")
+  }
+
+  if(length(tipBranchLengths) == 1) {
+    tipBranchLengths <- rep(tipBranchLengths, length(nodes))
+  } else if(length(tipBranchLengths) != length(nodes)) {
+    stop("PCMTreeInsertTipsOrSingletons:: tipBranchLengths should be positive numeric of length 1 or equal to the length of nodes.")
+  } else if(isTRUE(any(tipBranchLengths) < 0)) {
+    stop("PCMTreeInsertTipsOrSingletons:: all entries in tipBranchLengths should be non-negative.")
+  }
+
+  PCMTreeSetLabels(tree, paste0("x_", PCMTreeGetLabels(tree)))
+
+  names(originalLabels) <- PCMTreeGetLabels(tree)
+  partRegimeWithXLabels <- PCMTreeGetPartRegimes(tree)
+
+  edgeNames <- PCMTreeGetLabels(tree)[tree$edge[, 2]]
+
+  edgeTimes <- PCMTreeEdgeTimes(tree)
+  rownames(edgeTimes) <- edgeNames
+
+  names(nodes) <- names(positions) <- PCMTreeGetLabels(tree)[nodes]
+
+  # which edges should be processed in order of nodes
+  edgesToCutNames <- edgeNames[match(nodes, tree$edge[, 2])]
+
+
+  for(i in seq_along(edgesToCutNames)) {
+    edgeName <- edgesToCutNames[i]
+
+    if(singleton && positions[edgeName] == 0) {
+      warning("PCMTreeInsertTipsOrSingletons:: Skipping ", edgeName, " since position is 0 and singleton is set to TRUE.")
+      next
+    } else {
+      # find the number of the ending node for the edge. DON'T USE CASHED LABELS
+      # HERE, but use PCMTreeGetLabels(tree)!
+      node <- match(edgeName, PCMTreeGetLabels(tree))
+
+      # inserted edge
+      edgeNameNew <- if(!is.null(nodeLabels)) {
+        nodeLabels[i]
+      } else {
+        paste0(
+          "i_",
+          round(edgeTimes[edgeName, 2] - positions[edgeName], 2), "_", edgeName)
+      }
+
+      tipLabelNew <- if(!is.null(tipLabels)) {
+        tipLabels[i]
+      } else {
+        paste0("t", "_", edgeNameNew)
+      }
+
+      tipTree <- structure(
+        list(edge = matrix(c(2, 1), nrow = 1, ncol = 2),
+             tip.label = tipLabelNew,
+             edge.length = tipBranchLengths[i],
+             Nnode = 1),
+        class = "phylo")
+
+      # bind the tipTree
+      tree <- bind.tree(tree, tipTree, node, positions[edgeName])
+      if(singleton) {
+        # drop the tip, without removing its singleton parent node
+        tree <- drop.tip(tree, tipLabelNew, collapse.singles = FALSE)
+      }
+
+      tree$node.label[is.na(tree$node.label)] <- edgeNameNew
+
+      # The edge leading to the new internal node take the same part as ITS
+      # DAUGHTER edge.
+      # If the edge we just cut was leading to a partition node, then this
+      # node is no more a partition node, because the newly inserted node is
+      # its parent and it has to becomes the partition node.
+      # Also the part should be renamed. The regime for the (now renamed) part is
+      # preserved.
+      idxPartNodeInPartRegimes <- match(edgeName, names(partRegimeWithXLabels))
+      if(!is.na(idxPartNodeInPartRegimes)) {
+        names(partRegimeWithXLabels)[idxPartNodeInPartRegimes] <- edgeNameNew
+      }
+    }
+
+  }
+
+  PCMTreeSetPartRegimes(
+    tree, part.regime = partRegimeWithXLabels, setPartition = TRUE)
+
+  # restore original node labels
+  restoredOriginalLabels <- PCMTreeGetLabels(tree)
+  m <- match(restoredOriginalLabels, names(originalLabels))
+  restoredOriginalLabels[!is.na(m)] <- originalLabels[m[!is.na(m)]]
+
+  # restore original node-names for all old nodes
+  PCMTreeSetLabels(tree, labels = unname(restoredOriginalLabels))
+
+  tree
+}
+
 
 #' Find the nearest node to a given time from the root (epoch) on each lineage crossing this epoch
 #' @param tree a phylo
@@ -2405,7 +2612,17 @@ PCMTreePlot <- function(
         node = N+1L,
         regime = tree$part.regime[PCMTreeGetPartsForNodes(tree, N+1L)]))
 
-    plotTree <- ggtree::`%<+%`(ggtree::ggtree(tree, ...), data)
+    # Try to prevent plotting errors due to bugs in the function ladderize in ape package
+    # only changing default values here.
+    listParams <- c(list(tr = tree), list(...))
+    if(!"ladderize" %in% names(listParams)) {
+      listParams[["ladderize"]] <- FALSE
+    }
+    if(!"right" %in% names(listParams)) {
+      listParams[["right"]] <- TRUE
+    }
+
+    plotTree <- ggtree::`%<+%`(do.call(ggtree::ggtree, listParams), data)
 
     plotTree + aes(color = regime) +
       scale_color_manual(name = "regime", values = palette)

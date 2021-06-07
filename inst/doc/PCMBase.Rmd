@@ -15,7 +15,7 @@ bibliography: REFERENCES.bib
 ---
 
 <!--
-# Copyright 2016 Venelin Mitov
+# Copyright 2016-2021 Venelin Mitov
 #
 # This file is part of PCMBase.
 #
@@ -45,7 +45,7 @@ if(!requireNamespace("ggtree")) {
       install.packages("BiocManager")
     BiocManager::install("ggtree", version = "3.9")
   }, silent = TRUE)
-  if(class(status.ggtree == "try-error")) {
+  if(class(status.ggtree) == "try-error") {
     stop(
       "The ggtree installation did not succeed. The vignette cannot be built.")
   }

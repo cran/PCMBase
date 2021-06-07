@@ -4,14 +4,18 @@
 \alias{MixedGaussian}
 \title{Create a multi-regime Gaussian model (MixedGaussian)}
 \usage{
-MixedGaussian(k, modelTypes, mapping,
-  className = paste0("MixedGaussian_", do.call(paste0,
-  as.list(mapping))), X0 = structure(0, class = c("VectorParameter",
-  "_Global"), description = "trait values at the root"), ...,
-  Sigmae_x = structure(0, class = c("MatrixParameter",
-  "_UpperTriangularWithDiagonal", "_WithNonNegativeDiagonal", "_Global"),
-  description =
-  "Upper triangular factor of the non-phylogenetic variance-covariance"))
+MixedGaussian(
+  k,
+  modelTypes,
+  mapping,
+  className = paste0("MixedGaussian_", do.call(paste0, as.list(mapping))),
+  X0 = structure(0, class = c("VectorParameter", "_Global"), description =
+    "trait values at the root"),
+  ...,
+  Sigmae_x = structure(0, class = c("MatrixParameter", "_UpperTriangularWithDiagonal",
+    "_WithNonNegativeDiagonal", "_Global"), description =
+    "Upper triangular factor of the non-phylogenetic variance-covariance")
+)
 }
 \arguments{
 \item{k}{integer specifying the number of traits.}
@@ -21,7 +25,7 @@ regimes in the model and actual types of models. For convenience, different
 combinations are possible as explained below:
 \itemize{
 \item \code{modelTypes} is a (possibly named) character string vector. Each
-such string denotes a MGPM model class, e.g. the result of calling
+such string denotes a mixed Gaussian regime model class, e.g. the result of calling
 \code{MGPMDefaultModelTypes()}. In that case \code{mapping} can be either
 an integer vector with values corresponding to indices in \code{modelTypes}
 or a character string vector. If \code{mapping} is a character string vector,

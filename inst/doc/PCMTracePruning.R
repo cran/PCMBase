@@ -1,4 +1,4 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 library(ape)
 library(PCMBase)
@@ -12,7 +12,7 @@ if(!requireNamespace("ggtree")) {
       install.packages("BiocManager")
     BiocManager::install("ggtree", version = "3.9")
   }, silent = TRUE)
-  if(class(status.ggtree == "try-error")) {
+  if(class(status.ggtree) == "try-error") {
     stop(
       "The ggtree installation did not succeed. The vignette cannot be built.")
   }
@@ -22,7 +22,7 @@ options(digits = 2)
 # specify either 'html' or 'latex'
 tableOutputType <- 'html' # 'latex' is used for generating the S-tables in the ms.
 
-## ----treeAndData---------------------------------------------------------
+## ----treeAndData--------------------------------------------------------------
 library(ape); 
 library(PCMBase);
 
@@ -44,7 +44,7 @@ X <- cbind(
 
 colnames(X) <- as.character(1:5)
 
-## ----PlotTreeAndData, include=FALSE, eval=FALSE--------------------------
+## ----PlotTreeAndData, include=FALSE, eval=FALSE-------------------------------
 #  library(tikzDevice); library(ggtree); library(ggplot2); library(data.table);
 #  # 4. Plotting the tree, the data and the active coordinate vectors:
 #  tipValueLabels <- data.table(
@@ -80,7 +80,7 @@ colnames(X) <- as.character(1:5)
 #    scale_x_continuous(limits = c(0, 5.2)) + scale_y_continuous(limits = c(0.8, 5.2))
 #  dev.off()
 
-## ---- results='asis'-----------------------------------------------------
+## ---- results='asis'----------------------------------------------------------
 model.OU.BM <- MixedGaussian(
   k = nrow(X), 
   modelTypes = c(
@@ -113,7 +113,7 @@ print(
   PCMTable(model.OU.BM, removeUntransformed = FALSE), 
   xtable = TRUE, type=tableOutputType)
 
-## ----add-to-PCMBaseTestObjects, include = FALSE, eval=FALSE--------------
+## ----add-to-PCMBaseTestObjects, include = FALSE, eval=FALSE-------------------
 #  # add these objects to the PCMBaseTestObjects (needed for the coding examples).
 #  PCMBaseTestObjects[["tree"]] <- tree
 #  PCMBaseTestObjects[["X"]] <- X[, tree$tip.label]
@@ -121,7 +121,7 @@ print(
 #  
 #  usethis::use_data(PCMBaseTestObjects, overwrite = TRUE)
 
-## ---- echo = TRUE--------------------------------------------------------
+## ---- echo = TRUE-------------------------------------------------------------
 options(digits = 4)
 # Variant 1: 
 PCMLik(X[, tree$tip.label], tree, model.OU.BM)
@@ -146,23 +146,23 @@ X3 <- X
 X3[is.nan(X3)] <- NA_real_
 PCMLik(X3[, tree$tip.label], tree, model.OU.BM)
 
-## ----traceTable1R--------------------------------------------------------
+## ----traceTable1R-------------------------------------------------------------
 traceTable1 <- PCMLikTrace(X[, tree$tip.label], tree, model.OU.BM)
 traceTable1[, node:=.I]
 setkey(traceTable1, i)
 
-## ----traceTable2R--------------------------------------------------------
+## ----traceTable2R-------------------------------------------------------------
 traceTable2 <- PCMLikTrace(
   X[, tree$tip.label], tree, model.OU.BM, metaI = metaI.variant2)
 traceTable2[, node:=.I]
 setkey(traceTable2, i)
 
-## ----traceTable3R--------------------------------------------------------
+## ----traceTable3R-------------------------------------------------------------
 traceTable3 <- PCMLikTrace(X3[, tree$tip.label], tree, model.OU.BM)
 traceTable3[, node:=.I]
 setkey(traceTable3, i)
 
-## ----omegaPhiVOU---------------------------------------------------------
+## ----omegaPhiVOU--------------------------------------------------------------
 # OU parameters:
 H <- model.OU.BM$`1`$H[,,1]
 theta <- model.OU.BM$`1`$Theta[,1]
@@ -196,7 +196,7 @@ print(omega1 <- (diag(1, 3, 3)[k1, ] - expm::expm(-H*t1)[k1, ]) %*% theta[])
 print(Phi1 <- expm::expm(-H*t1)[k1, k9])
 print(V1 <- (P %*% (LambdaMat * (P_1 %*% Sigma %*% t(P_1))) %*% t(P))[k1, k1])
 
-## ----omegaPhiVBM---------------------------------------------------------
+## ----omegaPhiVBM--------------------------------------------------------------
 # BM parameter:
 Sigma <- model.OU.BM$`2`$Sigma_x[,,1] %*% t(model.OU.BM$`2`$Sigma_x[,,1])
 
@@ -215,24 +215,24 @@ print(omega2 <- as.matrix(rep(0, 3)[k2]))
 print(Phi2 <- as.matrix(diag(1, 3, 3)[k2, k6]))
 print(V2 <- as.matrix((t2*Sigma)[k2, k2]))
 
-## ----omegaPhiV1R, results='asis'-----------------------------------------
+## ----omegaPhiV1R, results='asis'----------------------------------------------
 options(digits = 2)
 cat(FormatTableAsLatex(
   traceTable1[list(pOrder), list(j, i, t_i, k_i, omega_i, Phi_i, V_i, V_1_i)], 
   type = tableOutputType))
 
-## ----omegaPhiV2R, results='asis'-----------------------------------------
+## ----omegaPhiV2R, results='asis'----------------------------------------------
 cat(FormatTableAsLatex(
   traceTable2[list(pOrder), list(j, i, t_i, k_i, omega_i, Phi_i, V_i, V_1_i)], 
   type = tableOutputType))
 
-## ----omegaPhiV3R, results='asis'-----------------------------------------
+## ----omegaPhiV3R, results='asis'----------------------------------------------
 options(digits = 2)
 cat(FormatTableAsLatex(
   traceTable3[list(pOrder), list(j, i, t_i, k_i, omega_i, Phi_i, V_i, V_1_i)], 
   type = tableOutputType))
 
-## ----AbCdEf--------------------------------------------------------------
+## ----AbCdEf-------------------------------------------------------------------
 # For tip 1. We directly apply Eq. 2, Thm 1:
 # We can safely use the real part of V1 (all imaginary parts are 0):
 print(V1)
@@ -246,22 +246,22 @@ print(C1 <- -0.5 * E1 %*% Phi1)
 print(d1 <- -E1 %*% omega1)
 print(f1 <- -0.5 * (t(omega1) %*% V1_1 %*% omega1 + sum(k1)*log(2*pi) + log(det(V1))))
 
-## ----AbCdEf1R, results='asis'--------------------------------------------
+## ----AbCdEf1R, results='asis'-------------------------------------------------
 cat(FormatTableAsLatex(
   traceTable1[list(pOrder), list(j, i, k_i, A_i, b_i, C_i, d_i, E_i, f_i)], 
   type = tableOutputType))
 
-## ----AbCdEf2R, results='asis'--------------------------------------------
+## ----AbCdEf2R, results='asis'-------------------------------------------------
 cat(FormatTableAsLatex(
   traceTable2[list(pOrder), list(j, i, k_i, A_i, b_i, C_i, d_i, E_i, f_i)], 
   type = tableOutputType))
 
-## ----AbCdEf3R, results='asis'--------------------------------------------
+## ----AbCdEf3R, results='asis'-------------------------------------------------
 cat(FormatTableAsLatex(
   traceTable3[list(pOrder), list(j, i, k_i, A_i, b_i, C_i, d_i, E_i, f_i)], 
   type = tableOutputType))
 
-## ----LmrVariant1---------------------------------------------------------
+## ----LmrVariant1--------------------------------------------------------------
 # For tip 2 with parent node 6, we use the following terms stored in Table S5:
 A2 <- matrix(-0.17)
 b2 <- 0.0
@@ -310,7 +310,7 @@ print(r86 <- f6+r6+(length(k6)/2)*log(2*pi) -
 # Because 8 is a singleton node, we immediately obtain L8, m8, r8:
 L8 <- L86; m8 <- m86; r8 <- r86;
 
-## ----Lmr1R, results='asis'-----------------------------------------------
+## ----Lmr1R, results='asis'----------------------------------------------------
 options(digits = 3)
 cat(FormatTableAsLatex(
   traceTable1[
@@ -322,7 +322,7 @@ cat(FormatTableAsLatex(
   
   type = tableOutputType))
 
-## ----Lmr2R, results='asis'-----------------------------------------------
+## ----Lmr2R, results='asis'----------------------------------------------------
 cat(FormatTableAsLatex(
   traceTable2[
     list(pOrder), 
@@ -333,7 +333,7 @@ cat(FormatTableAsLatex(
   
   type = tableOutputType))
 
-## ----Lmr3R, results='asis'-----------------------------------------------
+## ----Lmr3R, results='asis'----------------------------------------------------
 cat(FormatTableAsLatex(
   traceTable3[
     list(pOrder), 
@@ -344,7 +344,7 @@ cat(FormatTableAsLatex(
   
   type = tableOutputType))
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 # Variant 1.
 # Copy the values of L0, m0 and r0 from Table S8:
 L0 <- rbind(c(-0.192, 0.214, 0.178),
