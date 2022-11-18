@@ -6,15 +6,11 @@ library(PCMBase)
 
 if(!requireNamespace("ggtree")) {
   message("Building the vignette requires ggtree R-package. Trying to install.")
-  status.ggtree <- try({
+  try({
     if (!requireNamespace("BiocManager", quietly = TRUE))
       install.packages("BiocManager")
     BiocManager::install("ggtree", version = "3.9")
   }, silent = TRUE)
-  if(class(status.ggtree) == "try-error") {
-    stop(
-      "The ggtree installation did not succeed. The vignette cannot be built.")
-  }
 }
 
 ## -----------------------------------------------------------------------------
@@ -192,9 +188,13 @@ PCMTreeSetPartRegimes(
 palette <- PCMColorPalette(2, c("a", "b"))
 
 # Plot the tree with branches colored according to the regimes.
-# The following function call works only if the ggtree package is installed, 
-# which is not on CRAN:
-PCMTreePlot(tree.ab) + ggtree::geom_nodelab(size = 2)
+# The following code works correctly only if the ggtree package is installed, 
+# which is not on CRAN.
+plTree <- PCMTreePlot(tree.ab)
+if(requireNamespace("ggtree")) {
+  plTree <- plTree + ggtree::geom_nodelab(size = 2)
+}
+plTree
 
 ## -----------------------------------------------------------------------------
 mData<-PCMSim(tree.ab, PCMBase_model_BM_drift, X0)[,1:N] ## we only want the tip data

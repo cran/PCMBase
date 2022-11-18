@@ -5,15 +5,11 @@ library(PCMBase)
 
 if(!requireNamespace("ggtree")) {
   message("Building the vignette requires ggtree R-package. Trying to install.")
-  status.ggtree <- try({
+  try({
     if (!requireNamespace("BiocManager", quietly = TRUE))
       install.packages("BiocManager")
     BiocManager::install("ggtree", version = "3.9")
   }, silent = TRUE)
-  if(class(status.ggtree) == "try-error") {
-    stop(
-      "The ggtree installation did not succeed. The vignette cannot be built.")
-  }
 }
 
 ## -----------------------------------------------------------------------------
@@ -146,9 +142,13 @@ PCMTreeSetPartRegimes(
 palette <- PCMColorPalette(2, c("a", "b"))
 
 # Plot the tree with branches colored according to the regimes.
-# The following function call works only if the ggtree package is installed, 
-# which is not on CRAN:
-PCMTreePlot(tree.ab) + ggtree::geom_nodelab(size = 2)
+# The following code works only if the ggtree package is installed, which is not on CRAN. 
+# The tree would not be depicted correctly if ggtree is not installed.
+plTree <- PCMTreePlot(tree.ab)
+if(requireNamespace("ggtree")) {
+  plTree <- plTree + ggtree::geom_nodelab(size = 2) 
+}
+plTree
 
 ## -----------------------------------------------------------------------------
 traits <- PCMSim(tree.ab, modelBM.ab, modelBM.ab$X0)
