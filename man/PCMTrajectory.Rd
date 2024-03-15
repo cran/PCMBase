@@ -55,7 +55,7 @@ Default: NULL}
 \value{
 if doPlot2D is TRUE, returns a ggplot. Otherwise a named list of two
 elements:
-\itemize{
+\describe{
 \item{dt }{a data.table with columns 'regime', 't', 'X', 'V' and 'samp'. For
 each row corresponding to time in tVar, the column samp represents a list of
 sizeSamp k-vectors.}
@@ -111,5 +111,7 @@ plb <- PCMTrajectory(
     axis.title.y = ggplot2::element_blank(),
     axis.text.y = ggplot2::element_blank(),
     axis.ticks.y = ggplot2::element_blank())
-cowplot::plot_grid(pla, plb)
+
+plot(pla)
+plot(plb)
 }

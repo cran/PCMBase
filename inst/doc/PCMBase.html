@@ -12,27 +12,56 @@
 
 <meta name="author" content="Venelin Mitov" />
 
-<meta name="date" content="2022-11-18" />
+<meta name="date" content="2024-03-15" />
 
 <title>Getting Started with the PCMBase R-package</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
-code.sourceCode > span { display: inline-block; line-height: 1.25; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-code.sourceCode > span:empty { height: 1.2em; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
-code.sourceCode { white-space: pre; position: relative; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
 }
 @media print {
-code.sourceCode { white-space: pre-wrap; }
-code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -52,7 +81,7 @@ pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-le
 div.sourceCode
   {   }
 @media screen {
-code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; font-weight: bold; } /* Alert */
 code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
@@ -108,6 +137,29 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </script>
 
 
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 <style type="text/css">body {
 background-color: #fff;
@@ -301,24 +353,30 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Getting Started with the PCMBase R-package</h1>
+<h1 class="title toc-ignore">Getting Started with the PCMBase
+R-package</h1>
 <h4 class="author">Venelin Mitov</h4>
-<h4 class="date">2022-11-18</h4>
+<h4 class="date">2024-03-15</h4>
 
 
 <div id="TOC">
 <ul>
 <li><a href="#data">Data</a></li>
-<li><a href="#models">Models</a><ul>
-<li><a href="#the-mathcalg_linv-family-of-models">The <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family of models</a></li>
-<li><a href="#example-ornstein-uhlenbeck-model-types">Example: Ornstein-Uhlenbeck model types</a></li>
+<li><a href="#models">Models</a>
+<ul>
+<li><a href="#the-mathcalg_linv-family-of-models">The <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family of
+models</a></li>
+<li><a href="#example-ornstein-uhlenbeck-model-types">Example:
+Ornstein-Uhlenbeck model types</a></li>
 <li><a href="#groups-of-model-types">Groups of model types</a></li>
 <li><a href="#creating-pcm-objects">Creating PCM objects</a></li>
 <li><a href="#model-regimes">Model regimes</a></li>
-<li><a href="#printing-models-in-the-form-of-a-table">Printing models in the form of a table</a></li>
+<li><a href="#printing-models-in-the-form-of-a-table">Printing models in
+the form of a table</a></li>
 <li><a href="#mixed-gaussian-models">Mixed Gaussian models</a></li>
 </ul></li>
-<li><a href="#simulating-data-on-a-phylogenetic-tree">Simulating data on a phylogenetic tree</a></li>
+<li><a href="#simulating-data-on-a-phylogenetic-tree">Simulating data on
+a phylogenetic tree</a></li>
 <li><a href="#calculating-likelihoods">Calculating likelihoods</a></li>
 <li><a href="#references">References</a></li>
 </ul>
@@ -344,59 +402,152 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 -->
 <div id="data" class="section level1">
 <h1>Data</h1>
-<p>The input data for the phylogenetic comparative methods covered in the PCMBase package consists of a phylogenetic tree of <span class="math inline">\(N\)</span> tips and a <span class="math inline">\(k\times N\)</span> matrix, <span class="math inline">\(X\)</span> of observed trait-values, where <span class="math inline">\(k\)</span> is the number of traits. The matrix <span class="math inline">\(X\)</span> can contain <code>NA</code>s corresponding to missing measurements and <code>NaN</code>’s corresponding to non-existing traits for some of the tips.</p>
+<p>The input data for the phylogenetic comparative methods covered in
+the PCMBase package consists of a phylogenetic tree of <span class="math inline">\(N\)</span> tips and a <span class="math inline">\(k\times N\)</span> matrix, <span class="math inline">\(X\)</span> of observed trait-values, where <span class="math inline">\(k\)</span> is the number of traits. The matrix
+<span class="math inline">\(X\)</span> can contain <code>NA</code>s
+corresponding to missing measurements and <code>NaN</code>’s
+corresponding to non-existing traits for some of the tips.</p>
 </div>
 <div id="models" class="section level1">
 <h1>Models</h1>
-<p>Given a number of traits <span class="math inline">\(k\)</span>, a <em>model</em> is defined as a set of parameters with dimensionality possibly depending on <span class="math inline">\(k\)</span> and a rule stating how these parameters are used to calculate the model likelihood for an observed tree and data and/or to simulate data along a tree. Often, we use the term <em>model type</em> to denote a family of models sharing the same rule.</p>
+<p>Given a number of traits <span class="math inline">\(k\)</span>, a
+<em>model</em> is defined as a set of parameters with dimensionality
+possibly depending on <span class="math inline">\(k\)</span> and a rule
+stating how these parameters are used to calculate the model likelihood
+for an observed tree and data and/or to simulate data along a tree.
+Often, we use the term <em>model type</em> to denote a family of models
+sharing the same rule.</p>
 <div id="the-mathcalg_linv-family-of-models" class="section level2">
-<h2>The <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family of models</h2>
-<p>Currently, PCMBase supports Gaussian model types from the so called <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family <span class="citation">(Mitov et al. 2019)</span>. Specifically, these are models representing branching stochastic processes and satisfying the following two conditions <span class="citation">(Mitov et al. 2019)</span>:</p>
+<h2>The <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family
+of models</h2>
+<p>Currently, PCMBase supports Gaussian model types from the so called
+<span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family <span class="citation">(Mitov et al. 2019)</span>. Specifically, these are
+models representing branching stochastic processes and satisfying the
+following two conditions <span class="citation">(Mitov et al.
+2019)</span>:</p>
 <ol style="list-style-type: decimal">
-<li><p>after a branching point on the tree the traits evolve independently in the two descending lineages,</p></li>
-<li><p>the distribution of the trait <span class="math inline">\(\vec{X}\)</span>, at time <span class="math inline">\(t\)</span> conditional on the value at time <span class="math inline">\(s &lt; t\)</span> is Gaussian with the mean and variance satisfying</p>
-<p>2.a The expectation depends linearly on the ancestral trait value, i.e. <span class="math inline">\(\text{E}\big[{\vec{X}(t) \vert \vec{X}(s)}\big] = \vec{\omega}_{s,t} + \mathbf{\Phi}_{s,t} \vec{X}(s)\)</span>;</p>
-<p>2.b The variance is invariant (does not depend on) with respect to the ancestral trait, i.e. <span class="math inline">\(\text{V}\big[{\vec{X}(t) \vert \vec{X}(s)}\big] = \mathbf{V}_{s,t}\)</span>,</p></li>
+<li><p>after a branching point on the tree the traits evolve
+independently in the two descending lineages,</p></li>
+<li><p>the distribution of the trait <span class="math inline">\(\vec{X}\)</span>, at time <span class="math inline">\(t\)</span> conditional on the value at time <span class="math inline">\(s &lt; t\)</span> is Gaussian with the mean and
+variance satisfying</p>
+<p>2.a The expectation depends linearly on the ancestral trait value,
+i.e. <span class="math inline">\(\text{E}\big[{\vec{X}(t) \vert
+\vec{X}(s)}\big] = \vec{\omega}_{s,t} + \mathbf{\Phi}_{s,t}
+\vec{X}(s)\)</span>;</p>
+<p>2.b The variance is invariant (does not depend on) with respect to
+the ancestral trait, i.e. <span class="math inline">\(\text{V}\big[{\vec{X}(t) \vert \vec{X}(s)}\big] =
+\mathbf{V}_{s,t}\)</span>,</p></li>
 </ol>
-<p>where <span class="math inline">\(\vec{\omega}\)</span> and the matrices <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> may depend on <span class="math inline">\(s\)</span> and <span class="math inline">\(t\)</span> but do not depend on the previous trajectory of the trait <span class="math inline">\(\vec{X}(\cdot)\)</span>.</p>
+<p>where <span class="math inline">\(\vec{\omega}\)</span> and the
+matrices <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> may depend on <span class="math inline">\(s\)</span> and <span class="math inline">\(t\)</span> but do not depend on the previous
+trajectory of the trait <span class="math inline">\(\vec{X}(\cdot)\)</span>.</p>
 </div>
 <div id="example-ornstein-uhlenbeck-model-types" class="section level2">
 <h2>Example: Ornstein-Uhlenbeck model types</h2>
-<p>As an example, let’s consider a model representing a <span class="math inline">\(k\)</span>-variate Ornstein-Uhlenbeck branching stochastic process. This is defined by the following stochastic differential equation: <span class="math display">\[\begin{equation}\label{eq:mammals:OUprocess}
-d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma}}_{\chi} dW(t). 
-\end{equation}\]</span> In the above equation, <span class="math inline">\(\vec{X}(t)\)</span> is a <span class="math inline">\(k\)</span>-dimensional real vector, <span class="math inline">\(\mathbf{H}\)</span> is a <span class="math inline">\(k\times k\)</span>-dimensional eigen-decomposable real matrix, <span class="math inline">\(\vec{\theta}\)</span> is a <span class="math inline">\(k\)</span>-dimensional real vector, <span class="math inline">\(\mathbf{\Sigma}_{\chi}\)</span> is a <span class="math inline">\(k\times k\)</span>-dimensional real positive definite matrix and <span class="math inline">\(W(t)\)</span> denotes the <span class="math inline">\(k\)</span>-dimensional standard Wiener process.</p>
-<p>Biologically, <span class="math inline">\(\vec{X}(t)\)</span> denotes the mean values of <span class="math inline">\(k\)</span> continuous traits in a species at a time <span class="math inline">\(t\)</span> from the root, the parameter <span class="math inline">\(\mathbf{\Sigma}=\mathbf{\Sigma}_{\chi}\mathbf{\Sigma}_{\chi}^T\)</span> defines the magnitude and shape of the momentary fluctuations in the mean vector due to genetic drift, the matrix <span class="math inline">\(\mathbf{H}\)</span> and the vector <span class="math inline">\(\vec{\theta}\)</span> specify the trajectory of the population mean through time. When <span class="math inline">\(\mathbf{H}\)</span> is the zero matrix, the process is equivalent to a Brownian motion process and the parameter <span class="math inline">\(\vec{\theta}\)</span> is irrelevant. When <span class="math inline">\(\mathbf{H}\)</span> has strictly positive eigenvalues, the population mean converges in the long term towards <span class="math inline">\(\vec{\theta}\)</span>, although the trajectory of this convergence can be complex.</p>
+<p>As an example, let’s consider a model representing a <span class="math inline">\(k\)</span>-variate Ornstein-Uhlenbeck branching
+stochastic process. This is defined by the following stochastic
+differential equation: <span class="math display">\[\begin{equation}\label{eq:mammals:OUprocess}
+d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma}}_{\chi}
+dW(t).
+\end{equation}\]</span> In the above equation, <span class="math inline">\(\vec{X}(t)\)</span> is a <span class="math inline">\(k\)</span>-dimensional real vector, <span class="math inline">\(\mathbf{H}\)</span> is a <span class="math inline">\(k\times k\)</span>-dimensional eigen-decomposable
+real matrix, <span class="math inline">\(\vec{\theta}\)</span> is a
+<span class="math inline">\(k\)</span>-dimensional real vector, <span class="math inline">\(\mathbf{\Sigma}_{\chi}\)</span> is a <span class="math inline">\(k\times k\)</span>-dimensional real positive
+definite matrix and <span class="math inline">\(W(t)\)</span> denotes
+the <span class="math inline">\(k\)</span>-dimensional standard Wiener
+process.</p>
+<p>Biologically, <span class="math inline">\(\vec{X}(t)\)</span> denotes
+the mean values of <span class="math inline">\(k\)</span> continuous
+traits in a species at a time <span class="math inline">\(t\)</span>
+from the root, the parameter <span class="math inline">\(\mathbf{\Sigma}=\mathbf{\Sigma}_{\chi}\mathbf{\Sigma}_{\chi}^T\)</span>
+defines the magnitude and shape of the momentary fluctuations in the
+mean vector due to genetic drift, the matrix <span class="math inline">\(\mathbf{H}\)</span> and the vector <span class="math inline">\(\vec{\theta}\)</span> specify the trajectory of
+the population mean through time. When <span class="math inline">\(\mathbf{H}\)</span> is the zero matrix, the
+process is equivalent to a Brownian motion process and the parameter
+<span class="math inline">\(\vec{\theta}\)</span> is irrelevant. When
+<span class="math inline">\(\mathbf{H}\)</span> has strictly positive
+eigenvalues, the population mean converges in the long term towards
+<span class="math inline">\(\vec{\theta}\)</span>, although the
+trajectory of this convergence can be complex.</p>
 <p>So, the OU-model defines the following set of parameters:</p>
 <ul>
-<li><span class="math inline">\(\vec{X}_{0}\)</span> (coded <code>X0</code>) : a <span class="math inline">\(k\)</span>-vector of initial values;</li>
-<li><span class="math inline">\(\mathbf{H}\)</span> (coded <code>H</code>) : a <span class="math inline">\(k\times k\)</span> matrix denoting the selection strength of the process;</li>
-<li><span class="math inline">\(\vec{\theta}\)</span> (coded <code>Theta</code>) : a <span class="math inline">\(k\)</span>-vector of long-term optimal trait values;</li>
-<li><span class="math inline">\(\mathbf{\Sigma}_{\chi}\)</span> : (coded <code>Sigma_x</code>) : a <span class="math inline">\(k\times k\)</span> matrix denoting the an upper triangular factor or the stochastic drift variance-covariances; <!-- - $\mathbf{\Sigma}_{e,\chi}$ (coded `Sigmae_x`) : a $k\times k$ matrix denoting the Choleski factor of the non-genetic (non-heritable) variance covariance; --></li>
+<li><span class="math inline">\(\vec{X}_{0}\)</span> (coded
+<code>X0</code>) : a <span class="math inline">\(k\)</span>-vector of
+initial values;</li>
+<li><span class="math inline">\(\mathbf{H}\)</span> (coded
+<code>H</code>) : a <span class="math inline">\(k\times k\)</span>
+matrix denoting the selection strength of the process;</li>
+<li><span class="math inline">\(\vec{\theta}\)</span> (coded
+<code>Theta</code>) : a <span class="math inline">\(k\)</span>-vector of
+long-term optimal trait values;</li>
+<li><span class="math inline">\(\mathbf{\Sigma}_{\chi}\)</span> : (coded
+<code>Sigma_x</code>) : a <span class="math inline">\(k\times k\)</span>
+matrix denoting the an upper triangular factor or the stochastic drift
+variance-covariances;
+<!-- - $\mathbf{\Sigma}_{e,\chi}$ (coded `Sigmae_x`) : a $k\times k$ matrix denoting the Choleski factor of the non-genetic (non-heritable) variance covariance; --></li>
 </ul>
-<p>The rule defining how the parameters of the OU-model are used to calculate the model likelihood and to simulate data consists in the definition of the functions <span class="math inline">\(\vec{\omega}\)</span> and matrices <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> <span class="citation">(Mitov et al. 2019)</span>: <span class="math display">\[\begin{equation}\label{eq:mammals:omegaPhiVOU}
+<p>The rule defining how the parameters of the OU-model are used to
+calculate the model likelihood and to simulate data consists in the
+definition of the functions <span class="math inline">\(\vec{\omega}\)</span> and matrices <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> <span class="citation">(Mitov
+et al. 2019)</span>: <span class="math display">\[\begin{equation}\label{eq:mammals:omegaPhiVOU}
 \begin{array}{l}
-\vec{\omega}_{s,t}=\bigg(\mathbf{I}-\text{Exp}\big(-(t-s)\mathbf{H}\big)\bigg)\vec{\theta} \\
+\vec{\omega}_{s,t}=\bigg(\mathbf{I}-\text{Exp}\big(-(t-s)\mathbf{H}\big)\bigg)\vec{\theta}
+\\
 \mathbf{\Phi}_{s,t}=\text{Exp}(-(t-s)\mathbf{H}) \\
 \mathbf{V}_{s,t}=\int_{0}^{t-s}\text{Exp}(-v\mathbf{H})(\mathbf{\Sigma}_{\chi}\mathbf{\Sigma}_{\chi}^T)\text{Exp}(-v\mathbf{H}^T)dv
 \end{array}
 \end{equation}\]</span></p>
-<p>Together, <span class="math inline">\(\vec{X}_{0}\)</span>, <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> and the tree define a <span class="math inline">\(kN\)</span>-variate Gaussian distribution for the vector of trait values at the tips. This is the defining property of all Gaussian phylogenetic models. Hence, calculating the model likelihood is equivalent to calculating the density of this Gaussian distribution at observed trait values, and simulating data under the model is equivalent to drawing a random sample from this distribution. The functions <code>PCMMean()</code> and <code>PCMVar()</code> allow to calculate the mean <span class="math inline">\(kN\)</span>-vector and the <span class="math inline">\(kN\times kN\)</span> variance covariance matrix of this distribution. This can be useful, in particular, to compare two models by calculating a distance metric such as the Mahalanobis distance, or the Bhattacharyya distance. However, for big <span class="math inline">\(k\)</span> and/or <span class="math inline">\(N\)</span>, it is inefficient to use these functions in combination with a general purpose multivariate normal implementation (e.g. the <code>mvtnorm::dmvnorm</code> and <code>mvtnorm::rmvnorm</code>), to calculate the likelihood or simulate data assuming an OU model. The main purpose of PCMBase package is to provide a generic and computationally efficient way to perform these two operations.</p>
+<p>Together, <span class="math inline">\(\vec{X}_{0}\)</span>, <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span>, <span class="math inline">\(\mathbf{V}\)</span> and the tree define a <span class="math inline">\(kN\)</span>-variate Gaussian distribution for the
+vector of trait values at the tips. This is the defining property of all
+Gaussian phylogenetic models. Hence, calculating the model likelihood is
+equivalent to calculating the density of this Gaussian distribution at
+observed trait values, and simulating data under the model is equivalent
+to drawing a random sample from this distribution. The functions
+<code>PCMMean()</code> and <code>PCMVar()</code> allow to calculate the
+mean <span class="math inline">\(kN\)</span>-vector and the <span class="math inline">\(kN\times kN\)</span> variance covariance matrix of
+this distribution. This can be useful, in particular, to compare two
+models by calculating a distance metric such as the Mahalanobis
+distance, or the Bhattacharyya distance. However, for big <span class="math inline">\(k\)</span> and/or <span class="math inline">\(N\)</span>, it is inefficient to use these
+functions in combination with a general purpose multivariate normal
+implementation (e.g. the <code>mvtnorm::dmvnorm</code> and
+<code>mvtnorm::rmvnorm</code>), to calculate the likelihood or simulate
+data assuming an OU model. The main purpose of PCMBase package is to
+provide a generic and computationally efficient way to perform these two
+operations.</p>
 </div>
 <div id="groups-of-model-types" class="section level2">
 <h2>Groups of model types</h2>
-<p>It is convenient to group model types into smaller subsets with named elements. This allows to use simple names, such as letters, as aliases for otherwise very long model type names. For example, the PCMBase package defines a subset of six so called “default model types”, which are commonly used in macroevolutionary studies. These are model types based on parameterizations of the <span class="math inline">\(k\)</span>-variate Ornstein-Uhlenbeck (OU) process. All of these six models restrict <span class="math inline">\(\mathbf{H}\)</span> to have non-negative eigenvalues - a negative eigenvalue of <span class="math inline">\(\mathbf{H}\)</span> transforms the process into repulsion with respect to <span class="math inline">\(\vec{\theta}\)</span>, which, while biologically plausible, is not identifiable in a ultrametric tree. The six default models are defined as follows:</p>
+<p>It is convenient to group model types into smaller subsets with named
+elements. This allows to use simple names, such as letters, as aliases
+for otherwise very long model type names. For example, the PCMBase
+package defines a subset of six so called “default model types”, which
+are commonly used in macroevolutionary studies. These are model types
+based on parameterizations of the <span class="math inline">\(k\)</span>-variate Ornstein-Uhlenbeck (OU)
+process. All of these six models restrict <span class="math inline">\(\mathbf{H}\)</span> to have non-negative
+eigenvalues - a negative eigenvalue of <span class="math inline">\(\mathbf{H}\)</span> transforms the process into
+repulsion with respect to <span class="math inline">\(\vec{\theta}\)</span>, which, while biologically
+plausible, is not identifiable in a ultrametric tree. The six default
+models are defined as follows:</p>
 <ul>
-<li><span class="math inline">\(BM_{A}\)</span> (<span class="math inline">\(\mathbf{H}=0\)</span>, diagonal <span class="math inline">\(\mathbf{\Sigma}\)</span>): BM, uncorrelated traits;</li>
-<li><span class="math inline">\(BM_{B}\)</span> (<span class="math inline">\(\mathbf{H}=0\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): BM, correlated traits;</li>
-<li><span class="math inline">\(OU_{C}\)</span> (diagonal <span class="math inline">\(\mathbf{H}\)</span>, diagonal <span class="math inline">\(\mathbf{\Sigma}\)</span>): OU, uncorrelated traits;</li>
-<li><span class="math inline">\(OU_{D}\)</span> (diagonal <span class="math inline">\(\mathbf{H}\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): OU, correlated traits, but simple (diagonal) selection strength matrix;</li>
-<li><span class="math inline">\(OU_{E}\)</span> (symmetric <span class="math inline">\(\mathbf{H}\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): An OU with non-diagonal symmetric <span class="math inline">\(\mathbf{H}\)</span> and non-diagonal symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>;</li>
-<li><span class="math inline">\(OU_{F}\)</span> (asymmetric <span class="math inline">\(\mathbf{H}\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): An OU with non-diagonal asymmetric <span class="math inline">\(\mathbf{H}\)</span> and non-diagonal symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>;</li>
+<li><span class="math inline">\(BM_{A}\)</span> (<span class="math inline">\(\mathbf{H}=0\)</span>, diagonal <span class="math inline">\(\mathbf{\Sigma}\)</span>): BM, uncorrelated
+traits;</li>
+<li><span class="math inline">\(BM_{B}\)</span> (<span class="math inline">\(\mathbf{H}=0\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): BM, correlated
+traits;</li>
+<li><span class="math inline">\(OU_{C}\)</span> (diagonal <span class="math inline">\(\mathbf{H}\)</span>, diagonal <span class="math inline">\(\mathbf{\Sigma}\)</span>): OU, uncorrelated
+traits;</li>
+<li><span class="math inline">\(OU_{D}\)</span> (diagonal <span class="math inline">\(\mathbf{H}\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): OU, correlated traits,
+but simple (diagonal) selection strength matrix;</li>
+<li><span class="math inline">\(OU_{E}\)</span> (symmetric <span class="math inline">\(\mathbf{H}\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): An OU with non-diagonal
+symmetric <span class="math inline">\(\mathbf{H}\)</span> and
+non-diagonal symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>;</li>
+<li><span class="math inline">\(OU_{F}\)</span> (asymmetric <span class="math inline">\(\mathbf{H}\)</span>, symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>): An OU with non-diagonal
+asymmetric <span class="math inline">\(\mathbf{H}\)</span> and
+non-diagonal symmetric <span class="math inline">\(\mathbf{\Sigma}\)</span>;</li>
 </ul>
-<p>Calling the function <code>PCMDefaultModelTypes()</code> returns a named vector of the technical class-names for these six models:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="co"># scroll to the right in the following listing to see the full model type names </span></span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="co"># and their corresponding alias:</span></span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">PCMDefaultModelTypes</span>()</span></code></pre></div>
+<p>Calling the function <code>PCMDefaultModelTypes()</code> returns a
+named vector of the technical class-names for these six models:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># scroll to the right in the following listing to see the full model type names </span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># and their corresponding alias:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMDefaultModelTypes</span>()</span></code></pre></div>
 <pre><code>##                                                                                                                                                                                A 
 ##                                                                                                      &quot;BM__Global_X0__Diagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot; 
 ##                                                                                                                                                                                B 
@@ -409,9 +560,16 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 ## &quot;OU__Global_X0__Schur_UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Transformable_H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot; 
 ##                                                                                                                                                                                F 
 ##                             &quot;OU__Global_X0__Schur_WithNonNegativeDiagonal_Transformable_H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</code></pre>
-<p>The PCMBase package comes with numerous other predefined model types. At present, all these are members of the <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family. A list of these model types is returned from calling the function <code>PCMModels()</code>.</p>
-<p>For each model type, it is possible to check how the conditional distribution of <span class="math inline">\(\vec{X}\)</span> at the end of a time interval of length <span class="math inline">\(t\)</span> is defined from an ancestral value <span class="math inline">\(X_{0}\)</span>. In particular, for <span class="math inline">\(\mathcal{G}_{LInv}\)</span> models, this is the definition of the functions <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span>. For example,</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">PCMFindMethod</span>(<span class="kw">PCMDefaultModelTypes</span>()[<span class="st">&quot;A&quot;</span>], <span class="st">&quot;PCMCond&quot;</span>)</span></code></pre></div>
+<p>The PCMBase package comes with numerous other predefined model types.
+At present, all these are members of the <span class="math inline">\(\mathcal{G}_{LInv}\)</span>-family. A list of
+these model types is returned from calling the function
+<code>PCMModels()</code>.</p>
+<p>For each model type, it is possible to check how the conditional
+distribution of <span class="math inline">\(\vec{X}\)</span> at the end
+of a time interval of length <span class="math inline">\(t\)</span> is
+defined from an ancestral value <span class="math inline">\(X_{0}\)</span>. In particular, for <span class="math inline">\(\mathcal{G}_{LInv}\)</span> models, this is the
+definition of the functions <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span>. For example,</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMFindMethod</span>(<span class="fu">PCMDefaultModelTypes</span>()[<span class="st">&quot;A&quot;</span>], <span class="st">&quot;PCMCond&quot;</span>)</span></code></pre></div>
 <pre><code>## function (tree, model, r = 1, metaI = PCMInfo(NULL, tree, model, 
 ##     verbose = verbose), verbose = FALSE) 
 ## {
@@ -434,18 +592,24 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 ##     }
 ##     list(omega = omega, Phi = Phi, V = V)
 ## }
-## &lt;bytecode: 0x0000000022bb9c50&gt;
+## &lt;bytecode: 0x562e5134edb0&gt;
 ## &lt;environment: namespace:PCMBase&gt;</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co"># The complex maths is implemented in the function PCMCondVOU. You can see its </span></span>
-<span id="cb5-2"><a href="#cb5-2"></a><span class="co"># R-code by typing :</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a><span class="co"># PCMBase::PCMCondVOU</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The complex maths is implemented in the function PCMCondVOU. You can see its </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># R-code by typing :</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># PCMBase::PCMCondVOU</span></span></code></pre></div>
 </div>
 <div id="creating-pcm-objects" class="section level2">
 <h2>Creating PCM objects</h2>
-<p>In the computer memory, models are represented by S3 objects, i.e. ordinary R-lists with a class attribute. The base S3 class of all models is called <code>&quot;PCM&quot;</code>, which is inherited by more specific model-classes. Let us create a BM PCM for two traits:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>modelBM &lt;-<span class="st"> </span><span class="kw">PCM</span>(<span class="dt">model =</span> <span class="st">&quot;BM&quot;</span>, <span class="dt">k =</span> <span class="dv">2</span>)</span></code></pre></div>
-<p>Printing the model object shows a short verbal description, the S3-class, the number of traits, k, the number of numerical parameters of the model, p, the model regimes and the current values of the parameters for each regime (more on regimes in the next sub-section):</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>modelBM</span></code></pre></div>
+<p>In the computer memory, models are represented by S3 objects,
+i.e. ordinary R-lists with a class attribute. The base S3 class of all
+models is called <code>&quot;PCM&quot;</code>, which is inherited by more specific
+model-classes. Let us create a BM PCM for two traits:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>modelBM <span class="ot">&lt;-</span> <span class="fu">PCM</span>(<span class="at">model =</span> <span class="st">&quot;BM&quot;</span>, <span class="at">k =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p>Printing the model object shows a short verbal description, the
+S3-class, the number of traits, k, the number of numerical parameters of
+the model, p, the model regimes and the current values of the parameters
+for each regime (more on regimes in the next sub-section):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>modelBM</span></code></pre></div>
 <pre><code>## Brownian motion model
 ## S3 class: BM, GaussianPCM, PCM; k=2; p=8; regimes: 1. Parameters/sub-models:
 ## X0 (VectorParameter, _Global, numeric; trait values at the root):
@@ -465,13 +629,19 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 ## [2,]    0    0
 ## 
 ## </code></pre>
-<p>One may wonder why in the above description, p = 8 instead of 10 (see also <code>?PCMParamCount</code>). The reason is that both, the matrix Sigma and the matrix Sigmae, are symmetric matrices and their matching off-diagonal elements are counted only one time.</p>
+<p>One may wonder why in the above description, p = 8 instead of 10 (see
+also <code>?PCMParamCount</code>). The reason is that both, the matrix
+Sigma and the matrix Sigmae, are symmetric matrices and their matching
+off-diagonal elements are counted only one time.</p>
 </div>
 <div id="model-regimes" class="section level2">
 <h2>Model regimes</h2>
-<p>Model <em>regimes</em> are different models associated with different parts of the phylogenetic tree. This is a powerful concept allowing to model different evolutionary modes on different lineages on the tree. Let us create a 2-trait BM model with two regimes called a and b:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a>modelBM.ab &lt;-<span class="st"> </span><span class="kw">PCM</span>(<span class="st">&quot;BM&quot;</span>, <span class="dt">k =</span> <span class="dv">2</span>, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
-<span id="cb9-2"><a href="#cb9-2"></a>modelBM.ab</span></code></pre></div>
+<p>Model <em>regimes</em> are different models associated with different
+parts of the phylogenetic tree. This is a powerful concept allowing to
+model different evolutionary modes on different lineages on the tree.
+Let us create a 2-trait BM model with two regimes called a and b:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>modelBM.ab <span class="ot">&lt;-</span> <span class="fu">PCM</span>(<span class="st">&quot;BM&quot;</span>, <span class="at">k =</span> <span class="dv">2</span>, <span class="at">regimes =</span> <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>modelBM.ab</span></code></pre></div>
 <pre><code>## Brownian motion model
 ## S3 class: BM, GaussianPCM, PCM; k=2; p=14; regimes: a, b. Parameters/sub-models:
 ## X0 (VectorParameter, _Global, numeric; trait values at the root):
@@ -503,80 +673,96 @@ d\vec{X}(t)=\mathbf{H}\big(\vec{\theta}-\vec{X}(t)\big)dt+\mathbf{\mathbf{\Sigma
 ## [2,]    0    0
 ## 
 ## </code></pre>
-<p>Now, we can set some different values for the parameters of the model we’ve just created. First, let us specify an initial value vector different from the default 0-vector:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>modelBM.ab<span class="op">$</span>X0[] &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="dv">5</span>, <span class="dv">2</span>)</span></code></pre></div>
-<p>X0 is defined as a parameter with S3 class <code>class(modelBM.ab$X0)</code>. This specifies that <code>X0</code> is global vector parameter shared by all model regimes. This is also the reason, why the number of parameters is not the double of the number of parameters in the first model:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a><span class="kw">PCMParamCount</span>(modelBM)</span></code></pre></div>
+<p>Now, we can set some different values for the parameters of the model
+we’ve just created. First, let us specify an initial value vector
+different from the default 0-vector:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>modelBM.ab<span class="sc">$</span>X0[] <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">2</span>)</span></code></pre></div>
+<p>X0 is defined as a parameter with S3 class
+<code>class(modelBM.ab$X0)</code>. This specifies that <code>X0</code>
+is global vector parameter shared by all model regimes. This is also the
+reason, why the number of parameters is not the double of the number of
+parameters in the first model:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamCount</span>(modelBM)</span></code></pre></div>
 <pre><code>## [1] 8</code></pre>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">PCMParamCount</span>(modelBM.ab)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamCount</span>(modelBM.ab)</span></code></pre></div>
 <pre><code>## [1] 14</code></pre>
-<p>The other parameters, Sigma_x and Sigmae_x are local for each regime:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="co"># in regime &#39;a&#39; the traits evolve according to two independent BM processes (starting from the global vecto X0).</span></span>
-<span id="cb16-2"><a href="#cb16-2"></a>modelBM.ab<span class="op">$</span>Sigma_x[,, <span class="st">&quot;a&quot;</span>] &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">1.6</span>, <span class="dv">0</span>),</span>
-<span id="cb16-3"><a href="#cb16-3"></a>                                  <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">2.4</span>))</span>
-<span id="cb16-4"><a href="#cb16-4"></a>modelBM.ab<span class="op">$</span>Sigmae_x[,, <span class="st">&quot;a&quot;</span>] &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(.<span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb16-5"><a href="#cb16-5"></a>                                   <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">.4</span>))</span>
-<span id="cb16-6"><a href="#cb16-6"></a><span class="co"># in regime &#39;b&#39; there is a correlation between the traits</span></span>
-<span id="cb16-7"><a href="#cb16-7"></a>modelBM.ab<span class="op">$</span>Sigma_x[,, <span class="st">&quot;b&quot;</span>] &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">1.6</span>, <span class="fl">.8</span>),</span>
-<span id="cb16-8"><a href="#cb16-8"></a>                                  <span class="kw">c</span>(.<span class="dv">8</span>, <span class="fl">2.4</span>))</span>
-<span id="cb16-9"><a href="#cb16-9"></a>modelBM.ab<span class="op">$</span>Sigmae_x[,, <span class="st">&quot;b&quot;</span>] &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">c</span>(.<span class="dv">1</span>, <span class="dv">0</span>),</span>
-<span id="cb16-10"><a href="#cb16-10"></a>                                   <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">.4</span>))</span></code></pre></div>
-<p>The above way of setting values for model parameters, while human readable, is not handy during model fitting procedures, such as likelihood maximization. Thus, there is another way to set (or get) the model parameter values from a numerical vector:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1"></a>param &lt;-<span class="st"> </span><span class="kw">double</span>(<span class="kw">PCMParamCount</span>(modelBM.ab))</span>
-<span id="cb17-2"><a href="#cb17-2"></a></span>
-<span id="cb17-3"><a href="#cb17-3"></a><span class="co"># load the current model parameters into param</span></span>
-<span id="cb17-4"><a href="#cb17-4"></a><span class="kw">PCMParamLoadOrStore</span>(modelBM.ab, param, <span class="dt">offset=</span><span class="dv">0</span>, <span class="dt">load=</span><span class="ot">FALSE</span>)</span></code></pre></div>
+<p>The other parameters, Sigma_x and Sigmae_x are local for each
+regime:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># in regime &#39;a&#39; the traits evolve according to two independent BM processes (starting from the global vecto X0).</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>modelBM.ab<span class="sc">$</span>Sigma_x[,, <span class="st">&quot;a&quot;</span>] <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="fl">1.6</span>, <span class="dv">0</span>),</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">2.4</span>))</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>modelBM.ab<span class="sc">$</span>Sigmae_x[,, <span class="st">&quot;a&quot;</span>] <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(.<span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="fu">c</span>(<span class="dv">0</span>, .<span class="dv">4</span>))</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co"># in regime &#39;b&#39; there is a correlation between the traits</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>modelBM.ab<span class="sc">$</span>Sigma_x[,, <span class="st">&quot;b&quot;</span>] <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="fl">1.6</span>, .<span class="dv">8</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">c</span>(.<span class="dv">8</span>, <span class="fl">2.4</span>))</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>modelBM.ab<span class="sc">$</span>Sigmae_x[,, <span class="st">&quot;b&quot;</span>] <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(.<span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>                                   <span class="fu">c</span>(<span class="dv">0</span>, .<span class="dv">4</span>))</span></code></pre></div>
+<p>The above way of setting values for model parameters, while human
+readable, is not handy during model fitting procedures, such as
+likelihood maximization. Thus, there is another way to set (or get) the
+model parameter values from a numerical vector:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>param <span class="ot">&lt;-</span> <span class="fu">double</span>(<span class="fu">PCMParamCount</span>(modelBM.ab))</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># load the current model parameters into param</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamLoadOrStore</span>(modelBM.ab, param, <span class="at">offset=</span><span class="dv">0</span>, <span class="at">load=</span><span class="cn">FALSE</span>)</span></code></pre></div>
 <pre><code>## [1] 14</code></pre>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a><span class="kw">print</span>(param)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(param)</span></code></pre></div>
 <pre><code>##  [1] 5.0 2.0 1.6 0.0 2.4 1.6 0.8 2.4 0.1 0.0 0.4 0.1 0.0 0.4</code></pre>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1"></a><span class="co"># modify slightly the model parameters</span></span>
-<span id="cb21-2"><a href="#cb21-2"></a>param2 &lt;-<span class="st"> </span><span class="kw">jitter</span>(param)</span>
-<span id="cb21-3"><a href="#cb21-3"></a></span>
-<span id="cb21-4"><a href="#cb21-4"></a><span class="kw">print</span>(param2)</span></code></pre></div>
-<pre><code>##  [1]  5.00309697  1.99017691  1.58184832  0.01685340  2.38704190  1.58892429
-##  [7]  0.78461223  2.39913339  0.10429085 -0.01252188  0.41722106  0.10595128
-## [13] -0.00261971  0.38782080</code></pre>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1"></a><span class="co"># set the new parameter vector</span></span>
-<span id="cb23-2"><a href="#cb23-2"></a><span class="kw">PCMParamLoadOrStore</span>(modelBM.ab, param2, <span class="dt">offset =</span> <span class="dv">0</span>, <span class="dt">load=</span><span class="ot">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># modify slightly the model parameters</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>param2 <span class="ot">&lt;-</span> <span class="fu">jitter</span>(param)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(param2)</span></code></pre></div>
+<pre><code>##  [1]  4.9805426428  1.9891297395  1.6111129699 -0.0022761540  2.3996846637
+##  [6]  1.6089305746  0.8001918500  2.3839385408  0.0933156090  0.0004943791
+## [11]  0.3885086007  0.1198546167  0.0046077819  0.4077723531</code></pre>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set the new parameter vector</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamLoadOrStore</span>(modelBM.ab, param2, <span class="at">offset =</span> <span class="dv">0</span>, <span class="at">load=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 <pre><code>## [1] 14</code></pre>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1"></a><span class="kw">print</span>(modelBM.ab)</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(modelBM.ab)</span></code></pre></div>
 <pre><code>## Brownian motion model
 ## S3 class: BM, GaussianPCM, PCM; k=2; p=14; regimes: a, b. Parameters/sub-models:
 ## X0 (VectorParameter, _Global, numeric; trait values at the root):
-## [1] 5.003097 1.990177
+## [1] 4.980543 1.989130
 ## Sigma_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; factor of the unit-time variance rate):
 ## , , a
 ## 
-##          [,1]      [,2]
-## [1,] 1.581848 0.0168534
-## [2,] 0.000000 2.3870419
+##          [,1]         [,2]
+## [1,] 1.611113 -0.002276154
+## [2,] 0.000000  2.399684664
 ## 
 ## , , b
 ## 
 ##          [,1]      [,2]
-## [1,] 1.588924 0.7846122
-## [2,] 0.800000 2.3991334
+## [1,] 1.608931 0.8001919
+## [2,] 0.800000 2.3839385
 ## 
 ## Sigmae_x (MatrixParameter, _UpperTriangularWithDiagonal, _WithNonNegativeDiagonal; factor of the non-heritable variance or the variance of the measurement error):
 ## , , a
 ## 
-##           [,1]        [,2]
-## [1,] 0.1042909 -0.01252188
-## [2,] 0.0000000  0.41722106
+##            [,1]         [,2]
+## [1,] 0.09331561 0.0004943791
+## [2,] 0.00000000 0.3885086007
 ## 
 ## , , b
 ## 
 ##           [,1]        [,2]
-## [1,] 0.1059513 -0.00261971
-## [2,] 0.0000000  0.38782080
+## [1,] 0.1198546 0.004607782
+## [2,] 0.0000000 0.407772353
 ## 
 ## </code></pre>
 </div>
 <div id="printing-models-in-the-form-of-a-table" class="section level2">
 <h2>Printing models in the form of a table</h2>
-<p>It can be handy to print the parameters of a model in the form of a table with rows corresponding to the different regimes. For that purpose we use the <code>PCMTable()</code> function, which generates a <code>PCMTable</code> object for a given <code>PCM</code> object. The <code>PCMTable</code> S3 class inherits from <code>data.table</code> and implements a print method that allows for beautiful formatting of matrix and vector parameters. Here is an example:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">options</span>(<span class="dt">digits =</span> <span class="dv">2</span>)</span>
-<span id="cb27-2"><a href="#cb27-2"></a><span class="kw">print</span>(<span class="kw">PCMTable</span>(modelBM.ab), <span class="dt">xtable =</span> <span class="ot">TRUE</span>, <span class="dt">type=</span><span class="st">&quot;html&quot;</span>)</span></code></pre></div>
+<p>It can be handy to print the parameters of a model in the form of a
+table with rows corresponding to the different regimes. For that purpose
+we use the <code>PCMTable()</code> function, which generates a
+<code>PCMTable</code> object for a given <code>PCM</code> object. The
+<code>PCMTable</code> S3 class inherits from <code>data.table</code> and
+implements a print method that allows for beautiful formatting of matrix
+and vector parameters. Here is an example:</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits =</span> <span class="dv">2</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">PCMTable</span>(modelBM.ab), <span class="at">xtable =</span> <span class="cn">TRUE</span>, <span class="at">type=</span><span class="st">&quot;html&quot;</span>)</span></code></pre></div>
 <table border="1">
 <tr>
 <th>
@@ -597,7 +783,8 @@ regime
 :global:
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 5.00 \\ 1.99 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 4.98 \\ 1.99 \\
+\end{bmatrix}\)</span>
 </td>
 <td align="right">
 </td>
@@ -605,7 +792,6 @@ regime
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 a
@@ -613,14 +799,15 @@ a
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 2.50 &amp; 0.04 \\ 0.04 &amp; 5.70 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 2.60 &amp; -0.01 \\ -0.01
+&amp; 5.76 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; -0.01 \\ -0.01 &amp; 0.17 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; 0.00 \\ 0.00
+&amp; 0.15 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 b
@@ -628,55 +815,73 @@ b
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 3.14 &amp; 3.15 \\ 3.15 &amp; 6.40 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 3.23 &amp; 3.19 \\ 3.19
+&amp; 6.32 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; -0.00 \\ -0.00 &amp; 0.15 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 0.01 &amp; 0.00 \\ 0.00
+&amp; 0.17 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 </table>
-<p>Check the help-page for the <code>PCMTable</code>-function for more details.</p>
+<p>Check the help-page for the <code>PCMTable</code>-function for more
+details.</p>
 </div>
 <div id="mixed-gaussian-models" class="section level2">
 <h2>Mixed Gaussian models</h2>
-<p>One of the features of the package is the possibility to specify models in which different types of processes are associated with different regimes. We call these “mixed Gaussian” models. To create a mixed Gaussian model, we use the constructor function <code>MixedGaussian</code>:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a>model.OU.BM &lt;-<span class="st"> </span><span class="kw">MixedGaussian</span>(</span>
-<span id="cb28-2"><a href="#cb28-2"></a>  <span class="dt">k =</span> <span class="dv">3</span>, </span>
-<span id="cb28-3"><a href="#cb28-3"></a>  <span class="dt">modelTypes =</span> <span class="kw">c</span>(</span>
-<span id="cb28-4"><a href="#cb28-4"></a>    <span class="dt">BM =</span> <span class="kw">paste0</span>(<span class="st">&quot;BM&quot;</span>,</span>
-<span id="cb28-5"><a href="#cb28-5"></a>    <span class="st">&quot;__Omitted_X0&quot;</span>,</span>
-<span id="cb28-6"><a href="#cb28-6"></a>    <span class="st">&quot;__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x&quot;</span>,</span>
-<span id="cb28-7"><a href="#cb28-7"></a>    <span class="st">&quot;__Omitted_Sigmae_x&quot;</span>),</span>
-<span id="cb28-8"><a href="#cb28-8"></a>    <span class="dt">OU =</span> <span class="kw">paste0</span>(<span class="st">&quot;OU&quot;</span>,</span>
-<span id="cb28-9"><a href="#cb28-9"></a>    <span class="st">&quot;__Omitted_X0&quot;</span>,</span>
-<span id="cb28-10"><a href="#cb28-10"></a>    <span class="st">&quot;__H&quot;</span>,</span>
-<span id="cb28-11"><a href="#cb28-11"></a>    <span class="st">&quot;__Theta&quot;</span>,</span>
-<span id="cb28-12"><a href="#cb28-12"></a>    <span class="st">&quot;__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x&quot;</span>,</span>
-<span id="cb28-13"><a href="#cb28-13"></a>    <span class="st">&quot;__Omitted_Sigmae_x&quot;</span>)), </span>
-<span id="cb28-14"><a href="#cb28-14"></a>  <span class="dt">mapping =</span> <span class="kw">c</span>(<span class="dt">a =</span> <span class="dv">2</span>, <span class="dt">b =</span> <span class="dv">1</span>), </span>
-<span id="cb28-15"><a href="#cb28-15"></a>  <span class="dt">Sigmae_x =</span> <span class="kw">structure</span>(</span>
-<span id="cb28-16"><a href="#cb28-16"></a>    <span class="dv">0</span>, </span>
-<span id="cb28-17"><a href="#cb28-17"></a>    <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>), </span>
-<span id="cb28-18"><a href="#cb28-18"></a>    <span class="dt">description =</span> <span class="st">&quot;upper triangular factor of the non-phylogenetic variance-covariance&quot;</span>))</span></code></pre></div>
-<p>In the above, snippet, notice the long names for the BM and the OU model types. These are the model types that can be mapped to regimes. It is important to notice that both of these model types omit the parameter <code>X0</code>, which is a global parameter shared by all regimes. Similarly the two model types omit the parameter <code>Sigmae_x</code>. However, in this example, we specify that the whole mixed Gaussian model does not have a <code>Sigmae_x</code> parameter, i.e. the model assumes that the trait variation is completely explainable by the mixed Gaussian phylogenetic process and there is no non-heritable component. For more information on model parametrizations, see the <a href="https://venelin.github.io/PCMBase/articles/PCMParam.html">PCMBase parameterizations</a> guide. For further information on mixed Gaussian models, see the <code>?MixedGaussian</code> help page.</p>
+<p>One of the features of the package is the possibility to specify
+models in which different types of processes are associated with
+different regimes. We call these “mixed Gaussian” models. To create a
+mixed Gaussian model, we use the constructor function
+<code>MixedGaussian</code>:</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>model.OU.BM <span class="ot">&lt;-</span> <span class="fu">MixedGaussian</span>(</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="dv">3</span>, </span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">modelTypes =</span> <span class="fu">c</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">BM =</span> <span class="fu">paste0</span>(<span class="st">&quot;BM&quot;</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__Omitted_X0&quot;</span>,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x&quot;</span>,</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__Omitted_Sigmae_x&quot;</span>),</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">OU =</span> <span class="fu">paste0</span>(<span class="st">&quot;OU&quot;</span>,</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__Omitted_X0&quot;</span>,</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__H&quot;</span>,</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__Theta&quot;</span>,</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x&quot;</span>,</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;__Omitted_Sigmae_x&quot;</span>)), </span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">mapping =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="dv">2</span>, <span class="at">b =</span> <span class="dv">1</span>), </span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sigmae_x =</span> <span class="fu">structure</span>(</span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span>, </span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Omitted&quot;</span>), </span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">description =</span> <span class="st">&quot;upper triangular factor of the non-phylogenetic variance-covariance&quot;</span>))</span></code></pre></div>
+<p>In the above, snippet, notice the long names for the BM and the OU
+model types. These are the model types that can be mapped to regimes. It
+is important to notice that both of these model types omit the parameter
+<code>X0</code>, which is a global parameter shared by all regimes.
+Similarly the two model types omit the parameter <code>Sigmae_x</code>.
+However, in this example, we specify that the whole mixed Gaussian model
+does not have a <code>Sigmae_x</code> parameter, i.e. the model assumes
+that the trait variation is completely explainable by the mixed Gaussian
+phylogenetic process and there is no non-heritable component. For more
+information on model parametrizations, see the <a href="https://venelin.github.io/PCMBase/articles/PCMParam.html">PCMBase
+parameterizations</a> guide. For further information on mixed Gaussian
+models, see the <code>?MixedGaussian</code> help page.</p>
 <p>We can set the parameters of the model manually as follows:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1"></a>model.OU.BM<span class="op">$</span>X0[] &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="ot">NA</span>, <span class="ot">NA</span>, <span class="ot">NA</span>)</span>
-<span id="cb29-2"><a href="#cb29-2"></a>model.OU.BM<span class="op">$</span><span class="st">`</span><span class="dt">a</span><span class="st">`</span><span class="op">$</span>H[,,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="kw">cbind</span>(</span>
-<span id="cb29-3"><a href="#cb29-3"></a>  <span class="kw">c</span>(.<span class="dv">1</span>, <span class="fl">-.7</span>, <span class="fl">.6</span>), </span>
-<span id="cb29-4"><a href="#cb29-4"></a>  <span class="kw">c</span>(<span class="fl">1.3</span>, <span class="fl">2.2</span>, <span class="fl">-1.4</span>), </span>
-<span id="cb29-5"><a href="#cb29-5"></a>  <span class="kw">c</span>(<span class="fl">0.8</span>, <span class="fl">0.2</span>, <span class="fl">0.9</span>))</span>
-<span id="cb29-6"><a href="#cb29-6"></a>model.OU.BM<span class="op">$</span><span class="st">`</span><span class="dt">a</span><span class="st">`</span><span class="op">$</span>Theta[] &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="fl">1.3</span>, <span class="fl">-.5</span>, <span class="fl">.2</span>)</span>
-<span id="cb29-7"><a href="#cb29-7"></a>model.OU.BM<span class="op">$</span><span class="st">`</span><span class="dt">a</span><span class="st">`</span><span class="op">$</span>Sigma_x[,,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="kw">cbind</span>(</span>
-<span id="cb29-8"><a href="#cb29-8"></a>  <span class="kw">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
-<span id="cb29-9"><a href="#cb29-9"></a>  <span class="kw">c</span>(<span class="fl">1.0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>), </span>
-<span id="cb29-10"><a href="#cb29-10"></a>  <span class="kw">c</span>(<span class="fl">0.3</span>, <span class="fl">-.8</span>, <span class="dv">1</span>))</span>
-<span id="cb29-11"><a href="#cb29-11"></a></span>
-<span id="cb29-12"><a href="#cb29-12"></a>model.OU.BM<span class="op">$</span><span class="st">`</span><span class="dt">b</span><span class="st">`</span><span class="op">$</span>Sigma_x[,,<span class="dv">1</span>] &lt;-<span class="st"> </span><span class="kw">cbind</span>(</span>
-<span id="cb29-13"><a href="#cb29-13"></a>  <span class="kw">c</span>(<span class="fl">0.8</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
-<span id="cb29-14"><a href="#cb29-14"></a>  <span class="kw">c</span>(<span class="dv">1</span>, <span class="fl">0.3</span>, <span class="dv">0</span>), </span>
-<span id="cb29-15"><a href="#cb29-15"></a>  <span class="kw">c</span>(<span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>model.OU.BM<span class="sc">$</span>X0[] <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>model.OU.BM<span class="sc">$</span><span class="st">`</span><span class="at">a</span><span class="st">`</span><span class="sc">$</span>H[,,<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(.<span class="dv">1</span>, <span class="sc">-</span>.<span class="dv">7</span>, .<span class="dv">6</span>), </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="fl">1.3</span>, <span class="fl">2.2</span>, <span class="sc">-</span><span class="fl">1.4</span>), </span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="fl">0.2</span>, <span class="fl">0.9</span>))</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>model.OU.BM<span class="sc">$</span><span class="st">`</span><span class="at">a</span><span class="st">`</span><span class="sc">$</span>Theta[] <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">1.3</span>, <span class="sc">-</span>.<span class="dv">5</span>, .<span class="dv">2</span>)</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>model.OU.BM<span class="sc">$</span><span class="st">`</span><span class="at">a</span><span class="st">`</span><span class="sc">$</span>Sigma_x[,,<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="fl">1.0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>), </span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="sc">-</span>.<span class="dv">8</span>, <span class="dv">1</span>))</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>model.OU.BM<span class="sc">$</span><span class="st">`</span><span class="at">b</span><span class="st">`</span><span class="sc">$</span>Sigma_x[,,<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="fu">cbind</span>(</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="dv">0</span>, <span class="dv">0</span>), </span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.3</span>, <span class="dv">0</span>), </span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.3</span>))</span></code></pre></div>
 <p>We can print the mixed Gaussian model as a table:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a><span class="kw">print</span>(<span class="kw">PCMTable</span>(model.OU.BM), <span class="dt">xtable =</span> <span class="ot">TRUE</span>, <span class="dt">type=</span><span class="st">&quot;html&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">PCMTable</span>(model.OU.BM), <span class="at">xtable =</span> <span class="cn">TRUE</span>, <span class="at">type=</span><span class="st">&quot;html&quot;</span>)</span></code></pre></div>
 <table border="1">
 <tr>
 <th>
@@ -706,7 +911,8 @@ type
 NA
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} . \\ . \\ . \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} . \\ . \\ . \\
+\end{bmatrix}\)</span>
 </td>
 <td align="right">
 </td>
@@ -716,7 +922,6 @@ NA
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 a
@@ -727,17 +932,21 @@ OU
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 0.10 &amp; 1.30 &amp; 0.80 \\ -0.70 &amp; 2.20 &amp; 0.20 \\ 0.60 &amp; -1.40 &amp; 0.90 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 0.10 &amp; 1.30 &amp; 0.80
+\\ -0.70 &amp; 2.20 &amp; 0.20 \\ 0.60 &amp; -1.40 &amp; 0.90 \\
+\end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 1.30 \\ -0.50 \\ 0.20 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 1.30 \\ -0.50 \\ 0.20 \\
+\end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 2.09 &amp; 0.26 &amp; 0.30 \\ 0.26 &amp; 0.89 &amp; -0.80 \\ 0.30 &amp; -0.80 &amp; 1.00 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 2.09 &amp; 0.26 &amp; 0.30
+\\ 0.26 &amp; 0.89 &amp; -0.80 \\ 0.30 &amp; -0.80 &amp; 1.00 \\
+\end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 b
@@ -752,7 +961,9 @@ BM
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 1.80 &amp; 0.50 &amp; 0.12 \\ 0.50 &amp; 0.34 &amp; 0.15 \\ 0.12 &amp; 0.15 &amp; 0.09 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 1.80 &amp; 0.50 &amp; 0.12
+\\ 0.50 &amp; 0.34 &amp; 0.15 \\ 0.12 &amp; 0.15 &amp; 0.09 \\
+\end{bmatrix}\)</span>
 </td>
 </tr>
 </table>
@@ -760,67 +971,78 @@ BM
 </div>
 <div id="simulating-data-on-a-phylogenetic-tree" class="section level1">
 <h1>Simulating data on a phylogenetic tree</h1>
-<p>The first functionality of the PCMBase package is to provide an easy way to simulate multiple trait data on a tree under a given (possibly multiple regime) PCM.</p>
-<p>For this example, first we simulate a birth death tree with two parts “a” and “b” using the <code>ape</code> R-package:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a><span class="co"># make results reproducible</span></span>
-<span id="cb31-2"><a href="#cb31-2"></a><span class="kw">set.seed</span>(<span class="dv">2</span>, <span class="dt">kind =</span> <span class="st">&quot;Mersenne-Twister&quot;</span>, <span class="dt">normal.kind =</span> <span class="st">&quot;Inversion&quot;</span>)</span>
-<span id="cb31-3"><a href="#cb31-3"></a></span>
-<span id="cb31-4"><a href="#cb31-4"></a><span class="co"># number of regimes</span></span>
-<span id="cb31-5"><a href="#cb31-5"></a>R &lt;-<span class="st"> </span><span class="dv">2</span></span>
-<span id="cb31-6"><a href="#cb31-6"></a></span>
-<span id="cb31-7"><a href="#cb31-7"></a><span class="co"># number of extant tips</span></span>
-<span id="cb31-8"><a href="#cb31-8"></a>N &lt;-<span class="st"> </span><span class="dv">100</span></span>
-<span id="cb31-9"><a href="#cb31-9"></a></span>
-<span id="cb31-10"><a href="#cb31-10"></a>tree.a &lt;-<span class="st"> </span><span class="kw">PCMTree</span>(<span class="kw">rtree</span>(<span class="dt">n=</span>N))</span>
-<span id="cb31-11"><a href="#cb31-11"></a><span class="kw">PCMTreeSetLabels</span>(tree.a)</span>
-<span id="cb31-12"><a href="#cb31-12"></a><span class="kw">PCMTreeSetPartRegimes</span>(tree.a, <span class="dt">part.regime =</span> <span class="kw">c</span>(<span class="st">`</span><span class="dt">101</span><span class="st">`</span> =<span class="st"> &quot;a&quot;</span>), <span class="dt">setPartition =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb31-13"><a href="#cb31-13"></a></span>
-<span id="cb31-14"><a href="#cb31-14"></a>lstDesc &lt;-<span class="st"> </span><span class="kw">PCMTreeListDescendants</span>(tree.a)</span>
-<span id="cb31-15"><a href="#cb31-15"></a>splitNode &lt;-<span class="st"> </span><span class="kw">names</span>(lstDesc)[<span class="kw">which</span>(<span class="kw">sapply</span>(lstDesc, length) <span class="op">&gt;</span><span class="st"> </span>N<span class="op">/</span><span class="dv">2</span> <span class="op">&amp;</span><span class="st"> </span><span class="kw">sapply</span>(lstDesc, length) <span class="op">&lt;</span><span class="st"> </span><span class="dv">2</span><span class="op">*</span>N<span class="op">/</span><span class="dv">3</span>)][<span class="dv">1</span>]</span>
-<span id="cb31-16"><a href="#cb31-16"></a></span>
-<span id="cb31-17"><a href="#cb31-17"></a>tree.ab &lt;-<span class="st"> </span><span class="kw">PCMTreeInsertSingletons</span>(</span>
-<span id="cb31-18"><a href="#cb31-18"></a>  tree.a, <span class="dt">nodes =</span> <span class="kw">as.integer</span>(splitNode), </span>
-<span id="cb31-19"><a href="#cb31-19"></a>  <span class="dt">positions =</span> <span class="kw">PCMTreeGetBranchLength</span>(tree.a, <span class="kw">as.integer</span>(splitNode))<span class="op">/</span><span class="dv">2</span>)</span>
-<span id="cb31-20"><a href="#cb31-20"></a><span class="kw">PCMTreeSetPartRegimes</span>(</span>
-<span id="cb31-21"><a href="#cb31-21"></a>  tree.ab,</span>
-<span id="cb31-22"><a href="#cb31-22"></a>  <span class="dt">part.regime =</span> <span class="kw">structure</span>(<span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>), <span class="dt">names =</span> <span class="kw">as.character</span>(<span class="kw">c</span>(N<span class="op">+</span><span class="dv">1</span>, splitNode))), </span>
-<span id="cb31-23"><a href="#cb31-23"></a>  <span class="dt">setPartition =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb31-24"><a href="#cb31-24"></a></span>
-<span id="cb31-25"><a href="#cb31-25"></a>palette &lt;-<span class="st"> </span><span class="kw">PCMColorPalette</span>(<span class="dv">2</span>, <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
-<span id="cb31-26"><a href="#cb31-26"></a></span>
-<span id="cb31-27"><a href="#cb31-27"></a><span class="co"># Plot the tree with branches colored according to the regimes.</span></span>
-<span id="cb31-28"><a href="#cb31-28"></a><span class="co"># The following code works only if the ggtree package is installed, which is not on CRAN. </span></span>
-<span id="cb31-29"><a href="#cb31-29"></a><span class="co"># The tree would not be depicted correctly if ggtree is not installed.</span></span>
-<span id="cb31-30"><a href="#cb31-30"></a>plTree &lt;-<span class="st"> </span><span class="kw">PCMTreePlot</span>(tree.ab)</span>
-<span id="cb31-31"><a href="#cb31-31"></a><span class="cf">if</span>(<span class="kw">requireNamespace</span>(<span class="st">&quot;ggtree&quot;</span>)) {</span>
-<span id="cb31-32"><a href="#cb31-32"></a>  plTree &lt;-<span class="st"> </span>plTree <span class="op">+</span><span class="st"> </span>ggtree<span class="op">::</span><span class="kw">geom_nodelab</span>(<span class="dt">size =</span> <span class="dv">2</span>) </span>
-<span id="cb31-33"><a href="#cb31-33"></a>}</span>
-<span id="cb31-34"><a href="#cb31-34"></a>plTree</span></code></pre></div>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASAAAAEgCAIAAACb4TnXAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAgAElEQVR4nO2dbVAbeX7nv62WwUazN54xqEfesNgJDxvBYTDH7p1JbU1BBgMz2ThJZe7kF1H5dstcUhWbiuPA1viSSeKpNedzInxVt4drN47mhZVzchdn4+VpC8q3Cc7tsbIFi7WDYddm2EVugedhZyQM7r/6XnRLaj0AAqv1gH+fF7uiaXU3Hn31+/9/j5wsyyAIQh8M2X4AgtjJkMAIQkdIYAShIyQwgtAREhhB6AgJjCB0hARGEDpCAiMIHSGBEYSOkMAIQkdIYAShIyQwgtAREhhB6AgJjCB0hARGEDpCAiMIHSGBEYSOkMAIQkeMet+AuUZga+Uhrna/s/GZhb2X9X4YgsgwnJ49OUTmuspEi+xzKz8X9r7FXJMQ7qCmhzeLzDVpsLVyut2eILKOvktEg62HFwDAWLcfACAAPllE5HVI19sTRLbRdYkoRKwT33JY8iyudp8CYDzzBrvmlAWERPB63p4gso7ue7Awhwp6WzmIzDUEHNrVFXlNEDuZjAlskrnA4Y4snDBiUoq+3oiIg4S5rkqexW3clRwnRHbR1cmhstp9aqsfdGUxGYex7g0Id2Shx1hNDhIiP8iYBdsyBb2XQy4nbHa4LqClR7p0SvLcBACcYsoZ6o8xkMkicorcFZjWQbJ2zcnXNYRE8LWQ0cbXiGz0EU8WjMh5dHTTM9cIAwARwJrLyfwAwMacaw4nu5fKW0bkJ8rhQ8ZaH2rbeAGyCK5Z4My1HO6E/Po9O0GkB50smBpi5gF57CqAAlsbc40wwScL9oIukY2NyNVR+xOz4/LclAAABbZD0tfvAMAHfyd971NOuIqqE8aaScnhZLVg6CgwR9+kzRfh6t7gW1p5M9iYk02Bf83OV+vzVxLEZmxfYEn9ELEsSt1qDgcbG5KFNk70cXCufRf8cXvc6q6w9y0ZQmTTJXkWAYE7YAFEdrdi12+/wGA3VgNoNXYB0AbQEsV8aAMxE0QmeSYLtrFHgbmcsNkNY861Ybehpp6NTgJuWbhc0CUyh5N12WOjzPFRacnlDIngx4bQYueWnInXj1V4VMyRfBGtmFNPidzS30gQG6O7kyMkAgBnruUwwMT9fAkAAcLGbzoE3DTa2pjrqgwLRp2S6AtBNUQRqQAIrwZF6evfkA8c5EwcG/+BokyDEBFz/1PhQ1lj4pSUSNXL7x+RRl8x2mr1/ncgnk90FxjfYpE8YGNOho6C44+ka04mgKG+YKM3TQJgrquycMLYLADAPacEJfkjyWpQboG8x2Kw2Xm/yMZ/wDxuAMwHeMIOfR8STVwI4CGyUR9na9Xrjyeee7YfaE49fLzpmYknpLDBA4DC3svM5UQt2N8+4Pbu5r5QifkX1ByRmknpmo9TxGyrVdarvH9k9VKS6NkG10/9ZIJIJEfjYBt8srVSUfdpJfW73lY2Wk7YfpOHYpES3SGISYkMh7B5c+JNCCI95KjAUuAQcFNZDUqX3NHDHreUcKpGrtqUSJGJFpC6CD3JX4FN8nVvRFaDa9d8vOBjQkdBc3J3BW+zA4C51WgDVBMHvsueqaclnlOyKTCtP3DN5eRb7IZpJ1PLMS1cS2vSxVsyqbQWJFkNEkT2yZDA1nVaRPM22phrBDa7EarrPItbo8SgWWHvW8w1xGDh15E9QSQlEwJL5rEQI3kbirtCTfUAoLPrPNWIc1j5StCMjQ2hxV5gnpIcI3IX5YUQqZKtJWI0b0Oe9gFQUj1ktHL3hmShTZ/Hig+jxTfhcQyhq80Qm7EV1eGw6j5h3TdBHnwiNbLv5NCmeoT8rZjycS2bJHpswJYyJJWIM5p7eAAQZVj42IwtJloMSu+QLjsPyP4pKpMhtkT2BRaT6mHepus8af4UGxtiU+CP2/mYvPuEMBoAiMwxwB3viVWOpnfIvRFW3cqHvwVoG0akSDYFFvEHAjf5ZjX3d+uu882y6V0jchKbowmjdYdDZ5dORWNoHrcERCMBJZOSw8mUSACpi0iZ7FuwTUktbSoxm97H1UCTdhhHNIzGiVcZLAYAsCRb/m2QF0IQm5AHAkMKHoXEhZ9BiC41ZdcI03oOPW5JzWME1yzw6CHZEDqRu8MfknUcEJnrQqT7QDIOATDa2ngBnAD4AXhDD70h0QeN59BY90ZB71vMdYGJvkz8JcRzTG5asPU6DtyRa3sKqtfbVkGpc0l0rOMjd0KtyiGDrQeuJHWcBJFGMlGuksqlNj7BeLRBRpuxZlIaBSf4ZLSpdWKpsXGtCkW0CP3ICQuW9COe2HGAwQehzVDzihqS3vJ9YmpV+PAt0vAHEMQ65ITANkAJQ4fMtRz+QRpeAtxsGABYsq6jSVmnVoUgMkGOf9JEPJkFII85QyIDwFuqZXwo4wl//O3UJ4wlrVWJHicI3chdLyJvs/OA4cR5AGzYLfs+AMDV7uZqT/DCbgA0YYzIfXJXYACUnGBjXYOx93LB0QYAhpp6iJOGlsPsmlNyRYrHCCJHyfElYpSQCGPvZQ7gMBBaOkETxoi8IG8EJnnc0X4bnneiWYLZfSyC2JBc/3wqZc48RAng6hr4FjU1Xh67wIQeIzWdJ3KbXBZYJHUw0lagUfr6ubUDFXy9RZ56Khc6pSlAqOeba6lAi8hNclFg4eKuxwC4vS9yr5jkZUle9q/9+bfkT5/C45Y8yolLACKRsaRQlgaRXXJNYNosxG8D4A+UhPB57smIDMifPgXAV7wcMv9uwa5vrHkOGvb48NoJY/X2K6AJQldyy02/2v2O5FmUfW6p+9Ta8CIAWfwAwiHO+ALf+xZf8TIANvuBPP7O6q0P5I/cfFcPNzXEsv3YBLEeuSUwAIW9l7WBL+7FlyBOcq/slh1D+HCN29tQ0HvZWLefP7Df8OuXOQDwgUZdErlK9gUWqftirgsAIrVe7Ps+APyJ0wbcCX0MrstutL+KVa/0bSdDh/G3Dsv/z8lcF5jQQR0yiJxly+UqMcNaLQ2RljLh4zGkOCRFi7HuDeCBjA9DP4O8tBg5zlsauA2bYxNEDrIlJ4fWAzEEoKCrjblGZNuhUPh4Ihv68WLaj0qjYJ6bsnDI2HxIhsC5nPjD+GJ+qu0n8outeREjVcAhtdj+GauDY9uPCm3ATYjr1nptewwsyF9PZIktCUzQfO4twGKy49skJIKzCRgG89yM1nolziKK7Wgd25TXTvaNyDW2GQczqJGntGWz8y0WyeE0Hm1gYn2BrRaROn/198l72RubW8O/Tb5AJYjssk2BcTX1GHarY5Sf7Qmi1ZCxjQdjqyHje9lLw+64HA6lZXwctDIkssuW1RHWQy0A3tYTf1x/lLoVHmCuC2jpkK/d5WKbYxNE7pBrqVKqJ0PpdZPk1x63+r9HGxg6+NGBkGAxjDql5E15CSLL5JTAomEArtmOYXfhmTek0Vd4YSCkeDJiO3DwAFBLWy8il8khgYWd74uRaQzSt0ZDB6zyQxhqRDY2xGYeyP5WI60Gifwh+wKLrAkB8HXVIe99/KtKwy98yDyL7KMVeNwyEJpRA1/s0ilGrgsif8iuwOLXhMaW4qcPn3C7fiLX9sJzCkpP308bucC30XICo0MywFGvNSJ/yILAEhIUo2tCNvopd2Avnqxg6n8ZCgtCq2uKOx4APOHsjdjoM1kzIpfJjgXTqiISUF7tPiULbcZmgTnelst+xfDkp9j9y0Zba8h1QYaFa7Hz5mjXa4LICzIksMhGS+lkKLlGuJZDGB1isBieIOIY5GoEAPIKuGaB9/8y+++j0rd9MjoKWiBdczLBR22kiPwiAx/XmI2WEWAeN/CKYXoo1GIvME89ffsOByhZV1JkiGv3KaVOWR53A27YLhu7qEqFyD8yYQ+0ufbKBoyz1XKo5SGysbvcl07wACDQborYeWSgojlJrn14EyUorbAjJZ+r3ae2UaNJEDlL1loGyPdGGMCZazncCWmaapAdI3YSGXYZRMtbuBLIDicTfEzo4EdHWDjWLLmcgIVraeXNz9q+Ny6tka97g4MvbC3VWxCErmRIYOFce7WMLLoO9AH4pgQgXGRpbLFIo6/wZsA/wqaA17Z3w3XSGm2tAOAfUW9BEDqTBad37CJQU0kJrHafYqM+ztYKiGwU/GuWuJ6HW9yhaUPYymUBiJrXBKEvWY8qxbtAZKHNqDTVabFzS6rvMTZfsQGwKGE0GRv1pteGsGOGsyBZMwLa/hE6kHWBxcOG31HrlIcVDbhVIxa3hsSkJLQZm1Nqmm2s24+WnnB7uQuR1wShNzklMNFoaYjpXXPPKaGNr062hrx3NzTlk6aivemTV2p63BJg2NtgUBUlQrSA1EVkipwQWMQFwnfFZspX2xOfT1lDoqR+V1ctBzCXk1W3IXml5l0m2I3VIhubDIcjEm5BEHqSEwLbEtE1ZASlj0CCSyPkusvBufZd8Mft1E2AyAr5JTDNGtI/snbNx2uaaSe6NCJvky6RS4PIDvkhsCRrSHNrQWybtwgRl0bEnxHbYpEgMkd+CGwrqG4MNWLmCafnJ/PLx0E2jUg7O0dgipVjrkl02WMjZq28OfnwF4LQm50jsEh6lBzO9ghnXUXTpggiw2R/AF8aMdh6eAEAjL2XAaxeusk835Rc42g5wa14mcvJ7mX5CYnnjZ0kMIGDGHro1R4qPPMGUG6YvgrBytva8F0nDXQmMslOWiICAHfAqjjojXX7Jc/i6qWbABgALIa63QDQTS57InPsMIFFUodFiBbj71hkUc1XZK7+kPih4ThlIRIZRZclYmSuOYA1h5P5ocw4X9vOFMytERMxm/IpbaqAKVncTeoiMk/aLVjyOc5MuIOWngKzuOpxswyNWo7m9TJX7g5hicQP2JhTih0oYzxzmb4R8p1nEtj65Y+LUnfksyIAPjQr48xFZMSvorSpiqR98Lb4Yeq5gfbLyCkLdsBtPPoGEJ6L6xqRc+zrgNgq2xfYBo4BJTUJLqfk0X4li8wxAIA+MREMth6p+1T4y8gNQBq+CQDDkQSUJGM7QV6Z/EFHJ0fsHOcpyXGXO96DS9SVLYLqkjHU7ZdnFrnfvhx69xQA44kq6W8kw94PQysHjV9rQ+xUNCK/0HG9xtXUA2Cuq7LQBtdASIA86gQgb/bG54GwHwgAZNHCcXu4H4f7I/zdB4bfO20QjAYBygI7lKWHJJ4dXSxYsjnO6i6IedzP1ZfxRl16PDeVdSDf1SZfnA39BMa6Bsnjlj9ZMoyOyA8/wRfbeDWIR+QrOywOlosk7JeijbSUbSpzDBmKK/gTdh6i/NArf6XXaIY85gvVCNpOkkQ+QgLLPOrWS3aNKI4N2edmPjXFhDPuxqiTtdj5mnqZBsrkP/TfLiuIoYdeeQ8Mwn5gEYCxrjokHOSmhkON/6WgSXXQ00CZHcBOSvbNJ7gDVoMAruWwYc/LAKSZJ4aaQ5xUgvdH2NiQLBx6rnaqOxiyYFlBMNrszOWEudVQdTPkAVZ+LF16BwCWFtVukMPx76HY17My19dUcf3N2fHT5Zm7Jwks6+w3nlEbhygj3nnqjqoT5afH5dMZvicJTBe0HQrWHE7+NTtfLbKxITYF/rhdqxy+5bB0zckEMNQXtDySHE5WC4aOAjOwxV78ZOJyEVlPnvzR7296JAM3zSyPpGtfX/3Lv5ZkOTT610/+6Pdl+ZE0OiyN/vXTaeW3w6GUr5XtvyXHmHUcwUmH4wgA4ORA+FAY5YjCwEn14BHHgOOI8qtZxxEcccyGXwxE33rEMau9kuZC610/VcjJkX4inQtCIgCsOYZQ0wrRx5UgxcwMbZ7HmkPpdKDW+zx714PIxdmYM3zxmNe5zZUu7zlZlmW5vx1zfU0VXTUDYSlMdzT1zQHAYCfXMe2YlWVZls95O7puJ7nO7a7zcIY1dLurgrNHf7zS0TkIYN3rbwFaIqYd7bwYN5SCHYdTFixcSnuqmBR79e1jI0xU632Yw8mqt93jMebiSnWM9G60xFv7OpEcWYKePNauvhq82HX75MC4+mP56XMnuzouDp7ux40rODmgujLazzqOXOlKdp1z6hnlr795pOt2TcyP1+/PoX12neu3J7naepDAdEUJcwkQwAmAHzDHZGakUu+z5hjij9t5szrcTMZG7bFS27NFL85ZGvjjdow6ISBxf5iTHLFWqK/m7k8Dtzu4KzG/vj83h2kceTN8liKYmE4tcddJ9uNG10f7FryQJDAd4VsOS55F5nIy1BfUQEqWmZHULITrfU5JHtUAsi47D5E5BrjjPRuHyDa1M9qLyz63dMkNgP+dywVdYvhG+cMRR6LXfa5P3+tvCdqD6QKvdOo2tyqvC2y1MNcau+y8rSfFmWYAgP0AFAMITEmOIazT9WCdPZtzzTXC/EnOVy5uPHO5sPeysa6Br9uv7g9Tf7QcoLyyBrevfydhV1ReWYPb3tnIz7PeZHuw7V9/S5AFy10UAxjuAe4GgGRTLFTCufnhPZsPLXZ+9N3QtRFDV2tozMmmoEQL5IcPZJeTM+2Xrzmhhgcs0VBBRv609NB+1nGkosve97piZFTXxvjp9mMn0XG+72z76XJgsLPjCnBy04tt4fpbsWgksEyjbcIBgN0DXx1zHNF6n9bC3k1nScfn5of3bCJznWdzEtd0FIn+DM8Hyv/v6rrMA0CtcZ1JGrlN+enxWTRVVHCKEyOynmvvlwc6OeXwEYfjJJI5OZ7h+luAk2UdCyBXu0/FbQkSj2TgppknrBZxtfudjc80Hn3D0HwopDj3trv/0W6rjL1vwTEk+dxx53B7G/iv2Pkl59p3YUB0MujOZ7CTO2/NbIJUFLJgaUfTCt8/iRivgyj7J6Vv/cjwtdNwOSFAGnajppWDaLD14Fl72omhh7uAp4Ag4wEAY+9bsuOqLID7+SL7CeSP3JE5aQzAu+9oSzmz/pWUTmLWcnN956+gZiAr6gIJ7NlZxzMeHbcpOS5EzEVo1Mcd2AsAcMvCZcCNa2lz3Bm/cnTt0k0p/DzsrW9gzwpqX+cejhh/vUJ+0c5NOSFYUNOqHZ62A2nvn3VEF3Y4OSBvKXSVVkhgaSDx618d+eefWr30TWNXD3M5WbWdvzckC22cOAQAUBx3SIvjLrJnM9b5ov79d35XevsbwAPuN74k//1tea8ztLe+oObR2jUnlMmgO1JdALKT1pscEpiOyNOPwi998INN+bgWQWkCoOT4Ajo57vYDi+r2b1j1Z+CjDwD3qkf9Osg3f0a+QgLTEa4GGAZzXWBCR4FZZKIFZo216QLrdhfY1LLlcNPvNMC3HJZFC6e43ZXr33NKsBur03UHIlVIYLoQURFwM9JXODpgWkPiFu5Z/A1a9UJrpqrt9F86K9A/ezbZUb47IhmUKrVNtBNkJJdTGptS4ony2AVJz6KPyH2Zyxm+r1LJskFWFJE1yIJtg/hIlzGyffKPsCngtUzcN9z3P9K9Y1EKZ0slQqYyW5DA4km5Sj8x0gU2Cv41y1Z78aae9hF3X96yH6+d4KauKhEtNTawxbsTukICS0Iq3/dJIl0i0GLnlraUkJE87UMeu8CEHmO1yBImP2jvy3yLePcdAPBEprGsmw1MRiwrkMCeCU2ky83EBoPolERfCCNydVQVKZjEBGNYcxijI0z0yUJb0uovefqRMp6PuS6g9oShWuAgMtcQWbBcgwT2TGgiXV8taI5EnKLq2qoxVIySZpGZpEGiUrrCTfnUhIySSckFDneoyXYOsnP+i2jLPSK7mqSd0tJC0kgXsP2Ik9YoRTLrN80YVItNbAA2LWwhskCuC2xLjQEjRYdM9ClDomXBXtCVH7NYuRqwSJZgQoNEIk/JkMAiJgVKI061InCIwcK3tG5sXlJYZUWLDhVfXLhrmo+rQaRT2sabE+0TSi4nhHq+WQi5rjJY+Fo7n44ko0RvYUHvWyHXkAxgbEpubi2Ipl/kaQUkEU8GBKZtFTYEpabdNcIEH1rsBeYpyTEidz2jedF2StNmp1uQWqc09RMfNoBKXEseu5COTmnqLZIXiflHZKFtK106iDxDd4GFv62jrcIUk4JmOw+Rjd1FbXJH2bNjEBBK6JS2Hsa6Btjs/D3n6rtu1ZXXrOysNumUhmcJncEX+t6dp1PgXvsye/d/AOCPfpVvrtW00EjtwsSzM9fXVKG2KE1jBZm+Aous7pimaYTm94Khpp6NTsrQZYPEpTrDTmNASuoBd7SCK4VOaanHlxJCZ/1Pn/iw96Chy46/uoBoEMypbh3HYtz9hMLWtuUaNvwvNdhZcf3NWXm8XFFa52CaJJZRJ4dB/SSLAHBvhFW38uZaDgMh/ybbsFTQlntEhkRvdYZdbAXXlHTtLrdOp7Rto9xC8yn5IGLbFbPGieDgXPsu+ON2UlciyXVyz7k2Vc/XPmJT2LUdh1Z7vxwWVHllDRIblW6TjCb7cjX1AJjrqiy08SWQHU6lVip3Cte5GgBqBRdGB0IC5FGn5BpJY2MgrgacpcFYt587+tXCM29we17m6/ZzTb8KwNjVw00NyXDLgr2gqw3XnDQBPVWq23bVAqLvWYZaD3ZyHMdxXMeVzc9NlQxZsIhJAcDbegAACTVLWSVZXKs2vc8WuYXWW8hX+WCz7xobCZ1Rvph9IXE/n4dtQLMLc11F7QlDcxvEyW1dYLCT68CALPcrS8S0WbBcj4NlGOYaAYDYvFtjXUMq4YRnIT4Ilo9tQLOKQbAwUQxN3WVKR4atvn/u/jROnovuuqa32IJ+XUhgEVRPOhCXd+sM1aQrnJCEpGYtp2x7XsA1Kwk02110lJ92OpoqOA4Ajpw8eeS2dxYggaUXpTmh5MPqpZuIeNL1DycQuUBsI6r+dF2WKpojqNFqY+/lwjNfBcB8i9zUEAOUcALESR17IBM7FBJYEpS828Ley4BPHhthAGeu5XAnRDX5xBahJWISYlwONY8kh5NltVMnd2s8ldPkV5v0fhJiq5DAYsgpl8OgdwHW0nYEAZw0F8NUfLZsz+z8wnk/zlmr2k0ZfyBi65DAcpMgd+suAPjfV37ut1YBmJufuVFUNd4Y7PMuVFhLszXQgEgdEljuMmAuhrUKdz0dHwc6J+5eCQQBAMtKnsHHQKO1NGtDDYjUIIHlJkUAAHbD65leMwBQ1HXSXHzMWtWOYOe//NAVCDZm9RGJVCCB5TRftNZ9YcJztLHpj4Mz3L3lK/7lK/5l9Xeryx23lkG+jdyGBJbL8BYAhfgL78yLhZ8ePvh5dzE67jwo3WeEqfJYYAHWKloi5jgUB8stBr0Lg+HXFaaVG0uAseBXTHh3dfevv7APpn2/v89oLavrLyvK5lMSKUMWLEOkGMsCop7DU+8/xeexGAheCawCuPPD8T8BDph2759fqCwr1ek5ifRCAsscm22WgnMomvXOwFrVjg+4Wz8aZGu4N64YtPZdxgcv/et/NN3/TnHdaVOwz7vwurWK3PS5DwksdygqB2YBAHPzamF1e3XTQEmQu3V38KkE/90KAA/GldHDXWFDp0CujtyEBJaDBGfDeSPzDxf+aunxycam/uBMx09Xjn5u3/WfBGtMmA7gXCN5ONLJYCd341j6p6WTkyMHKWovq1JelR3YZ9mF7935QdN7H/xzcM/ru/c5G6v6raVvppwnpfWazM17OpcABAe9nibvTF8g7U9OxEMWLNeIcw8WtVfUtVdgzvv9XyuoKsdCp/exFY+9psrTyd+uJdjnvX89sOccgKiXZTzccCJw27/clextz+9q80an0o8jb9q2EVshRg8Kqq8wsHAxUPilEsBU2m+NHtayvpcyoMSjAcxWF19EVX/RQuc8jpmCN1Caj+7+LfhjY9n0i+PKtHVWlsvzt20bsTGvW+sqvTMAgKDD/LmwGyPYN4+zB/ZcTPaWcMY9AMweNF0squsvweD8zHk/3jxQdboEg94ZWKsq5mcqHixX3FuOpDJeAYDlKw+AfDNZyZ92aaZpqfhcSfD8EpzbTYM+ee50OYDy0+dOcjcG+9vToTASWO6g9SIuoKwK/vev3FNXdF1+RLQRT9ideNEPHNBk3M8vzKm2LjirFLwEVqax701TsNJa1Q4Mej33y+pO74yyl5JSJ1Zmg0EEtm2Tj1gr0vlECiQwfdFamLl5z8Wiuv6S4OAmNV3BWcA7r5gyOA4WewNQtOFs1H43R+Nm8P6kw+9TrNz3/B9Nm2YaZj/Z/cJnvN6ZhY9X/m2g6I/LqtoBLM10ovR00ULnxMx9M66jdHxnqAsY9N6/X1L5elnpm4HH271GpNHN3P1p4Fh6HowElmaS7BDiLczCZjVdRQgUHbOWKnm9r2PFW1LXX+Jt+mnwoncGpuKzZfvKgbDFYze8nokPJQDlgGLxPv9S1Y+OBPsmFip/qejGfPEfR1RUUtUPAKX9jQCQgpskb6gw7bkRXIF3+XoAldvtB3VFWRfOfef6bW0Lt2eCBJZ+wpsEbWZGkLt1V7Ews4EVazGAokosJLYGa7eW9nk9WleHIksUfabm5X1JfRJftFZ+dsJ79ym4e8sAzr1oHCsEUFRpYjfmg8esz0VSVXmZ8t2x71m+NU7iBsd1AEccs+PpioeRwPQjdk8V1dKeyg0XZhpXB4CweyMYnPYHO/0rOFDZX6KVGW9BkcX0mYHGf1Ph/UGFf/X8xxI+Hud+rP46Wt6iIb+8GplBaU7f35+2hm0KJLAMEFRk1vlwZRoLx8y4H0C7KXgfqExyclSWsweLKx4sq7IsKnY27isHBr0zgyXRHI52axWAQeUups+cNH8mslub3Uk+jLyFMjkygJqZ0X9gT82B0vbiYq93ps9732vauOBfI8uHC4PLwVk18WLlfvIMjKL2sqp+a5Vyl3IE7wc2MZVEBiALpi+KhVFRfQz7+hv3pfDWovayKjxYvhIIAIGOB8CDcHavf7wrdpmX7C5FpxurQGQbElguEhEMbZbyHRJYbhGJm6WeEEQizGVIYLlDNBdRUddJkwkH6s4GPWqR5cRCJU3EnikAABJNSURBVJWo5Bvk5EgP4aqQIIAm78JgIO54SnwG+45q3BI/f2kPgPKyusr5hUGseFGkQyoPoS/PtQVjrhHYWvkNX6dA1PIo8a5xa1HnxEJF477vxGbHp7rqC0eu/uany/ipmn94MmCyWuuoR0DesTMFtoVB9J6bEgCAiT4eiIzh21In+i5/QFsVMji/DHNpeWzIOMWGHBNAo7Wk49aP/sOLhZ4nxpeN/+rPGl+89E8PPmuliFZesgMFlnwKfTyiDCHkcsJm5yGudr/DhwciK2P4tnLDIoTbXCvOiYriYsw/nkNpJGScykUiJy/OLwH4m49XgVWsBn71lg/A4MT4n6zzTnJy5DI7UGCpIWjGVQrrHN8yc0sLAMpN+45h4TuB0m3YnEZrKeYXIqUlSvr8oJrQSOQfz63AdKG8CAD6vJ7rpm1XghS1a0pLaNOV75DA0oMaGjaVAu+fttadjju+PpEhYOF5Rdrc3GiFpbzZdYjc5LkWmDpub8PXeqINfN0FIL/6+c6J4DHz4xtFdf0lwT7v49dpCFie81wLLOvEVab82fwyzCUdD96P9H6K6y6aFHJy5DIksCwS8Rwqk/XwJw+WgWUAJw8e/PmjTz42fHzY+oXzJjJleQwJLFf4U3Nxo7UKXk+HP3DlwQPl4ODE+DsANKaM7FV+QQLLJoPehQlAGVT5l0sf/bspz8cvmh0v/+z8R6EXdhW+bNqzexXUKDuvIYGlny13xvQvA7hWsue/BV76SuBn3/+lxiVTsPOffghL5dmSonIE+7wLujwooT8ksDST8hJO2xIH3K3xicAazPv+YzG+753pM33yD/zefy56fNH7+IqyOAy772mJmF+QwLJFUVwi1XHrwZ/NP54rK+1vDPZN3P/aoapyE/qtuOJ/n0SVv5DAsk9sglWR17t8zFqH+YVBa2l7uP7lXFlpuynY5124jqJzZaXrdCwF1l+gkkqzAtWDZZ9IgtV5U2nl/MK0iZ2f+v6Jx48XNfUvN7wLg/MLKKtSXs8lXERbkHbE/LmBxib51aaBg8VHTMWO6iZSV7Z47iyYPOYM1dh5c+LxC0zoMVYrP4nMNSQDEOr5ZiHkuspwmG9pjXtXJMsJQJN35s2SqtMlqpH52r0ftf92K68Uv8DC19r5apG5hhgs2utoE6y6/AHgvQ4AUKo1pa+GbZFS/9JeVtqOYKQWRiHGXoVd+UpBGsxBbZN6CqNlhedOYFyzPWmtF5sCXgv/4J+UPG4AgJsNK4cWJc9NCdjd/u/VcyQGI6/5TJf2Tcz0BYGyvd/79s3/9JK5Aqgcu4qWngKzyBxOJgIt9gLzlOQYkbta43L2Ey3MoMb/Ea5/KSpHkeZ15L31cf4SRYQIBK2YaZrAm5ppzvGpjylA1u9ZeO4ElsyCiQD41ywscmDJB4C37MdrJ7ipq2jp4c1gLidsdlk9Izh372+9/jqj7GkV7LuWxoEVL4rOlpWWY2HgyK9wU3fLAa65RynilGHhm1s5iGzsLmrbUq+I0W7PLs7jWFlpu/J6CsdqI8bz8blwS+25eQ+AjgfL2kTh2xOxg/aiMevPd04EzyoDJQILnfNF/dZU+skRW+C5E1gi8tgQgJgPfUk94DZ29TCXEy2H2TWnLCAkQmP6isqr7e8tfFv6sN7YDNxC38RCuKS/tLL4MXaZ5oAqABCZY4A73sMBgGCoqWejkzLiLdh6xNS/FAc7J2bum4J9AWZB8Fhsh4IvmLA/sPCffU/bq5sGSjDo9ZwP4E1r3WlTxBjGBwa4W+8BuHIrmu54xR/+NyGrlSZyVGDhrhgigDWHkz+u2pzYnVJaEEMAAOm7vhBG5OpWDpCnH4V/68NS266uVg4icw3FvREAxEcyPgug0lrXbsLc0sJsSWm7ad+X8cJAAFWmKclxlzvew5sh3xsJVbfy5loOAyF//HYukcTtGaekTwUA4AFW4zoU7A98cmMef/4Lu35tbqZvaeW6qXS8LNjpnekz4TqKx4G4wID8atNc4PHF+eBZa2n50kxnMC+nXeY+OSiwaFcMxbYUdLUx14hsa+X8IzE7pfQg8M12adhtfM0ioZW755TENmMNMAzmusCEjoKSSckFDndk4YT2H4u5rqLqN3Ydnv/HoVnsxo35mRsoOluGGxMz900r//PpB/9kAnMNhASLYdQpwcK3QHY4meBjQkfBZurSktSYJO7QYOKtxaXlweCXyqtOlyijifatN6Yo8kWgVF5XLq1YSV36wMmyvPlZ6WML7WjCFPZeZi4nbG1wTRpqfQz2tFow9aniOnkkHtkA7tZ4htdU6mDYpYWKe+/LrzYNesfPo7gGSeb0beDVOGIqXDEfvFO2hzou6kemLViKn1rFowCXM+zNA8aG0GLnlrbUjmYd/FNs9G7ke4Wrbdveu/hqQTn+Xz3/Ivnm4o/rj7JDC3vql2+rhwMVt2KryOK8GlZcXI4ZNUZd7PUjB5eIUQzqB1UEfDIsGHVKYnSntH3MtbytVntA2ta7Isf/sO6TM5m1YJEdmvzqBvP11vFqTAB4Px/Hn+cjOS0wrqYew27muioLJ4zNAgDcc0opu+Cee9bxapQVwRQeNQbQylBXcjRVirfZeQDmWgC8rUdVF4Dq9G/AngfmlhYG1Xja44vzm44aI9JGTluwnUGK5WG6rtbKi3BxYua+aUWJpzV5w6+pW7DOkMAyQRa3OpHdmsZlv298Hfc9kXZIYM8LqRhS8nmkHRLYTiYSBOvz3gfgqG56PThzUd13FR3bsK6MSAs56uQgnplgn9dzPhAEMDd/H2V1APBwZlYZlF5WBBSRujIAWTC9SFYtBgBz856LRXX9Jem5y2YLv/BQpQfjALwoeh0Agn3zwc8Cg9i3pboVLbSYTBESmB5oR/LdR7habLCkqj2wcNEPHEjnzTb4rGvGsgS5W3etSvfSpYfXA08ANIYfT361vm9iAeYVL7XsTjcksPSQzJJER/Ip1WKvI9g3j7MH9lzM6KMBeNw5sQyga2JcUxi2Evd4Z4uLvPMLg8Gg11S6qYMx8e8lm5YUElga2DThXakWw/wMyqrKgzOJJ2+VpOvPwfmZ8368eUBdi2pPnjbtOWkqBorOWvd9Z2KhsrEKiY+3PANTaUVxUVzF9Hr3PWIuDndJuH8d+wYDoE1dIiQwvXkMtVosOLgM7/xMZ2BlGgtzJdtegyVff/YF4U3owKEGwax12nwoJbU3PJr9MYCuQACqcVtWchSvbDB0Ivyrc9h14+FMXzD4f6QiGJ/e+PFCRe2+2fmF836cs1aR2BRIYPoy6F0AwtVi1qp+bD5ZL7XMj/j1pzVZB45UHu+IubgGAIrOluGiN2g143qgeDxJ7wBt6nCQu3X3fODTF/GS2f/R3weCAG6Hi6PlV+v7vAsVtIsDQALTj4j1gH+8Xzs+r6Sqf7P3brqfSVx/Vs6P3yhqGm8M9k3MDKZQ3JXUuK1XoAkgsVPq7cAnwCeKJWw3Fd55WvR7e9deLKsDUImFWYAEBoqD5Q7axoZN3pm+JQDBPu9Mp3emc/5xYiNEAJH152kTAJO1CEBRZSbWZisnTcV/+nLxwKtNcmM9gMHA6i9xaz/DnozcPZ8gCxZDuBeI9rW2t+E2L5vqOIjYJnCDRUVe00atMmLWn2X7bsR04NARxWuy8PEn/9e7UPCZn7ebP3cUj4cDIQD3A2g3Be8DlTo/Q75AAosQ7QWiNLRhoo8HZG1vw+rkPRU3JgX/dXxlpOrWDwan/cFO/woOVPaXxMgs6fpzwwVeetAuLAe9M7CWtgQWrj8KwoSPzWUDxej0zvSZVrymSsokViCBqax2K5PuFqVut1LgzAtAXG9DvW4ev70JN4F77GwMV0aWrLutijOPGYtHJcvTR38jdVaMgQQGaDqFKL1A+PjmPNrehnoTcetjbj44i33lJiiVkUkd3xTezXFIYJsS7W2YAZRtVcdE2Cg9CMej/ONd67wFJLMchgS2CTG9DW06tgOJbG9kq273IDIOCSwG3maPf23r0W3rBST3VabBb0nkCCSwLKLtYXwVLT3ypVOSxx3uIbeoeR1D6h1RiaxDAssQ67c0XpS63QAwfAoAb3mDV4cbTUmOR3zCoCMivyCBZY6klifitwTE1e53uOOKojLptyR0hFKl9IW5Rlj8a5G5Lqy5Rphfe+KU5BgynrnMm9XXyJTfktAVsmBpYJOJFp6bylYqPjXENSLbWpVTtL5KDncS/Zbr5W1pc7uIHIQElh6SLf9EGUJIXQGKq93vKKkhIRGoASAAvlByX2WcYGJ8IZJnMd7/ERZwak9FZBQSmH4Imh1UdN4K33J4LWFkZsRAhTO2Egn7QoDC3q9Kjkd81yFEBUzkKCSw7ZOYem8YczJR+aWFa1lvjOWh2JGZsc56oLD3LeYYQi1kwW6sFplr0mBrDWlyuFa7vwmAdd9Ur+dx82SpchUS2PZInnrPNduNAPwj0ugrieqSPG7Ehba0Ua+wgVISiznxDqdZSYaZ4i0N3PHoEHd1kBqRq5DAtonB1gNXdBogH10DimzUx4W9F5HUkI23Q9okY8VBj1EfEiSasbwtIl2QwLZH8v0VANwbkoW27f6zTgGQfIuFZsgCQn7ArK4418vb4sl85TYksDTDpnxcyzZHyDLXAFfXYAAk1wjfUi9fczLBFzd8ncgv6L/d9pEf+mTXCGytCO+v0PsWxJfka2fWCmv537KnHilOaqCMXckm1hJ5BWVybA+Ruf48tPqhLPoUJwcAztIACIZfXAitlBi+1IbREXnjaxDPAWTBtkxM3saKO+L9MwgAxNCyhdv7ifzDIQht5IQgSGDbQXEJMpdTBjibXeo+BYApq0SFh4t8nUWmee3PPSSw9GCsa5DxBMJu+fsPsGe3jMMc7oT868WaiecFElga2c012401I9K3buOgj8kdBWZAk/CxSU6wBsoh3DGQwFIlSU9SWxtzDTHXCLTxKHOr8Wut4TfFJ3xwlga+y877R6TpQ8bmbXrziTyCBLYuSQxOfOHJEFrsBeapVc/G1inaa1H2uaVuN36nITTlezrulY2/yH+5kxpv7GBIYMmJXaQlLzzhmu08RDZ2lz/61vrmSHz69b+Q91j5LtUXwlkaUFJvrL0bEnoNU/0hccRQTb6QHQvFwVJh/cQoCIaaeoiTG4S8uANWg+ZNBgGYfhSaByc62cxPsJ/UtZMhgW0f+d4IAzhzLYc7If96Z0XFqTr3PW5p+CZ7zy0Nu+WVFcOQk633ViL/IYFtH64EssPJXBeY0LGBO5632bUaM9Y1GHsvG+v2G89cLuy9HG8RiZ0F7cFSRZu3HqnsUozSNgqK+ZbD0jUnE8BQX5C+hyRyDU6WczpjbrX7FAWFiPyFlogEoSPPxRIxhZYySSDLSTw7O15g2pYyQ1BayrgmIdyRhZ5ISxlylBM6sTMFlpBXoW0pIwA+1BzG6AgTfXKyopLULR5ZOWJjdpTAIsKAkvV33G6YdjIR8sMHOHCEe+Jj74VlNu2D0GaoeYWNTsYWlaxr8VDTw5vJ4hFbY8cILF4YBV1tzDUCm90IsKsXQniFL/Ox97TGzc2GAYB5biZcLd7iySK0TdSo0SeRIjtGYFB7SscKIwTwEOVHT7iv1XJ+8FPglDYyNZPSNR9XCybWF9jiW1+ozQZdTsnjjgrSc0pSDGPm/iYi78l7gWmrSLg9Lxt+721u1Cl53GsOp6EQHIB7Q/ji7xoBmGs1bWRajV3AhrbIIMB45jJvFplrCC1tBrOgacdLECmRxwLT2Ba1ioSvssijI3LgAQDZ52YAut0SYDyzneaBXI22cdqk5AKHO9REjdgS+fdpifNkGF4Ed6JN/vpfsI9WQuITTvDB8BL3AsBWcPgPCr4M5hhKbJG7MWpWVJzFswFoXfc9BJGM/MrkEJnrAhN90Hgy8MgH/6S85xcB7Oo6zQHY82PDb75d8PYf8D8ZYhD4Lho+QmSNPMhF3OC3hb2Xpa+/jS8fDP3vB/KnH2x8KYpZEZkn15eIiarQuvjUQyX1uzrr2bW78opX/uIfFCgeQiVRPcFDSBCZJNctWCKKwAxjzrVh9+Znx0JGjMgwuW7B1oOrqdcGtdau+XjBx4SOgmYyWUQOkX8WjCDyiPzyIhJEnkECIwgdIYERhI6QwAhCR0hgBKEjJDCC0BESGEHoCAmMIHSEBEYQOkICIwgdIYERhI6QwAhCR0hgBKEjJDCC0BESGEHoCAmMIHSEBEYQOkICIwgdIYERhI6QwAhCR0hgBKEj/x9994vwcLxSHgAAAABJRU5ErkJggg==" /><!-- --></p>
-<p>Now we can simulate data on the tree using the modelBM.ab$X0 as a starting value:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a>traits &lt;-<span class="st"> </span><span class="kw">PCMSim</span>(tree.ab, modelBM.ab, modelBM.ab<span class="op">$</span>X0)</span></code></pre></div>
+<p>The first functionality of the PCMBase package is to provide an easy
+way to simulate multiple trait data on a tree under a given (possibly
+multiple regime) PCM.</p>
+<p>For this example, first we simulate a birth death tree with two parts
+“a” and “b” using the <code>ape</code> R-package:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># make results reproducible</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>, <span class="at">kind =</span> <span class="st">&quot;Mersenne-Twister&quot;</span>, <span class="at">normal.kind =</span> <span class="st">&quot;Inversion&quot;</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co"># number of regimes</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>R <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="co"># number of extant tips</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>tree.a <span class="ot">&lt;-</span> <span class="fu">PCMTree</span>(<span class="fu">rtree</span>(<span class="at">n=</span>N))</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMTreeSetLabels</span>(tree.a)</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMTreeSetPartRegimes</span>(tree.a, <span class="at">part.regime =</span> <span class="fu">c</span>(<span class="st">`</span><span class="at">101</span><span class="st">`</span> <span class="ot">=</span> <span class="st">&quot;a&quot;</span>), <span class="at">setPartition =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>lstDesc <span class="ot">&lt;-</span> <span class="fu">PCMTreeListDescendants</span>(tree.a)</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>splitNode <span class="ot">&lt;-</span> <span class="fu">names</span>(lstDesc)[<span class="fu">which</span>(<span class="fu">sapply</span>(lstDesc, length) <span class="sc">&gt;</span> N<span class="sc">/</span><span class="dv">2</span> <span class="sc">&amp;</span> <span class="fu">sapply</span>(lstDesc, length) <span class="sc">&lt;</span> <span class="dv">2</span><span class="sc">*</span>N<span class="sc">/</span><span class="dv">3</span>)][<span class="dv">1</span>]</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>tree.ab <span class="ot">&lt;-</span> <span class="fu">PCMTreeInsertSingletons</span>(</span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>  tree.a, <span class="at">nodes =</span> <span class="fu">as.integer</span>(splitNode), </span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">positions =</span> <span class="fu">PCMTreeGetBranchLength</span>(tree.a, <span class="fu">as.integer</span>(splitNode))<span class="sc">/</span><span class="dv">2</span>)</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMTreeSetPartRegimes</span>(</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>  tree.ab,</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">part.regime =</span> <span class="fu">structure</span>(<span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>), <span class="at">names =</span> <span class="fu">as.character</span>(<span class="fu">c</span>(N<span class="sc">+</span><span class="dv">1</span>, splitNode))), </span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">setPartition =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="fu">requireNamespace</span>(<span class="st">&quot;ggtree&quot;</span>)) {</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  palette <span class="ot">&lt;-</span> <span class="fu">PCMColorPalette</span>(<span class="dv">2</span>, <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Plot the tree with branches colored according to the regimes.</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The following code works only if the ggtree package is installed, which is not on CRAN. </span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># The tree would not be depicted correctly if ggtree is not installed.</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  plTree <span class="ot">&lt;-</span> <span class="fu">PCMTreePlot</span>(tree.ab)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  plTree <span class="ot">&lt;-</span> plTree <span class="sc">+</span> ggtree<span class="sc">::</span><span class="fu">geom_nodelab</span>(<span class="at">size =</span> <span class="dv">2</span>) </span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>  plTree</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><img src="data:image/png;base64,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R2aGkF/+8pcPPPDArFmzANxwww2MsXfffddqtb700ksLFizYtm1baGjoNddcEx4e/vnnnxcXF997773dtvOXv/xlxYoVmqbdeuutmZmZjz766JYtW1588cWHH374zjvvDA0N7anxvptqCGxg8Lo7iyIA8aaluidHJ88MReFF+VpoOAkI6FqdczhbWXkZOCMehWaN1B07tP272dEj0o1LeupW27SBlRTB3IfIWYrM6moBcLNFvOIqtnsH4uLpsCyamqZ9u0m88ZbTfuRBZNGiRbfddhuAnTt3fvfdd3a7Xf+lf+eddxISElauXDl8+PADBw5UVFRERERMmTKlpKTk17/+9cntPPnkkzNmzABwww03fP3110899RSA3/3ud6+//npFRUVubm63jf/oRz/qu6mGwIYOQgCI8+YLl0zv+pE3H9qffkXTh5HoWK7I+oE66da7u22sbc4WGUOqTtARo+kl00hAoLZtMzRNmDazI5Whb/vXL/b8/lFUVihvvAaAZo2kKWl6XwPwtP3JxIkT9YujR48qiuK7aKGq6okTJ9xud0ZGRkRE2778lCndR3ROSmrbLAkLC0tJSfFe9974aZlqCMyvIWYLKy5Qli8TLp7KDu7jiqK+/26XuD2dTpfV2WG16mMdrygTFiyCpmrfbBC7CExHMgkLr2UH90MQhMzhdPxk9Yu1EATh4qmD94RnRGBgm49LSEhIbGxsZWVllwIvvfQS8clnT+mp1xp8y/fe+GlhCGxoYHm5NC0DANuzgxcWeBfu2hb32t8wucdNqBVul/bdJr0iB9DS3CkUim8QlNISDtY2ZwsI4LV25eMV4uwr2M5t2o6tECSSlg5Ctez9xGZTVrwjzr5c9Mn77o0RdK4wevTo6urqo0ePjhw5EkBFRcVNN93073//e9SoUfn5+fX19eHh4QB27drVj42PGzeu740YAhtsOgactAwAJDVdXLBI27+bR0V3RL9ph6ZmcEXuPvCJL+1BUDgAUH3OJsyap339BQFY9j52OJt73ABQVtxmRkMdryjTbDbxuh8MwFMOEsOHD7/hhhuuv/76v/3tbyaT6amnnmppaRk9evTYsWPHjh179913P/HEE8XFxa+99hq6G6POrPHTasQQ2EChj0Xc7QKg/PvvJCoGjPGGenCOFgcJC9O+/QYAr61pG3AsFu/2tBfph/f1qTNvEJSX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" /><!-- --></p>
+<p>Now we can simulate data on the tree using the modelBM.ab$X0 as a
+starting value:</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>traits <span class="ot">&lt;-</span> <span class="fu">PCMSim</span>(tree.ab, modelBM.ab, modelBM.ab<span class="sc">$</span>X0)</span></code></pre></div>
 </div>
 <div id="calculating-likelihoods" class="section level1">
 <h1>Calculating likelihoods</h1>
-<p>Calculating a model likelihood for a given tree and data is the other key functionality of the PCMBase package.</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">PCMLik</span>(traits, tree.ab, modelBM.ab)</span></code></pre></div>
-<pre><code>## [1] -413
+<p>Calculating a model likelihood for a given tree and data is the other
+key functionality of the PCMBase package.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMLik</span>(traits, tree.ab, modelBM.ab)</span></code></pre></div>
+<pre><code>## [1] -414
 ## attr(,&quot;X0&quot;)
 ## [1] 5 2</code></pre>
-<p>For faster and repeated likelihood evaluation, I recommend creating a likelihood function for a given data, tree and model object. Passing this function object to <code>optim</code> would save the need for pre-processing the data and tree at every likelihood evaluation.</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1"></a><span class="co"># a function of a numerical parameter vector:</span></span>
-<span id="cb35-2"><a href="#cb35-2"></a>likFun &lt;-<span class="st"> </span><span class="kw">PCMCreateLikelihood</span>(traits, tree.ab, modelBM.ab)</span>
-<span id="cb35-3"><a href="#cb35-3"></a></span>
-<span id="cb35-4"><a href="#cb35-4"></a><span class="kw">likFun</span>(param2)</span></code></pre></div>
-<pre><code>## [1] -413
+<p>For faster and repeated likelihood evaluation, I recommend creating a
+likelihood function for a given data, tree and model object. Passing
+this function object to <code>optim</code> would save the need for
+pre-processing the data and tree at every likelihood evaluation.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># a function of a numerical parameter vector:</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>likFun <span class="ot">&lt;-</span> <span class="fu">PCMCreateLikelihood</span>(traits, tree.ab, modelBM.ab)</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="fu">likFun</span>(param2)</span></code></pre></div>
+<pre><code>## [1] -414
 ## attr(,&quot;X0&quot;)
 ## [1] 5 2</code></pre>
 </div>
 <div id="references" class="section level1 unnumbered">
-<h1>References</h1>
-<div id="refs" class="references">
-<div id="ref-Mitov:2018fl">
-<p>Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja Stadler. 2019. “Fast likelihood calculation for multivariate Gaussian phylogenetic models with shifts.” <em>Theor. Popul. Biol.</em>, December. <a href="https://doi.org/10.1016/j.tpb.2019.11.005">https://doi.org/10.1016/j.tpb.2019.11.005</a>.</p>
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Mitov:2018fl" class="csl-entry">
+Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja
+Stadler. 2019. <span>“<span class="nocase">Fast likelihood calculation
+for multivariate Gaussian phylogenetic models with
+shifts</span>.”</span> <em>Theor. Popul. Biol.</em>, December. <a href="https://doi.org/10.1016/j.tpb.2019.11.005">https://doi.org/10.1016/j.tpb.2019.11.005</a>.
 </div>
 </div>
 </div>

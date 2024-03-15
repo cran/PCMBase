@@ -1,17 +1,12 @@
 ## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
-library(abind)
+
 library(ape)
 library(PCMBase)
 
-if(!requireNamespace("ggtree")) {
-  message("Building the vignette requires ggtree R-package. Trying to install.")
-  try({
-    if (!requireNamespace("BiocManager", quietly = TRUE))
-      install.packages("BiocManager")
-    BiocManager::install("ggtree", version = "3.9")
-  }, silent = TRUE)
-}
+FLAGSuggestsAvailable <- PCMBase::RequireSuggestedPackages()
+
+options(rmarkdown.html_vignette.check_title = FALSE)
 
 ## -----------------------------------------------------------------------------
 PCMParentClasses.BM_drift <- function(model) {
@@ -137,9 +132,9 @@ PCMSpecify.BM_drift <- function(model, ...) {
   spec
 }
 
-## -----------------------------------------------------------------------------
+## ----eval=FLAGSuggestsAvailable-----------------------------------------------
 X0 <- c(5, 2, 1) ## root state
-  
+
 ## in regime a traits evolve independently
 a.Sigma_x <- rbind(c(1.6, 0.0, 0.0),c(0.0, 2.4, 0.0),c(0.0, 0.0, 2.0))
 ## no jumps at the end of a branch
@@ -152,15 +147,15 @@ b.Sigma_x <- rbind(c(1.6, 0.3, 0.3), c(0.0, 0.3, 0.4),c(0.0, 0.0, 2.0))
 b.Sigmae_x <- rbind(c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0))
 b.h_drift<-c(1, 2, 3)
 
-Sigma_x <- abind(a.Sigma_x, b.Sigma_x, along=3, new.names=list(x=NULL,y=NULL,regime=c('a','b')))
-Sigmae_x <- abind(a.Sigmae_x,b.Sigmae_x,along=3,new.names=list(x=NULL,y=NULL,regime=c('a','b')))
-h_drift <- abind(a.h_drift, b.h_drift, along=2, new.names=list(xy=NULL, regime=c('a','b')))
+Sigma_x <- PCMParamBindRegimeParams(a = a.Sigma_x, b = b.Sigma_x)
+Sigmae_x <- PCMParamBindRegimeParams(a = a.Sigmae_x, b = b.Sigmae_x)
+h_drift <- PCMParamBindRegimeParams(a = a.h_drift, b = b.h_drift)
 
 PCMBase_model_BM_drift <- PCM("BM_drift", k = 3, regimes = c("a", "b"),
-params = list(X0 = X0,h_drift = h_drift[,,drop=FALSE],
-Sigma_x = Sigma_x[,,,drop=FALSE],Sigmae_x = Sigmae_x[,,,drop=FALSE]))
+                              params = list(X0 = X0,h_drift = h_drift[,,drop=FALSE],
+                                            Sigma_x = Sigma_x[,,,drop=FALSE],Sigmae_x = Sigmae_x[,,,drop=FALSE]))
 
-## -----------------------------------------------------------------------------
+## ----eval=FLAGSuggestsAvailable-----------------------------------------------
 # make results reproducible
 set.seed(2, kind = "Mersenne-Twister", normal.kind = "Inversion")
 
@@ -196,16 +191,16 @@ if(requireNamespace("ggtree")) {
 }
 plTree
 
-## -----------------------------------------------------------------------------
+## ---- eval=FLAGSuggestsAvailable----------------------------------------------
 mData<-PCMSim(tree.ab, PCMBase_model_BM_drift, X0)[,1:N] ## we only want the tip data
 ## NOTE that observations from different species are in the columns NOT in the rows as 
 ## in other software
 
-## -----------------------------------------------------------------------------
+## ---- eval=FLAGSuggestsAvailable----------------------------------------------
 log_lik<- PCMLik(mData, tree.ab, PCMBase_model_BM_drift)
 print(log_lik[1]) ## we just want to print the log-likelihood without the attributes
 
-## -----------------------------------------------------------------------------
+## ---- eval=FLAGSuggestsAvailable----------------------------------------------
 ## create an vector of appropriate length to store the vectorized model parameters
 v_param <- double(PCMParamCount(PCMBase_model_BM_drift))
 

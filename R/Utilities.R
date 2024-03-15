@@ -71,6 +71,32 @@ FalsePositiveRate <- function(pred, true) {
 }
 
 
+#' Check if all packages listed in Suggests are available
+#' @return logical TRUE if suggested packages are installed and can be loaded; FALSE
+#' otherwise
+#' @importFrom utils install.packages
+#' @export
+RequireSuggestedPackages <- function() {
+  isAvailable <- c(
+    testthat = requireNamespace("testthat", quietly = TRUE),
+    knitr = requireNamespace("knitr", quietly = TRUE),
+    rmarkdown = requireNamespace("rmarkdown", quietly = TRUE),
+    ggtree  = requireNamespace("ggtree", quietly = TRUE),
+    cowplot = requireNamespace("cowplot", quietly = TRUE),
+    covr = requireNamespace("covr", quietly = TRUE),
+    #mvSLOUCH not called in vignettes
+    #mvSLOUCH = requireNamespace("mvSLOUCH", quietly = TRUE),
+    BiocManager = requireNamespace("BiocManager", quietly = TRUE)
+    )
+
+  if(!sum(isAvailable) == length(isAvailable)) {
+    message("PCMBase: The following suggested packages could not be loaded: ",
+            toString(names(isAvailable)[!isAvailable]), ". ",
+            "The vignette generation and unit tests may fail to execute.")
+  }
+  sum(isAvailable) == length(isAvailable)
+}
+
 #' Check if the PCMBase version corresponds to a dev release
 #' @importFrom utils packageDescription
 #' @return a logical

@@ -1,7 +1,9 @@
 ## ----setup--------------------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
-library(abind)
+
 library(PCMBase)
+
+FLAGSuggestsAvailable <- PCMBase::RequireSuggestedPackages()
 
 ## -----------------------------------------------------------------------------
 OU <- PCM("OU", k = 3, regimes = c("a", "b"))

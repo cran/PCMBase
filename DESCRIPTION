@@ -2,7 +2,7 @@ Package: PCMBase
 Type: Package
 Title: Simulation and Likelihood Calculation of Phylogenetic
         Comparative Models
-Version: 1.2.13
+Version: 1.2.14
 Authors@R: c(person("Venelin", "Mitov", email = "vmitov@gmail.com",
                     comment = '<a href="https://venelin.github.io">venelin.github.io</a>',
                     role = c("aut", "cre", "cph")),
@@ -36,20 +36,20 @@ Encoding: UTF-8
 License: GPL (>= 3.0)
 LazyData: true
 Depends: R (>= 3.1.0)
-Imports: ape, expm, mvtnorm, data.table, ggplot2, xtable
-Suggests: testthat, knitr, rmarkdown, abind, ggtree, cowplot, covr,
-        mvSLOUCH, BiocManager
-RoxygenNote: 7.1.0
+Imports: ape, abind, expm, mvtnorm, data.table, ggplot2, xtable
+Suggests: testthat, knitr, rmarkdown, ggtree, cowplot, covr, mvSLOUCH,
+        BiocManager
+RoxygenNote: 7.1.2
 ByteCompile: yes
 VignetteBuilder: knitr, rmarkdown
 URL: https://venelin.github.io/PCMBase/, https://venelin.github.io
 BugReports: https://github.com/venelin/PCMBase/issues
 NeedsCompilation: no
 Repository: CRAN
-Packaged: 2022-11-18 06:21:30 UTC; venelin
+Packaged: 2024-03-15 15:52:33 UTC; venelin
 Author: Venelin Mitov [aut, cre, cph] (<a
     href="https://venelin.github.io">venelin.github.io</a>),
   Krzysztof Bartoszek [ctb],
   Georgios Asimomitis [ctb],
   Tanja Stadler [ths]
-Date/Publication: 2022-11-18 08:40:02 UTC
+Date/Publication: 2024-03-15 20:10:02 UTC

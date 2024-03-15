@@ -5,14 +5,7 @@ library(PCMBase)
 library(data.table)
 library(xtable)
 
-if(!requireNamespace("ggtree")) {
-  message("Building the vignette requires ggtree R-package. Trying to install.")
-  try({
-    if (!requireNamespace("BiocManager", quietly = TRUE))
-      install.packages("BiocManager")
-    BiocManager::install("ggtree", version = "3.9")
-  }, silent = TRUE)
-}
+FLAGSuggestsAvailable <- PCMBase::RequireSuggestedPackages()
 
 options(digits = 2)
 # specify either 'html' or 'latex'
@@ -71,15 +64,18 @@ colnames(X) <- as.character(1:5)
 #  # The following code works correctly only if the ggtree package is installed,
 #  # which is not on CRAN.
 #  if(requireNamespace("ggtree")) {
-#    require(ggtree)
 #  
-#    plTree <- plTree + geom_nodelab(geom = "label", color = "red") + geom_tiplab(geom = "label", color = "black")
-#    plTree <- plTree %<+% tipValueLabels %<+% dtNodes[, list(node = endNode, kLabel, kLabel2, tLabel)]
 #    plTree <- plTree +
-#      geom_tiplab(geom = "text", aes(label = valueLabel), color = "black", hjust = -0.2, vjust = -1.1) +
-#      geom_tiplab(geom = "text", aes(label = kLabel), color = "black", hjust = -0.4, vjust = 1.1) +
-#      geom_nodelab(geom = "text", aes(label = kLabel), color = "red", hjust = -0.2, vjust = 0.6) +
-#      geom_nodelab(geom = "text", aes(label = kLabel2), color = "red", hjust = 0.4, vjust = 2.8) +
+#      ggtree::geom_nodelab(geom = "label", color = "red") +
+#      ggtree::geom_tiplab(geom = "label", color = "black")
+#  
+#    plTree <- plTree %<+% tipValueLabels %<+% dtNodes[, list(node = endNode, kLabel, kLabel2, tLabel)]
+#  
+#    plTree <- plTree +
+#      ggtree::geom_tiplab(geom = "text", aes(label = valueLabel), color = "black", hjust = -0.2, vjust = -1.1) +
+#      ggtree::geom_tiplab(geom = "text", aes(label = kLabel), color = "black", hjust = -0.4, vjust = 1.1) +
+#      ggtree::geom_nodelab(geom = "text", aes(label = kLabel), color = "red", hjust = -0.2, vjust = 0.6) +
+#      ggtree::geom_nodelab(geom = "text", aes(label = kLabel2), color = "red", hjust = 0.4, vjust = 2.8) +
 #      geom_text(aes(x = branch, label = tLabel), vjust = -0.8, color = "black") +
 #      scale_x_continuous(limits = c(0, 5.2)) + scale_y_continuous(limits = c(0.8, 5.2))
 #  }

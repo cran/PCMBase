@@ -12,27 +12,56 @@
 
 <meta name="author" content="Venelin Mitov" />
 
-<meta name="date" content="2022-11-18" />
+<meta name="date" content="2024-03-15" />
 
 <title>The PCMBase Parametrization API</title>
 
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
-code.sourceCode > span { display: inline-block; line-height: 1.25; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-code.sourceCode > span:empty { height: 1.2em; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
-code.sourceCode { white-space: pre; position: relative; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
 @media screen {
 div.sourceCode { overflow: auto; }
 }
 @media print {
-code.sourceCode { white-space: pre-wrap; }
-code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -52,7 +81,7 @@ pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-le
 div.sourceCode
   {   }
 @media screen {
-code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 code span.al { color: #ff0000; font-weight: bold; } /* Alert */
 code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
@@ -108,6 +137,29 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </script>
 
 
+
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 <style type="text/css">body {
 background-color: #fff;
@@ -303,14 +355,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">The PCMBase Parametrization API</h1>
 <h4 class="author">Venelin Mitov</h4>
-<h4 class="date">2022-11-18</h4>
+<h4 class="date">2024-03-15</h4>
 
 
 <div id="TOC">
 <ul>
 <li><a href="#introduction">Introduction</a></li>
-<li><a href="#generic-functions-for-pcm-parameters">Generic functions for PCM parameters</a></li>
-<li><a href="#parameter-s3-class">Parameter S3 class</a><ul>
+<li><a href="#generic-functions-for-pcm-parameters">Generic functions
+for PCM parameters</a></li>
+<li><a href="#parameter-s3-class">Parameter S3 class</a>
+<ul>
 <li><a href="#main-type">Main type</a></li>
 <li><a href="#scope">Scope</a></li>
 <li><a href="#omission">Omission</a></li>
@@ -318,7 +372,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <li><a href="#transformation">Transformation</a></li>
 <li><a href="#other-restrictions">Other restrictions</a></li>
 </ul></li>
-<li><a href="#generating-model-parametrizations">Generating model parametrizations</a></li>
+<li><a href="#generating-model-parametrizations">Generating model
+parametrizations</a></li>
 <li><a href="#references">References</a></li>
 </ul>
 </div>
@@ -341,153 +396,250 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 # You should have received a copy of the GNU General Public License
 # along with PCMBase.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>knitr<span class="op">::</span>opts_chunk<span class="op">$</span><span class="kw">set</span>(<span class="dt">echo =</span> <span class="ot">TRUE</span>)</span>
-<span id="cb1-2"><a href="#cb1-2"></a><span class="kw">library</span>(abind)</span>
-<span id="cb1-3"><a href="#cb1-3"></a><span class="kw">library</span>(PCMBase)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(PCMBase)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>FLAGSuggestsAvailable <span class="ot">&lt;-</span> PCMBase<span class="sc">::</span><span class="fu">RequireSuggestedPackages</span>()</span></code></pre></div>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>Model parameters are the key object of interest in every phylogenetic comparative method. PCMBase provides a powerful interface for specifying and manipulating model parameters. This interface is based on the S3 object system (see <a href="http://adv-r.had.co.nz/S3.html" class="uri">http://adv-r.had.co.nz/S3.html</a> for an excellent introduction by Hadley Wickham).</p>
-<p>In PCMBase, every model is an object of an S3 class, such as “OU”, inheriting from the base S3-class “PCM”. A PCM object represents a named list. Each element of that list can be one of the following:</p>
+<p>Model parameters are the key object of interest in every phylogenetic
+comparative method. PCMBase provides a powerful interface for specifying
+and manipulating model parameters. This interface is based on the S3
+object system (see <a href="http://adv-r.had.co.nz/S3.html" class="uri">http://adv-r.had.co.nz/S3.html</a> for an excellent
+introduction by Hadley Wickham).</p>
+<p>In PCMBase, every model is an object of an S3 class, such as “OU”,
+inheriting from the base S3-class “PCM”. A PCM object represents a named
+list. Each element of that list can be one of the following:</p>
 <ul>
-<li>a global parameter shared by all regimes in the model. For example, this would be the case for a non-heritable variance-covariance parameter <span class="math inline">\(\Sigma_{e}\)</span> if it is assumed to be the same for every observed species (i.e. tip) in the tree.</li>
-<li>a local stacked parameter that has a different value for each regime in the model. For example, in an OU model, the selection strength matrix <span class="math inline">\(H\)</span> has a different value for each of the <span class="math inline">\(R\)</span> regimes in the model. Therefore, an OU model contains a <span class="math inline">\(k\times k\times R\)</span> array member called “H”. The element <code>H[,,1]</code> would correspond to regime 1, <code>H[,,2]</code> to regime 2, etc. As a second example, the long-term optimum parameter of an OU process is a <span class="math inline">\(k\)</span>-dimensional vector <span class="math inline">\(\vec{\theta}_{r}\)</span> for each regime in the model. In an OU model with <span class="math inline">\(R\)</span> regimes, this would be represented by a <span class="math inline">\(k\times R\)</span> array (matrix) called “Theta”, such that the vector <code>Theta[, 1]</code> corresponds to regime 1. Finally, a local scalar parameter (i.e. a number), would be represented by an <span class="math inline">\(R\)</span>-vector.</li>
-<li>a nested PCM object corresponding to a regime. This is the case for a mixed Gaussian phylogenetic model, where different types of Gaussian processes can be acting on different parts of the tree, represented by different regimes.</li>
+<li>a global parameter shared by all regimes in the model. For example,
+this would be the case for a non-heritable variance-covariance parameter
+<span class="math inline">\(\Sigma_{e}\)</span> if it is assumed to be
+the same for every observed species (i.e. tip) in the tree.</li>
+<li>a local stacked parameter that has a different value for each regime
+in the model. For example, in an OU model, the selection strength matrix
+<span class="math inline">\(H\)</span> has a different value for each of
+the <span class="math inline">\(R\)</span> regimes in the model.
+Therefore, an OU model contains a <span class="math inline">\(k\times
+k\times R\)</span> array member called “H”. The element
+<code>H[,,1]</code> would correspond to regime 1, <code>H[,,2]</code> to
+regime 2, etc. As a second example, the long-term optimum parameter of
+an OU process is a <span class="math inline">\(k\)</span>-dimensional
+vector <span class="math inline">\(\vec{\theta}_{r}\)</span> for each
+regime in the model. In an OU model with <span class="math inline">\(R\)</span> regimes, this would be represented by a
+<span class="math inline">\(k\times R\)</span> array (matrix) called
+“Theta”, such that the vector <code>Theta[, 1]</code> corresponds to
+regime 1. Finally, a local scalar parameter (i.e. a number), would be
+represented by an <span class="math inline">\(R\)</span>-vector.</li>
+<li>a nested PCM object corresponding to a regime. This is the case for
+a mixed Gaussian phylogenetic model, where different types of Gaussian
+processes can be acting on different parts of the tree, represented by
+different regimes.</li>
 </ul>
 </div>
 <div id="generic-functions-for-pcm-parameters" class="section level1">
 <h1>Generic functions for PCM parameters</h1>
-<p>The parametrization API provides the following S3 generic functions:</p>
+<p>The parametrization API provides the following S3 generic
+functions:</p>
 <ul>
-<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamLoadOrStore.html"><code>PCMParamLoadOrStore</code></a>: Loading the parameters of a model from a numerical vector or storing them into a vector.</li>
-<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamCount.html"><code>PCMParamCount</code></a>: counting the parameters of a model;</li>
-<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamGetShortVector.html"><code>PCMParamGetShortVector</code></a>: Getting all values of the model parameters as a numeric vector;</li>
-<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamLowerLimit.html"><code>PCMParamLowerLimit</code></a>, <a href="https://venelin.github.io/PCMBase/reference/PCMParamUpperLimit.html"><code>PCMParamUpperLimit</code></a>: Upper and lower limit for the parameters of a model;</li>
-<li><a href="https://venelin.github.io/PCMBase/reference/PCMApplyTransformation.html"><code>PCMApplyTransformation</code></a>: transforming a parameter.</li>
+<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamLoadOrStore.html"><code>PCMParamLoadOrStore</code></a>:
+Loading the parameters of a model from a numerical vector or storing
+them into a vector.</li>
+<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamCount.html"><code>PCMParamCount</code></a>:
+counting the parameters of a model;</li>
+<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamGetShortVector.html"><code>PCMParamGetShortVector</code></a>:
+Getting all values of the model parameters as a numeric vector;</li>
+<li><a href="https://venelin.github.io/PCMBase/reference/PCMParamLowerLimit.html"><code>PCMParamLowerLimit</code></a>,
+<a href="https://venelin.github.io/PCMBase/reference/PCMParamUpperLimit.html"><code>PCMParamUpperLimit</code></a>:
+Upper and lower limit for the parameters of a model;</li>
+<li><a href="https://venelin.github.io/PCMBase/reference/PCMApplyTransformation.html"><code>PCMApplyTransformation</code></a>:
+transforming a parameter.</li>
 </ul>
-<p>All of the above generic functions can be called both on individual parameters, as well as on PCM objects. When called on a PCM object, the function will be called recursively on each parameter within the object. The behaviour of the above generic functions is specified by the parameter’s S3 class attribute described in the following section.</p>
+<p>All of the above generic functions can be called both on individual
+parameters, as well as on PCM objects. When called on a PCM object, the
+function will be called recursively on each parameter within the object.
+The behaviour of the above generic functions is specified by the
+parameter’s S3 class attribute described in the following section.</p>
 </div>
 <div id="parameter-s3-class" class="section level1">
 <h1>Parameter S3 class</h1>
-<p>Parameters can be numeric vectors, matrices or cubes (i.e. 3-dimensional arrays) with a “class” attribute specifying a set of S3 classes. The S3 classes of a parameter control the parameter’s:</p>
+<p>Parameters can be numeric vectors, matrices or cubes
+(i.e. 3-dimensional arrays) with a “class” attribute specifying a set of
+S3 classes. The S3 classes of a parameter control the parameter’s:</p>
 <div id="main-type" class="section level2">
 <h2>Main type</h2>
-<p>The main type specifies the mathematical character of the parameter, i.e. as what does the parameter enter in the equations defining the model. The main type S3 class is mandatory and can be one of the following: “ScalarParameter”, “VectorParameter” and “MatrixParameter”. Here’s an example:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>OU &lt;-<span class="st"> </span><span class="kw">PCM</span>(<span class="st">&quot;OU&quot;</span>, <span class="dt">k =</span> <span class="dv">3</span>, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw">class</span>(OU<span class="op">$</span>X0)</span></code></pre></div>
+<p>The main type specifies the mathematical character of the parameter,
+i.e. as what does the parameter enter in the equations defining the
+model. The main type S3 class is mandatory and can be one of the
+following: “ScalarParameter”, “VectorParameter” and “MatrixParameter”.
+Here’s an example:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>OU <span class="ot">&lt;-</span> <span class="fu">PCM</span>(<span class="st">&quot;OU&quot;</span>, <span class="at">k =</span> <span class="dv">3</span>, <span class="at">regimes =</span> <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU<span class="sc">$</span>X0)</span></code></pre></div>
 <pre><code>## [1] &quot;VectorParameter&quot; &quot;_Global&quot;         &quot;numeric&quot;</code></pre>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">class</span>(OU<span class="op">$</span>H)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU<span class="sc">$</span>H)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;</code></pre>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="kw">class</span>(OU<span class="op">$</span>Theta)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU<span class="sc">$</span>Theta)</span></code></pre></div>
 <pre><code>## [1] &quot;VectorParameter&quot; &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">class</span>(OU<span class="op">$</span>Sigma_x)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU<span class="sc">$</span>Sigma_x)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;</code></pre>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">class</span>(OU<span class="op">$</span>Sigmae_x)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU<span class="sc">$</span>Sigmae_x)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;</code></pre>
 </div>
 <div id="scope" class="section level2">
 <h2>Scope</h2>
-<p>Every parameter can be global, i.e. having the same value for each regime in a model, or local, i.e. having a different value for each regime. A parameter is assumed to be local scope, unless its class attribute includes the class &quot;_Global&quot;. For instance, in the above code example, the root trait value <code>X0</code> has a global scope. Another example would be an OU model with a global selection strength, drift and non-heritable variance matrices:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>OU2 &lt;-<span class="st"> </span><span class="kw">PCM</span>(</span>
-<span id="cb12-2"><a href="#cb12-2"></a>  <span class="kw">paste0</span>(</span>
-<span id="cb12-3"><a href="#cb12-3"></a>    <span class="st">&quot;OU_&quot;</span>, </span>
-<span id="cb12-4"><a href="#cb12-4"></a>    <span class="st">&quot;_Global_X0_&quot;</span>,</span>
-<span id="cb12-5"><a href="#cb12-5"></a>    <span class="st">&quot;_Global_H_&quot;</span>,</span>
-<span id="cb12-6"><a href="#cb12-6"></a>    <span class="st">&quot;_Theta_&quot;</span>,</span>
-<span id="cb12-7"><a href="#cb12-7"></a>    <span class="st">&quot;_UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigma_x_&quot;</span>,</span>
-<span id="cb12-8"><a href="#cb12-8"></a>    <span class="st">&quot;_UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;</span>), </span>
-<span id="cb12-9"><a href="#cb12-9"></a>  <span class="dt">k =</span> <span class="dv">3</span>, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
-<span id="cb12-10"><a href="#cb12-10"></a><span class="kw">class</span>(OU2<span class="op">$</span>X0)</span></code></pre></div>
+<p>Every parameter can be global, i.e. having the same value for each
+regime in a model, or local, i.e. having a different value for each
+regime. A parameter is assumed to be local scope, unless its class
+attribute includes the class “_Global”. For instance, in the above code
+example, the root trait value <code>X0</code> has a global scope.
+Another example would be an OU model with a global selection strength,
+drift and non-heritable variance matrices:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>OU2 <span class="ot">&lt;-</span> <span class="fu">PCM</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">paste0</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;OU_&quot;</span>, </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;_Global_X0_&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;_Global_H_&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;_Theta_&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;_UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigma_x_&quot;</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;_UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;</span>), </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="dv">3</span>, <span class="at">regimes =</span> <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>))</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU2<span class="sc">$</span>X0)</span></code></pre></div>
 <pre><code>## [1] &quot;VectorParameter&quot; &quot;_Global&quot;         &quot;numeric&quot;</code></pre>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1"></a><span class="kw">class</span>(OU2<span class="op">$</span>H)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU2<span class="sc">$</span>H)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot; &quot;_Global&quot;         &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1"></a><span class="kw">class</span>(OU2<span class="op">$</span>Theta)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU2<span class="sc">$</span>Theta)</span></code></pre></div>
 <pre><code>## [1] &quot;VectorParameter&quot; &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="kw">class</span>(OU2<span class="op">$</span>Sigma_x)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU2<span class="sc">$</span>Sigma_x)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;     &quot;_Global&quot;                     
 ## [5] &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">class</span>(OU2<span class="op">$</span>Sigmae_x)</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(OU2<span class="sc">$</span>Sigmae_x)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;     &quot;_Global&quot;                     
 ## [5] &quot;matrix&quot;</code></pre>
 </div>
 <div id="omission" class="section level2">
 <h2>Omission</h2>
-<p>In some cases, a parameter has to be omitted, i.e. not present in a model. For example, if a mixed Gaussian model has a global parameter <span class="math inline">\(\Sigma_{e}\)</span>, then having a local scope parameter <span class="math inline">\(\Sigma_{e}\)</span> for each regime represents a non-identifiable case, i.e. infinitely many different combinations of values for the global and local scope <span class="math inline">\(\Sigma_{e}\)</span> parameters would fit equally well to the data. To prevent this, it is possible to specify that the local parameter <span class="math inline">\(\Sigma_{e}\)</span> should be omitted from each regime. This is done by including &quot;_Omitted&quot; in the class attribute of the parameter. Here is an example:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a>BMOU &lt;-<span class="st"> </span><span class="kw">MixedGaussian</span>(</span>
-<span id="cb22-2"><a href="#cb22-2"></a>  <span class="dt">k =</span> <span class="dv">3</span>, </span>
-<span id="cb22-3"><a href="#cb22-3"></a>  <span class="dt">modelTypes =</span> <span class="kw">c</span>(</span>
-<span id="cb22-4"><a href="#cb22-4"></a>    <span class="st">&quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>,</span>
-<span id="cb22-5"><a href="#cb22-5"></a>    <span class="st">&quot;OU__Omitted_X0__H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>),</span>
-<span id="cb22-6"><a href="#cb22-6"></a>  <span class="dt">mapping =</span> <span class="kw">c</span>(<span class="dt">a =</span> <span class="dv">1</span>, <span class="dt">b =</span> <span class="dv">2</span>))</span>
-<span id="cb22-7"><a href="#cb22-7"></a></span>
-<span id="cb22-8"><a href="#cb22-8"></a><span class="kw">class</span>(BMOU<span class="op">$</span>X0)</span></code></pre></div>
+<p>In some cases, a parameter has to be omitted, i.e. not present in a
+model. For example, if a mixed Gaussian model has a global parameter
+<span class="math inline">\(\Sigma_{e}\)</span>, then having a local
+scope parameter <span class="math inline">\(\Sigma_{e}\)</span> for each
+regime represents a non-identifiable case, i.e. infinitely many
+different combinations of values for the global and local scope <span class="math inline">\(\Sigma_{e}\)</span> parameters would fit equally
+well to the data. To prevent this, it is possible to specify that the
+local parameter <span class="math inline">\(\Sigma_{e}\)</span> should
+be omitted from each regime. This is done by including “_Omitted” in the
+class attribute of the parameter. Here is an example:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>BMOU <span class="ot">&lt;-</span> <span class="fu">MixedGaussian</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="dv">3</span>, </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">modelTypes =</span> <span class="fu">c</span>(</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;OU__Omitted_X0__H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>),</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">mapping =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="dv">1</span>, <span class="at">b =</span> <span class="dv">2</span>))</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(BMOU<span class="sc">$</span>X0)</span></code></pre></div>
 <pre><code>## [1] &quot;VectorParameter&quot; &quot;_Global&quot;         &quot;numeric&quot;</code></pre>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a><span class="kw">class</span>(BMOU<span class="op">$</span>Sigmae_x)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(BMOU<span class="sc">$</span>Sigmae_x)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;     &quot;_Global&quot;                     
 ## [5] &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1"></a><span class="co"># There are no X0 and Sigmae_x parameters for the regimes because they are omitted:</span></span>
-<span id="cb26-2"><a href="#cb26-2"></a><span class="kw">names</span>(BMOU<span class="op">$</span>a)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># There are no X0 and Sigmae_x parameters for the regimes because they are omitted:</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(BMOU<span class="sc">$</span>a)</span></code></pre></div>
 <pre><code>## [1] &quot;Sigma_x&quot;</code></pre>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1"></a><span class="kw">names</span>(BMOU<span class="op">$</span>b)</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(BMOU<span class="sc">$</span>b)</span></code></pre></div>
 <pre><code>## [1] &quot;H&quot;       &quot;Theta&quot;   &quot;Sigma_x&quot;</code></pre>
 </div>
 <div id="constancy" class="section level2">
 <h2>Constancy</h2>
-<p>In some cases, a parameter will have a known and fixed value. Constant classes include: &quot;_Fixed“,”_Ones“,”_Zeros“,”_Identity&quot;. For example, in a mixed Gaussian model, we can specify a fixed value for the global parameter <code>Sigmae_x</code>:</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1"></a>BMOU2 &lt;-<span class="st"> </span><span class="kw">MixedGaussian</span>(</span>
-<span id="cb30-2"><a href="#cb30-2"></a>  <span class="dt">k =</span> <span class="dv">3</span>, </span>
-<span id="cb30-3"><a href="#cb30-3"></a>  <span class="dt">modelTypes =</span> <span class="kw">c</span>(</span>
-<span id="cb30-4"><a href="#cb30-4"></a>    <span class="st">&quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>,</span>
-<span id="cb30-5"><a href="#cb30-5"></a>    <span class="st">&quot;OU__Omitted_X0__H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>),</span>
-<span id="cb30-6"><a href="#cb30-6"></a>  <span class="dt">mapping =</span> <span class="kw">c</span>(<span class="dt">a =</span> <span class="dv">1</span>, <span class="dt">b =</span> <span class="dv">2</span>), </span>
-<span id="cb30-7"><a href="#cb30-7"></a>  <span class="dt">Sigmae_x =</span> <span class="kw">structure</span>(<span class="dv">0</span>, </span>
-<span id="cb30-8"><a href="#cb30-8"></a>    <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>,</span>
-<span id="cb30-9"><a href="#cb30-9"></a>              <span class="st">&quot;_UpperTriangularWithDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>, <span class="st">&quot;_Fixed&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</span>
-<span id="cb30-10"><a href="#cb30-10"></a>    <span class="dt">description =</span></span>
-<span id="cb30-11"><a href="#cb30-11"></a>      <span class="st">&quot;A fixed upper triangular factor of the non-phylogenetic variance-covariance&quot;</span>))</span>
-<span id="cb30-12"><a href="#cb30-12"></a></span>
-<span id="cb30-13"><a href="#cb30-13"></a>BMOU2<span class="op">$</span>Sigmae_x[] &lt;-<span class="st"> </span><span class="kw">rbind</span>(</span>
-<span id="cb30-14"><a href="#cb30-14"></a>    <span class="kw">c</span>(<span class="fl">0.5</span>, <span class="fl">0.02</span>, <span class="dv">0</span>),</span>
-<span id="cb30-15"><a href="#cb30-15"></a>    <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.2</span>, <span class="fl">0.01</span>),</span>
-<span id="cb30-16"><a href="#cb30-16"></a>    <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.1</span>))</span>
-<span id="cb30-17"><a href="#cb30-17"></a></span>
-<span id="cb30-18"><a href="#cb30-18"></a><span class="kw">class</span>(BMOU2<span class="op">$</span>X0)</span></code></pre></div>
+<p>In some cases, a parameter will have a known and fixed value.
+Constant classes include: “_Fixed”, “_Ones”, “_Zeros”, “_Identity”. For
+example, in a mixed Gaussian model, we can specify a fixed value for the
+global parameter <code>Sigmae_x</code>:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>BMOU2 <span class="ot">&lt;-</span> <span class="fu">MixedGaussian</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">k =</span> <span class="dv">3</span>, </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">modelTypes =</span> <span class="fu">c</span>(</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;OU__Omitted_X0__H__Theta__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;</span>),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">mapping =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="dv">1</span>, <span class="at">b =</span> <span class="dv">2</span>), </span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">Sigmae_x =</span> <span class="fu">structure</span>(<span class="dv">0</span>, </span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>              <span class="st">&quot;_UpperTriangularWithDiagonal&quot;</span>, <span class="st">&quot;_WithNonNegativeDiagonal&quot;</span>, <span class="st">&quot;_Fixed&quot;</span>, <span class="st">&quot;_Global&quot;</span>),</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">description =</span></span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>      <span class="st">&quot;A fixed upper triangular factor of the non-phylogenetic variance-covariance&quot;</span>))</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>BMOU2<span class="sc">$</span>Sigmae_x[] <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.02</span>, <span class="dv">0</span>),</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.2</span>, <span class="fl">0.01</span>),</span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.1</span>))</span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(BMOU2<span class="sc">$</span>X0)</span></code></pre></div>
 <pre><code>## [1] &quot;VectorParameter&quot; &quot;_Global&quot;         &quot;numeric&quot;</code></pre>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1"></a><span class="kw">class</span>(BMOU2<span class="op">$</span>Sigmae_x)</span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(BMOU2<span class="sc">$</span>Sigmae_x)</span></code></pre></div>
 <pre><code>## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;     &quot;_Fixed&quot;                      
 ## [5] &quot;_Global&quot;                      &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1"></a><span class="co"># There are no X0 and Sigmae_x parameters for the regimes because they are omitted:</span></span>
-<span id="cb34-2"><a href="#cb34-2"></a><span class="kw">names</span>(BMOU2<span class="op">$</span>a)</span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># There are no X0 and Sigmae_x parameters for the regimes because they are omitted:</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(BMOU2<span class="sc">$</span>a)</span></code></pre></div>
 <pre><code>## [1] &quot;Sigma_x&quot;</code></pre>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1"></a><span class="kw">names</span>(BMOU2<span class="op">$</span>b)</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(BMOU2<span class="sc">$</span>b)</span></code></pre></div>
 <pre><code>## [1] &quot;H&quot;       &quot;Theta&quot;   &quot;Sigma_x&quot;</code></pre>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1"></a><span class="co"># Notice that the BMOU model created in the previous example has more parameters than BMOU2:</span></span>
-<span id="cb38-2"><a href="#cb38-2"></a><span class="kw">PCMParamCount</span>(BMOU)</span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Notice that the BMOU model created in the previous example has more parameters than BMOU2:</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamCount</span>(BMOU)</span></code></pre></div>
 <pre><code>## [1] 33</code></pre>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">PCMParamCount</span>(BMOU2)</span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamCount</span>(BMOU2)</span></code></pre></div>
 <pre><code>## [1] 27</code></pre>
 </div>
 <div id="transformation" class="section level2">
 <h2>Transformation</h2>
-<p>Due to constraints arising from their mathematical formulation or to facilitate the biological interpretation, the parameters of Gaussian models are often subject to restrictions. For example, the <span class="math inline">\(k\times k\)</span> matrix parameter <span class="math inline">\(\mathbf{\Sigma}\)</span> of a BM or an OU process should always be a symmetric positive-definite matrix; the selection strength matrix <span class="math inline">\(\mathbf{H}\)</span> of an OU process is usually restricted to be at least semi-positive-definite (but not necessarily symmetric), in order to limit the interpretation to cases of stabilizing selection rather than (usually unidentifiable) cases of repulsion. Such parameter restrictions can pose a challenge, during a parameter inference procedure, since many of the proposed parameter values may violate some of the imposed restrictions. For most of the <a href="https://venelin.github.io/PCMBase/articles/PCMBase.html"><span class="math inline">\(\mathcal{G}_{LInv}\)</span> models</a> known to us, the common restrictions can be handled using an appropriate parametrization with a transformation applied to the parameters before calculating the functions <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span> and the model likelihood.</p>
-<p>By default, the parameters named <code>Sigma_x</code>, <code>Sigmae_x</code> and <code>Sigmaj_x</code> are always transformed using the formula <span class="math inline">\(\mathbf{\Sigma} = \mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^T\)</span> (see also the runtim option “PCMBase.Transpose.Sigma_x” in <code>?PCMOptions</code> for changing the above default behavior).</p>
-<p>For other parameters, to specify that a parameter should be transformed, its class and the class of the encompassing PCM object(s) must include &quot;_Transformable“. A further S3 class for the parameter specifies the type of transformation. Once a parameter is transformed via a call to the generic function <code>PCMApplyTransformation</code>, the”_Transformable&quot; class is removed, i.e. the returned parameter is not transformable. For convenience, the name of the transformed parameter is kept the same as the name of the untransformed one. Currently the following transformations are defined:</p>
+<p>Due to constraints arising from their mathematical formulation or to
+facilitate the biological interpretation, the parameters of Gaussian
+models are often subject to restrictions. For example, the <span class="math inline">\(k\times k\)</span> matrix parameter <span class="math inline">\(\mathbf{\Sigma}\)</span> of a BM or an OU process
+should always be a symmetric positive-definite matrix; the selection
+strength matrix <span class="math inline">\(\mathbf{H}\)</span> of an OU
+process is usually restricted to be at least semi-positive-definite (but
+not necessarily symmetric), in order to limit the interpretation to
+cases of stabilizing selection rather than (usually unidentifiable)
+cases of repulsion. Such parameter restrictions can pose a challenge,
+during a parameter inference procedure, since many of the proposed
+parameter values may violate some of the imposed restrictions. For most
+of the <a href="https://venelin.github.io/PCMBase/articles/PCMBase.html"><span class="math inline">\(\mathcal{G}_{LInv}\)</span> models</a> known to
+us, the common restrictions can be handled using an appropriate
+parametrization with a transformation applied to the parameters before
+calculating the functions <span class="math inline">\(\vec{\omega}\)</span>, <span class="math inline">\(\mathbf{\Phi}\)</span> and <span class="math inline">\(\mathbf{V}\)</span> and the model likelihood.</p>
+<p>By default, the parameters named <code>Sigma_x</code>,
+<code>Sigmae_x</code> and <code>Sigmaj_x</code> are always transformed
+using the formula <span class="math inline">\(\mathbf{\Sigma} =
+\mathbf{\Sigma}_{x}\mathbf{\Sigma}_{x}^T\)</span> (see also the runtim
+option “PCMBase.Transpose.Sigma_x” in <code>?PCMOptions</code> for
+changing the above default behavior).</p>
+<p>For other parameters, to specify that a parameter should be
+transformed, its class and the class of the encompassing PCM object(s)
+must include “_Transformable”. A further S3 class for the parameter
+specifies the type of transformation. Once a parameter is transformed
+via a call to the generic function <code>PCMApplyTransformation</code>,
+the “_Transformable” class is removed, i.e. the returned parameter is
+not transformable. For convenience, the name of the transformed
+parameter is kept the same as the name of the untransformed one.
+Currently the following transformations are defined:</p>
 <div id="choleskyfactor" class="section level3">
 <h3>_CholeskyFactor</h3>
-<p>If a matrix parameter <span class="math inline">\(\mathbf{S}\)</span> has the classes &quot;_CholeskyFactor&quot; and &quot;_Transformable“, it will be transformed as <span class="math inline">\(\mathbf{S}^{T}\mathbf{S}\)</span>. Note that this is analogical but not equivalent to the transformation <span class="math inline">\(\mathbf{S}\mathbf{S}^T\)</span>, which is the default for the parameters <code>Sigma_x</code> (see above). The transformed parameter will have classes”_SemiPositiveDefinite&quot; and &quot;_Transformed&quot;:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>M &lt;-<span class="st"> </span><span class="kw">structure</span>(</span>
-<span id="cb42-2"><a href="#cb42-2"></a>  <span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">1.2</span>),</span>
-<span id="cb42-3"><a href="#cb42-3"></a>        <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>),</span>
-<span id="cb42-4"><a href="#cb42-4"></a>        <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">1.02</span>)),</span>
-<span id="cb42-5"><a href="#cb42-5"></a>  <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_CholeskyFactor&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
-<span id="cb42-6"><a href="#cb42-6"></a></span>
-<span id="cb42-7"><a href="#cb42-7"></a>Mtransf &lt;-<span class="st"> </span><span class="kw">PCMApplyTransformation</span>(M)</span>
-<span id="cb42-8"><a href="#cb42-8"></a>Mtransf</span></code></pre></div>
+<p>If a matrix parameter <span class="math inline">\(\mathbf{S}\)</span>
+has the classes “_CholeskyFactor” and “_Transformable”, it will be
+transformed as <span class="math inline">\(\mathbf{S}^{T}\mathbf{S}\)</span>. Note that this
+is analogical but not equivalent to the transformation <span class="math inline">\(\mathbf{S}\mathbf{S}^T\)</span>, which is the
+default for the parameters <code>Sigma_x</code> (see above). The
+transformed parameter will have classes “_SemiPositiveDefinite” and
+“_Transformed”:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">structure</span>(</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">1.2</span>),</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>),</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">1.02</span>)),</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_CholeskyFactor&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>Mtransf <span class="ot">&lt;-</span> <span class="fu">PCMApplyTransformation</span>(M)</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>Mtransf</span></code></pre></div>
 <pre><code>##      [,1] [,2] [,3]
 ## [1,] 0.04 0.10 0.24
 ## [2,] 0.10 0.26 0.60
@@ -498,77 +650,109 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 </div>
 <div id="schur" class="section level3">
 <h3>_Schur</h3>
-<p>If both, the positive-definiteness and the symmetry of a matrix parameter are optional, e.g. the matrix <span class="math inline">\(\mathbf{H}\)</span> of an OU process, such restrictions can be imposed through a Schur decomposition as shown previously by <span class="citation">(Clavel, Escarguel, and Merceron 2015)</span>. Specifically, we define a <span class="math inline">\(k\times k\)</span>-dimensional matrix <span class="math inline">\(\mathbf{H}_{S}\)</span> as follows:</p>
+<p>If both, the positive-definiteness and the symmetry of a matrix
+parameter are optional, e.g. the matrix <span class="math inline">\(\mathbf{H}\)</span> of an OU process, such
+restrictions can be imposed through a Schur decomposition as shown
+previously by <span class="citation">(Clavel, Escarguel, and Merceron
+2015)</span>. Specifically, we define a <span class="math inline">\(k\times k\)</span>-dimensional matrix <span class="math inline">\(\mathbf{H}_{S}\)</span> as follows:</p>
 <ul>
-<li>the upper triangle of <span class="math inline">\(\mathbf{H}_{S}\)</span>, excluding the diagonal, specifies <span class="math inline">\(k(k-1)/2\)</span> rotation angles for Givens rotations <span class="citation">(Golub and Van Loan 2013)</span> to obtain a <span class="math inline">\(k\times k\)</span>-dimensional orthoganal matrix <span class="math inline">\(\mathbf{Q}\)</span>;</li>
-<li>the lower triangle of <span class="math inline">\(\mathbf{H}_{S}\)</span> including the diagonal defines a <span class="math inline">\(k\times k\)</span> triangular matrix <span class="math inline">\(\mathbf{T}\)</span>.</li>
+<li>the upper triangle of <span class="math inline">\(\mathbf{H}_{S}\)</span>, excluding the diagonal,
+specifies <span class="math inline">\(k(k-1)/2\)</span> rotation angles
+for Givens rotations <span class="citation">(Golub and Van Loan
+2013)</span> to obtain a <span class="math inline">\(k\times
+k\)</span>-dimensional orthoganal matrix <span class="math inline">\(\mathbf{Q}\)</span>;</li>
+<li>the lower triangle of <span class="math inline">\(\mathbf{H}_{S}\)</span> including the diagonal
+defines a <span class="math inline">\(k\times k\)</span> triangular
+matrix <span class="math inline">\(\mathbf{T}\)</span>.</li>
 </ul>
-<p>Then, <span class="math inline">\(\mathbf{H}\)</span> is obtained from <span class="math inline">\(\mathbf{Q}\)</span> and <span class="math inline">\(\mathbf{T}\)</span> as follows <span class="citation">(Clavel, Escarguel, and Merceron 2015)</span>: <span class="math display">\[
+<p>Then, <span class="math inline">\(\mathbf{H}\)</span> is obtained
+from <span class="math inline">\(\mathbf{Q}\)</span> and <span class="math inline">\(\mathbf{T}\)</span> as follows <span class="citation">(Clavel, Escarguel, and Merceron 2015)</span>: <span class="math display">\[
 \mathbf{H}=\mathbf{Q}\mathbf{T}^{T}\mathbf{Q}^{T}
-\]</span> The matrix <span class="math inline">\(\mathbf{H}\)</span> calculated in this way has all of its eigenvalues equal to the elements on the diagonal of <span class="math inline">\(\mathbf{H}_{S}\)</span> <span class="citation">(Clavel, Escarguel, and Merceron 2015)</span>. Thus, by restricting the diagonal of <span class="math inline">\(\mathbf{H}_{S}\)</span> to non-negative or strictly positive values, we guarantee that <span class="math inline">\(\mathbf{H}\)</span> will have all of its eigenvalues non-negative or strictly positive (hence, guaranteeing semi- or strict positive definiteness). Further, if <span class="math inline">\(\mathbf{H}_{S}\)</span> is diagonal, then so is the matrix <span class="math inline">\(\mathbf{H}\)</span>; if <span class="math inline">\(\mathbf{H}_{S}\)</span> is upper triangular, then <span class="math inline">\(\mathbf{T}\)</span> is diagonal and the resulting matrix <span class="math inline">\(\mathbf{H}\)</span> is symmetric. Finally, if <span class="math inline">\(\mathbf{H}_{S}\)</span> is neither diagonal nor triangular, then the resulting matrix <span class="math inline">\(\mathbf{H}\)</span> is asymmetric. Here is an example:</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1"></a><span class="co"># Diagonal</span></span>
-<span id="cb44-2"><a href="#cb44-2"></a>Hs1 &lt;-<span class="st"> </span><span class="kw">structure</span>(</span>
-<span id="cb44-3"><a href="#cb44-3"></a>  <span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">0.2</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
-<span id="cb44-4"><a href="#cb44-4"></a>        <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
-<span id="cb44-5"><a href="#cb44-5"></a>        <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">1.02</span>)),</span>
-<span id="cb44-6"><a href="#cb44-6"></a>  <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Schur&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
-<span id="cb44-7"><a href="#cb44-7"></a></span>
-<span id="cb44-8"><a href="#cb44-8"></a><span class="kw">PCMApplyTransformation</span>(Hs1)</span></code></pre></div>
+\]</span> The matrix <span class="math inline">\(\mathbf{H}\)</span>
+calculated in this way has all of its eigenvalues equal to the elements
+on the diagonal of <span class="math inline">\(\mathbf{H}_{S}\)</span>
+<span class="citation">(Clavel, Escarguel, and Merceron 2015)</span>.
+Thus, by restricting the diagonal of <span class="math inline">\(\mathbf{H}_{S}\)</span> to non-negative or
+strictly positive values, we guarantee that <span class="math inline">\(\mathbf{H}\)</span> will have all of its
+eigenvalues non-negative or strictly positive (hence, guaranteeing semi-
+or strict positive definiteness). Further, if <span class="math inline">\(\mathbf{H}_{S}\)</span> is diagonal, then so is
+the matrix <span class="math inline">\(\mathbf{H}\)</span>; if <span class="math inline">\(\mathbf{H}_{S}\)</span> is upper triangular, then
+<span class="math inline">\(\mathbf{T}\)</span> is diagonal and the
+resulting matrix <span class="math inline">\(\mathbf{H}\)</span> is
+symmetric. Finally, if <span class="math inline">\(\mathbf{H}_{S}\)</span> is neither diagonal nor
+triangular, then the resulting matrix <span class="math inline">\(\mathbf{H}\)</span> is asymmetric. Here is an
+example:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Diagonal</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>Hs1 <span class="ot">&lt;-</span> <span class="fu">structure</span>(</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="fl">0.2</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">1.02</span>)),</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Schur&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMApplyTransformation</span>(Hs1)</span></code></pre></div>
 <pre><code>##      [,1] [,2] [,3]
 ## [1,]  0.2    0    0
 ## [2,]  0.0    0    0
 ## [3,]  0.0    0    1
 ## attr(,&quot;class&quot;)
 ## [1] &quot;MatrixParameter&quot; &quot;_Global&quot;         &quot;_Transformed&quot;    &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1"></a><span class="co"># Symmetric positive definite with eigenvalues 1.02, 0.1 and 0.02</span></span>
-<span id="cb46-2"><a href="#cb46-2"></a>Hs2 &lt;-<span class="st"> </span><span class="kw">structure</span>(</span>
-<span id="cb46-3"><a href="#cb46-3"></a>  <span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">1.02</span>, <span class="fl">0.5</span>, <span class="fl">1.2</span>),</span>
-<span id="cb46-4"><a href="#cb46-4"></a>        <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>),</span>
-<span id="cb46-5"><a href="#cb46-5"></a>        <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.02</span>)),</span>
-<span id="cb46-6"><a href="#cb46-6"></a>  <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Schur&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
-<span id="cb46-7"><a href="#cb46-7"></a></span>
-<span id="cb46-8"><a href="#cb46-8"></a><span class="kw">PCMApplyTransformation</span>(Hs2)</span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Symmetric positive definite with eigenvalues 1.02, 0.1 and 0.02</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>Hs2 <span class="ot">&lt;-</span> <span class="fu">structure</span>(</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="fl">1.02</span>, <span class="fl">0.5</span>, <span class="fl">1.2</span>),</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>),</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.02</span>)),</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Schur&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMApplyTransformation</span>(Hs2)</span></code></pre></div>
 <pre><code>##        [,1]   [,2]  [,3]
 ## [1,]  0.348 -0.089 -0.45
 ## [2,] -0.089  0.132  0.16
 ## [3,] -0.453  0.159  0.66
 ## attr(,&quot;class&quot;)
 ## [1] &quot;MatrixParameter&quot; &quot;_Global&quot;         &quot;_Transformed&quot;    &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1"></a><span class="kw">eigen</span>(<span class="kw">PCMApplyTransformation</span>(Hs2))<span class="op">$</span>values</span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eigen</span>(<span class="fu">PCMApplyTransformation</span>(Hs2))<span class="sc">$</span>values</span></code></pre></div>
 <pre><code>## [1] 1.02 0.10 0.02</code></pre>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1"></a><span class="co"># Asymmetric positive definite with eigenvalues 1.02, 0.1 and 0.02</span></span>
-<span id="cb50-2"><a href="#cb50-2"></a>Hs3 &lt;-<span class="st"> </span><span class="kw">structure</span>(</span>
-<span id="cb50-3"><a href="#cb50-3"></a>  <span class="kw">rbind</span>(<span class="kw">c</span>(<span class="fl">1.02</span>, <span class="fl">0.5</span>, <span class="fl">1.2</span>),</span>
-<span id="cb50-4"><a href="#cb50-4"></a>        <span class="kw">c</span>(<span class="fl">0.2</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>),</span>
-<span id="cb50-5"><a href="#cb50-5"></a>        <span class="kw">c</span>(<span class="fl">0.8</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>)),</span>
-<span id="cb50-6"><a href="#cb50-6"></a>  <span class="dt">class =</span> <span class="kw">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Schur&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
-<span id="cb50-7"><a href="#cb50-7"></a></span>
-<span id="cb50-8"><a href="#cb50-8"></a><span class="kw">PCMApplyTransformation</span>(Hs3)</span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Asymmetric positive definite with eigenvalues 1.02, 0.1 and 0.02</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>Hs3 <span class="ot">&lt;-</span> <span class="fu">structure</span>(</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="fl">1.02</span>, <span class="fl">0.5</span>, <span class="fl">1.2</span>),</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>),</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="fl">0.1</span>, <span class="fl">0.02</span>)),</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;MatrixParameter&quot;</span>, <span class="st">&quot;_Schur&quot;</span>, <span class="st">&quot;_Transformable&quot;</span>, <span class="st">&quot;_Global&quot;</span>))</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMApplyTransformation</span>(Hs3)</span></code></pre></div>
 <pre><code>##       [,1]  [,2]  [,3]
 ## [1,]  0.75 -0.10 -0.16
 ## [2,] -0.15  0.11  0.12
 ## [3,] -0.99  0.17  0.28
 ## attr(,&quot;class&quot;)
 ## [1] &quot;MatrixParameter&quot; &quot;_Global&quot;         &quot;_Transformed&quot;    &quot;matrix&quot;</code></pre>
-<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1"></a><span class="kw">eigen</span>(<span class="kw">PCMApplyTransformation</span>(Hs3))<span class="op">$</span>values</span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eigen</span>(<span class="fu">PCMApplyTransformation</span>(Hs3))<span class="sc">$</span>values</span></code></pre></div>
 <pre><code>## [1] 1.02 0.10 0.02</code></pre>
 </div>
 </div>
 <div id="other-restrictions" class="section level2">
 <h2>Other restrictions</h2>
-<p>We may need to specify other restrictions for a parameter. For example, by definition the matrix parameters <code>Sigma_x</code> and <code>Sigmae_x</code> are required to be upper triangular with non-negative diagonal elements <span class="citation">(Mitov et al. 2019)</span>. Restriction classes include: ’_AllEqual’, ’_NonNegative’, ’_WithNonNegativeDiagonal’, ’_LowerTriangular’, ’_LowerTriangularWithDiagonal’, ’_UpperTriangular’, ’_UpperTriangularWithDiagonal’, ’_Symmetric’ and ’_ScalarDiagonal’.</p>
+<p>We may need to specify other restrictions for a parameter. For
+example, by definition the matrix parameters <code>Sigma_x</code> and
+<code>Sigmae_x</code> are required to be upper triangular with
+non-negative diagonal elements <span class="citation">(Mitov et al.
+2019)</span>. Restriction classes include: ’_AllEqual’, ’_NonNegative’,
+’_WithNonNegativeDiagonal’, ’_LowerTriangular’,
+’_LowerTriangularWithDiagonal’, ’_UpperTriangular’,
+’_UpperTriangularWithDiagonal’, ’_Symmetric’ and ’_ScalarDiagonal’.</p>
 </div>
 </div>
 <div id="generating-model-parametrizations" class="section level1">
 <h1>Generating model parametrizations</h1>
-<p>It can be helpful to examine the structure of a 3-regime bivariate BM model:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1"></a>modelObject &lt;-<span class="st"> </span><span class="kw">PCM</span>(<span class="st">&quot;BM&quot;</span>, <span class="dt">k =</span> 2L, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>, <span class="st">&quot;c&quot;</span>))</span>
-<span id="cb54-2"><a href="#cb54-2"></a></span>
-<span id="cb54-3"><a href="#cb54-3"></a><span class="co"># let&#39;s assign some values to the model parameters:</span></span>
-<span id="cb54-4"><a href="#cb54-4"></a>vec &lt;-<span class="st"> </span><span class="kw">seq_len</span>(<span class="kw">PCMParamCount</span>(modelObject))</span>
-<span id="cb54-5"><a href="#cb54-5"></a><span class="kw">PCMParamLoadOrStore</span>(modelObject, vec, <span class="dt">offset =</span> <span class="dv">0</span>, <span class="dt">load=</span><span class="ot">TRUE</span>)</span></code></pre></div>
+<p>It can be helpful to examine the structure of a 3-regime bivariate BM
+model:</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>modelObject <span class="ot">&lt;-</span> <span class="fu">PCM</span>(<span class="st">&quot;BM&quot;</span>, <span class="at">k =</span> 2L, <span class="at">regimes =</span> <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>, <span class="st">&quot;c&quot;</span>))</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="co"># let&#39;s assign some values to the model parameters:</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>vec <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(<span class="fu">PCMParamCount</span>(modelObject))</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamLoadOrStore</span>(modelObject, vec, <span class="at">offset =</span> <span class="dv">0</span>, <span class="at">load=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 <pre><code>## [1] 20</code></pre>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1"></a><span class="kw">str</span>(modelObject)</span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(modelObject)</span></code></pre></div>
 <pre><code>## List of 3
 ##  $ X0      : &#39;VectorParameter&#39; num [1:2] 1 2
 ##   ..- attr(*, &quot;description&quot;)= chr &quot;trait values at the root&quot;
@@ -601,10 +785,10 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 ##  - attr(*, &quot;modelTypes&quot;)= chr &quot;BM&quot;
 ##  - attr(*, &quot;mapping&quot;)= int 1</code></pre>
 <p>Now let’s print the model parameters as a table:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1"></a><span class="kw">options</span>(<span class="dt">digits =</span> <span class="dv">1</span>)</span>
-<span id="cb58-2"><a href="#cb58-2"></a><span class="kw">print</span>(</span>
-<span id="cb58-3"><a href="#cb58-3"></a>  <span class="kw">PCMTable</span>(modelObject, <span class="dt">addTransformed =</span> <span class="ot">FALSE</span>, <span class="dt">removeUntransformed =</span> <span class="ot">FALSE</span>), </span>
-<span id="cb58-4"><a href="#cb58-4"></a>  <span class="dt">xtable =</span> <span class="ot">TRUE</span>, <span class="dt">type=</span><span class="st">&#39;html&#39;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">digits =</span> <span class="dv">1</span>)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">PCMTable</span>(modelObject, <span class="at">addTransformed =</span> <span class="cn">FALSE</span>, <span class="at">removeUntransformed =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">xtable =</span> <span class="cn">TRUE</span>, <span class="at">type=</span><span class="st">&#39;html&#39;</span>)</span></code></pre></div>
 <table border="1">
 <tr>
 <th>
@@ -625,7 +809,8 @@ regime
 :global:
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 1.0 \\ 2.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 1.0 \\ 2.0 \\
+\end{bmatrix}\)</span>
 </td>
 <td align="right">
 </td>
@@ -633,7 +818,6 @@ regime
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 a
@@ -641,14 +825,15 @@ a
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 3.0 &amp; 4.0 \\ 0.0 &amp; 5.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 3.0 &amp; 4.0 \\ 0.0 &amp;
+5.0 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 12.0 &amp; 13.0 \\ 0.0 &amp; 14.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 12.0 &amp; 13.0 \\ 0.0
+&amp; 14.0 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 b
@@ -656,14 +841,15 @@ b
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 6.0 &amp; 7.0 \\ 0.0 &amp; 8.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 6.0 &amp; 7.0 \\ 0.0 &amp;
+8.0 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 15.0 &amp; 16.0 \\ 0.0 &amp; 17.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 15.0 &amp; 16.0 \\ 0.0
+&amp; 17.0 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 c
@@ -671,15 +857,26 @@ c
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 9.0 &amp; 10.0 \\ 0.0 &amp; 11.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 9.0 &amp; 10.0 \\ 0.0
+&amp; 11.0 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 18.0 &amp; 19.0 \\ 0.0 &amp; 20.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 18.0 &amp; 19.0 \\ 0.0
+&amp; 20.0 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 </table>
-<p>We notice that the parameter <span class="math inline">\(\Sigma_{e,x}\)</span> is local for each regime in the model. In the context of a biological application, it can be more appropriate to assume that this parameter is shared by all regimes. Moreover, in many cases, e.g. when testing hypotheses about the presence of correlation between the traits, it can be necessary to assume that the matrices <span class="math inline">\(\Sigma_{x}\)</span> and <span class="math inline">\(\Sigma_{e,x}\)</span> are diagonal, meaning that the model assumes trait independence. Biologically, that would mean that any correlation between the traits originates from genetic (not environmental) factors. To specify such a scenario, first, we look at the list of available BM model types.</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1"></a><span class="kw">PCMModels</span>(<span class="dt">parentClass =</span> <span class="st">&quot;BM&quot;</span>)</span></code></pre></div>
+<p>We notice that the parameter <span class="math inline">\(\Sigma_{e,x}\)</span> is local for each regime in
+the model. In the context of a biological application, it can be more
+appropriate to assume that this parameter is shared by all regimes.
+Moreover, in many cases, e.g. when testing hypotheses about the presence
+of correlation between the traits, it can be necessary to assume that
+the matrices <span class="math inline">\(\Sigma_{x}\)</span> and <span class="math inline">\(\Sigma_{e,x}\)</span> are diagonal, meaning that
+the model assumes trait independence. Biologically, that would mean that
+any correlation between the traits originates from genetic (not
+environmental) factors. To specify such a scenario, first, we look at
+the list of available BM model types.</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMModels</span>(<span class="at">parentClass =</span> <span class="st">&quot;BM&quot;</span>)</span></code></pre></div>
 <pre><code>##  [1] &quot;BM&quot;                                                                                                                                              
 ##  [2] &quot;BM__Global_X0__Diagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;                                                                       
 ##  [3] &quot;BM__Global_X0__Diagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;                    
@@ -699,8 +896,15 @@ c
 ## [17] &quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__Omitted_Sigmae_x&quot;                                                   
 ## [18] &quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;
 ## [19] &quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigmae_x&quot;</code></pre>
-<p>We notice that the above list does not contain a BM model type with a global diagonal parameter <code>Sigmae_x</code>. This means that the S3 methods for such a model parametrization have not yet been generated and loaded. The function <code>PCMListParameterizations</code> returns a named list, where each named element is a list of the possible S3 class assignments for the corresponding parameter. So, let’s see what are the available S3 classes for the parameter <code>Sigmae_x</code> of a BM model:</p>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1"></a><span class="kw">PCMListParameterizations</span>(<span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class=</span><span class="st">&quot;BM&quot;</span>))<span class="op">$</span>Sigmae_x</span></code></pre></div>
+<p>We notice that the above list does not contain a BM model type with a
+global diagonal parameter <code>Sigmae_x</code>. This means that the S3
+methods for such a model parametrization have not yet been generated and
+loaded. The function <code>PCMListParameterizations</code> returns a
+named list, where each named element is a list of the possible S3 class
+assignments for the corresponding parameter. So, let’s see what are the
+available S3 classes for the parameter <code>Sigmae_x</code> of a BM
+model:</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMListParameterizations</span>(<span class="fu">structure</span>(<span class="fl">0.0</span>, <span class="at">class=</span><span class="st">&quot;BM&quot;</span>))<span class="sc">$</span>Sigmae_x</span></code></pre></div>
 <pre><code>## [[1]]
 ## [1] &quot;MatrixParameter&quot;              &quot;_UpperTriangularWithDiagonal&quot;
 ## [3] &quot;_WithNonNegativeDiagonal&quot;    
@@ -727,17 +931,20 @@ c
 ## 
 ## [[7]]
 ## [1] &quot;MatrixParameter&quot; &quot;_Omitted&quot;</code></pre>
-<p>We notice that, for <code>Sigmae_x</code>, the 5th element above contains &quot;_Diagonal&quot; and &quot;_Global&quot; in the list of S3-classes. We proceed to generate all BM parametrizations with this S3-class assignment for the parameter <code>Sigmae_x</code>.</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1"></a><span class="co"># 1. Filter the list of parametrizations to avoid generating too many S3 methods.</span></span>
-<span id="cb63-2"><a href="#cb63-2"></a><span class="co"># (note that we could do the same type of filtering for the other parameters).</span></span>
-<span id="cb63-3"><a href="#cb63-3"></a>listParameterizationsBM &lt;-<span class="st"> </span><span class="kw">PCMListParameterizations</span>(<span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class=</span><span class="st">&quot;BM&quot;</span>))</span>
-<span id="cb63-4"><a href="#cb63-4"></a>listParameterizationsBM<span class="op">$</span>Sigmae_x &lt;-<span class="st"> </span>listParameterizationsBM<span class="op">$</span>Sigmae_x[<span class="dv">5</span>]</span>
-<span id="cb63-5"><a href="#cb63-5"></a>  </span>
-<span id="cb63-6"><a href="#cb63-6"></a><span class="co"># 2. Generate a table of parametrizations for this list:</span></span>
-<span id="cb63-7"><a href="#cb63-7"></a>dtParameterizations &lt;-<span class="st"> </span><span class="kw">PCMTableParameterizations</span>(</span>
-<span id="cb63-8"><a href="#cb63-8"></a>  <span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class=</span><span class="st">&quot;BM&quot;</span>), <span class="dt">listParameterizations =</span> listParameterizationsBM)</span>
-<span id="cb63-9"><a href="#cb63-9"></a></span>
-<span id="cb63-10"><a href="#cb63-10"></a><span class="kw">print</span>(dtParameterizations)</span></code></pre></div>
+<p>We notice that, for <code>Sigmae_x</code>, the 5th element above
+contains “_Diagonal” and “_Global” in the list of S3-classes. We proceed
+to generate all BM parametrizations with this S3-class assignment for
+the parameter <code>Sigmae_x</code>.</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Filter the list of parametrizations to avoid generating too many S3 methods.</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="co"># (note that we could do the same type of filtering for the other parameters).</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>listParameterizationsBM <span class="ot">&lt;-</span> <span class="fu">PCMListParameterizations</span>(<span class="fu">structure</span>(<span class="fl">0.0</span>, <span class="at">class=</span><span class="st">&quot;BM&quot;</span>))</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>listParameterizationsBM<span class="sc">$</span>Sigmae_x <span class="ot">&lt;-</span> listParameterizationsBM<span class="sc">$</span>Sigmae_x[<span class="dv">5</span>]</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Generate a table of parametrizations for this list:</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>dtParameterizations <span class="ot">&lt;-</span> <span class="fu">PCMTableParameterizations</span>(</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">structure</span>(<span class="fl">0.0</span>, <span class="at">class=</span><span class="st">&quot;BM&quot;</span>), <span class="at">listParameterizations =</span> listParameterizationsBM)</span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(dtParameterizations)</span></code></pre></div>
 <pre><code>##                                    X0
 ##  1:           VectorParameter,_Global
 ##  2:    VectorParameter,_Fixed,_Global
@@ -777,12 +984,14 @@ c
 ## 10: MatrixParameter,_Diagonal,_WithNonNegativeDiagonal,_Global
 ## 11: MatrixParameter,_Diagonal,_WithNonNegativeDiagonal,_Global
 ## 12: MatrixParameter,_Diagonal,_WithNonNegativeDiagonal,_Global</code></pre>
-<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1"></a><span class="co"># 3. Generate the parametrizations (optionally, we could select a subset of the</span></span>
-<span id="cb65-2"><a href="#cb65-2"></a><span class="co"># rows in the data.table)</span></span>
-<span id="cb65-3"><a href="#cb65-3"></a><span class="kw">PCMGenerateParameterizations</span>(<span class="kw">structure</span>(<span class="fl">0.0</span>, <span class="dt">class=</span><span class="st">&quot;BM&quot;</span>), </span>
-<span id="cb65-4"><a href="#cb65-4"></a>                             <span class="dt">tableParameterizations =</span> dtParameterizations[])</span></code></pre></div>
-<p>Now the list of BM-models contains the generated model types with a diagonal <code>Sigma_x</code> and a global diagonal <code>Sigmae_x</code>:</p>
-<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1"></a><span class="kw">PCMModels</span>(<span class="st">&quot;BM&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Generate the parametrizations (optionally, we could select a subset of the</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="co"># rows in the data.table)</span></span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMGenerateParameterizations</span>(<span class="fu">structure</span>(<span class="fl">0.0</span>, <span class="at">class=</span><span class="st">&quot;BM&quot;</span>), </span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">tableParameterizations =</span> dtParameterizations[])</span></code></pre></div>
+<p>Now the list of BM-models contains the generated model types with a
+diagonal <code>Sigma_x</code> and a global diagonal
+<code>Sigmae_x</code>:</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMModels</span>(<span class="st">&quot;BM&quot;</span>)</span></code></pre></div>
 <pre><code>##  [1] &quot;BM&quot;                                                                                                                                              
 ##  [2] &quot;BM__AllEqual_Global_X0__Diagonal_WithNonNegativeDiagonal_Sigma_x__Diagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;                              
 ##  [3] &quot;BM__AllEqual_Global_X0__ScalarDiagonal_WithNonNegativeDiagonal_Sigma_x__Diagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;                        
@@ -815,19 +1024,19 @@ c
 ## [30] &quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;
 ## [31] &quot;BM__Omitted_X0__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigma_x__UpperTriangularWithDiagonal_WithNonNegativeDiagonal_Sigmae_x&quot;       
 ## [32] &quot;BM_drift&quot;</code></pre>
-<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1"></a>BMModelGlobalSigmae &lt;-<span class="st"> </span><span class="kw">paste0</span>(</span>
-<span id="cb68-2"><a href="#cb68-2"></a>  <span class="st">&quot;BM&quot;</span> , </span>
-<span id="cb68-3"><a href="#cb68-3"></a>  <span class="st">&quot;__Global_X0&quot;</span>, </span>
-<span id="cb68-4"><a href="#cb68-4"></a>  <span class="st">&quot;__Diagonal_WithNonNegativeDiagonal_Sigma_x&quot;</span>, </span>
-<span id="cb68-5"><a href="#cb68-5"></a>  <span class="st">&quot;__Diagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;</span>)</span>
-<span id="cb68-6"><a href="#cb68-6"></a></span>
-<span id="cb68-7"><a href="#cb68-7"></a>modelObject2 &lt;-<span class="st"> </span><span class="kw">PCM</span>(BMModelGlobalSigmae, <span class="dt">k =</span> <span class="dv">2</span>, <span class="dt">regimes =</span> <span class="kw">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>, <span class="st">&quot;c&quot;</span>))</span>
-<span id="cb68-8"><a href="#cb68-8"></a>vec &lt;-<span class="st"> </span><span class="kw">seq_len</span>(<span class="kw">PCMParamCount</span>(modelObject2))</span>
-<span id="cb68-9"><a href="#cb68-9"></a><span class="kw">PCMParamLoadOrStore</span>(modelObject2, vec, <span class="dt">offset =</span> <span class="dv">0</span>, <span class="dt">load=</span><span class="ot">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>BMModelGlobalSigmae <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;BM&quot;</span> , </span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;__Global_X0&quot;</span>, </span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;__Diagonal_WithNonNegativeDiagonal_Sigma_x&quot;</span>, </span>
+<span id="cb68-5"><a href="#cb68-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;__Diagonal_WithNonNegativeDiagonal_Global_Sigmae_x&quot;</span>)</span>
+<span id="cb68-6"><a href="#cb68-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-7"><a href="#cb68-7" aria-hidden="true" tabindex="-1"></a>modelObject2 <span class="ot">&lt;-</span> <span class="fu">PCM</span>(BMModelGlobalSigmae, <span class="at">k =</span> <span class="dv">2</span>, <span class="at">regimes =</span> <span class="fu">c</span>(<span class="st">&quot;a&quot;</span>, <span class="st">&quot;b&quot;</span>, <span class="st">&quot;c&quot;</span>))</span>
+<span id="cb68-8"><a href="#cb68-8" aria-hidden="true" tabindex="-1"></a>vec <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(<span class="fu">PCMParamCount</span>(modelObject2))</span>
+<span id="cb68-9"><a href="#cb68-9" aria-hidden="true" tabindex="-1"></a><span class="fu">PCMParamLoadOrStore</span>(modelObject2, vec, <span class="at">offset =</span> <span class="dv">0</span>, <span class="at">load=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 <p>[1] 10</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1"></a><span class="kw">print</span>(</span>
-<span id="cb69-2"><a href="#cb69-2"></a>  <span class="kw">PCMTable</span>(modelObject2, <span class="dt">addTransformed =</span> <span class="ot">FALSE</span>, <span class="dt">removeUntransformed =</span> <span class="ot">FALSE</span>), </span>
-<span id="cb69-3"><a href="#cb69-3"></a>  <span class="dt">xtable =</span> <span class="ot">TRUE</span>, <span class="dt">type=</span><span class="st">&#39;html&#39;</span>)                 </span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">PCMTable</span>(modelObject2, <span class="at">addTransformed =</span> <span class="cn">FALSE</span>, <span class="at">removeUntransformed =</span> <span class="cn">FALSE</span>), </span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">xtable =</span> <span class="cn">TRUE</span>, <span class="at">type=</span><span class="st">&#39;html&#39;</span>)                 </span></code></pre></div>
 <table border="1">
 <tr>
 <th>
@@ -848,16 +1057,17 @@ regime
 :global:
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 1.0 \\ 2.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 1.0 \\ 2.0 \\
+\end{bmatrix}\)</span>
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 9.0 &amp; 0.0 \\ 0.0 &amp; 10.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 9.0 &amp; 0.0 \\ 0.0 &amp;
+10.0 \\ \end{bmatrix}\)</span>
 </td>
 <td align="right">
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 a
@@ -867,11 +1077,11 @@ a
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 3.0 &amp; 0.0 \\ 0.0 &amp; 4.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 3.0 &amp; 0.0 \\ 0.0 &amp;
+4.0 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 b
@@ -881,11 +1091,11 @@ b
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 5.0 &amp; 0.0 \\ 0.0 &amp; 6.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 5.0 &amp; 0.0 \\ 0.0 &amp;
+6.0 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 <br />
-
 <tr>
 <td align="right">
 c
@@ -895,22 +1105,30 @@ c
 <td align="right">
 </td>
 <td align="right">
-<span class="math inline">\(\begin{bmatrix}{} 7.0 &amp; 0.0 \\ 0.0 &amp; 8.0 \\ \end{bmatrix}\)</span>
+<span class="math inline">\(\begin{bmatrix}{} 7.0 &amp; 0.0 \\ 0.0 &amp;
+8.0 \\ \end{bmatrix}\)</span>
 </td>
 </tr>
 </table>
 </div>
 <div id="references" class="section level1 unnumbered">
-<h1>References</h1>
-<div id="refs" class="references">
-<div id="ref-Clavel:2015hc">
-<p>Clavel, Julien, Gilles Escarguel, and Gildas Merceron. 2015. “mvmorph: an R package for fitting multivariate evolutionary models to morphometric data.” <em>Methods in Ecology and Evolution</em> 6 (11): 1311–9.</p>
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Clavel:2015hc" class="csl-entry">
+Clavel, Julien, Gilles Escarguel, and Gildas Merceron. 2015.
+<span>“<span class="nocase">mvmorph: an R package for fitting
+multivariate evolutionary models to morphometric data</span>.”</span>
+<em>Methods in Ecology and Evolution</em> 6 (11): 1311–19.
 </div>
-<div id="ref-Golub:2013mc">
-<p>Golub, G H, and C F Van Loan. 2013. <em>Matrix Computations</em>. Baltimore: The Johns Hopkins University Press.</p>
+<div id="ref-Golub:2013mc" class="csl-entry">
+Golub, G H, and C F Van Loan. 2013. <em><span>Matrix
+Computations</span></em>. Baltimore: The Johns Hopkins University Press.
 </div>
-<div id="ref-Mitov:2018fl">
-<p>Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja Stadler. 2019. “Fast likelihood calculation for multivariate Gaussian phylogenetic models with shifts.” <em>Theor. Popul. Biol.</em>, December. <a href="https://doi.org/10.1016/j.tpb.2019.11.005">https://doi.org/10.1016/j.tpb.2019.11.005</a>.</p>
+<div id="ref-Mitov:2018fl" class="csl-entry">
+Mitov, Venelin, Krzysztof Bartoszek, Georgios Asimomitis, and Tanja
+Stadler. 2019. <span>“<span class="nocase">Fast likelihood calculation
+for multivariate Gaussian phylogenetic models with
+shifts</span>.”</span> <em>Theor. Popul. Biol.</em>, December. <a href="https://doi.org/10.1016/j.tpb.2019.11.005">https://doi.org/10.1016/j.tpb.2019.11.005</a>.
 </div>
 </div>
 </div>

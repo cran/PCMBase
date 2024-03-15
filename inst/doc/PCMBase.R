@@ -3,14 +3,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ape)
 library(PCMBase)
 
-if(!requireNamespace("ggtree")) {
-  message("Building the vignette requires ggtree R-package. Trying to install.")
-  try({
-    if (!requireNamespace("BiocManager", quietly = TRUE))
-      install.packages("BiocManager")
-    BiocManager::install("ggtree", version = "3.9")
-  }, silent = TRUE)
-}
+FLAGSuggestsAvailable <- PCMBase::RequireSuggestedPackages()
+
+options(rmarkdown.html_vignette.check_title = FALSE)
 
 ## -----------------------------------------------------------------------------
 # scroll to the right in the following listing to see the full model type names 
@@ -139,16 +134,18 @@ PCMTreeSetPartRegimes(
   part.regime = structure(c("a", "b"), names = as.character(c(N+1, splitNode))), 
   setPartition = TRUE)
 
-palette <- PCMColorPalette(2, c("a", "b"))
-
-# Plot the tree with branches colored according to the regimes.
-# The following code works only if the ggtree package is installed, which is not on CRAN. 
-# The tree would not be depicted correctly if ggtree is not installed.
-plTree <- PCMTreePlot(tree.ab)
+## ---- eval=FLAGSuggestsAvailable----------------------------------------------
 if(requireNamespace("ggtree")) {
+  palette <- PCMColorPalette(2, c("a", "b"))
+  
+  # Plot the tree with branches colored according to the regimes.
+  # The following code works only if the ggtree package is installed, which is not on CRAN. 
+  # The tree would not be depicted correctly if ggtree is not installed.
+  plTree <- PCMTreePlot(tree.ab)
   plTree <- plTree + ggtree::geom_nodelab(size = 2) 
+
+  plTree
 }
-plTree
 
 ## -----------------------------------------------------------------------------
 traits <- PCMSim(tree.ab, modelBM.ab, modelBM.ab$X0)
