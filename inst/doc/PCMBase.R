@@ -65,7 +65,7 @@ PCMParamLoadOrStore(modelBM.ab, param2, offset = 0, load=TRUE)
 
 print(modelBM.ab)
 
-## ---- results='asis'----------------------------------------------------------
+## ----results='asis'-----------------------------------------------------------
 options(digits = 2)
 print(PCMTable(modelBM.ab), xtable = TRUE, type="html")
 
@@ -106,7 +106,7 @@ model.OU.BM$`b`$Sigma_x[,,1] <- cbind(
   c(1, 0.3, 0), 
   c(0.4, 0.5, 0.3))
 
-## ---- results='asis'----------------------------------------------------------
+## ----results='asis'-----------------------------------------------------------
 print(PCMTable(model.OU.BM), xtable = TRUE, type="html")
 
 ## -----------------------------------------------------------------------------
@@ -134,18 +134,18 @@ PCMTreeSetPartRegimes(
   part.regime = structure(c("a", "b"), names = as.character(c(N+1, splitNode))), 
   setPartition = TRUE)
 
-## ---- eval=FLAGSuggestsAvailable----------------------------------------------
-if(requireNamespace("ggtree")) {
-  palette <- PCMColorPalette(2, c("a", "b"))
-  
-  # Plot the tree with branches colored according to the regimes.
-  # The following code works only if the ggtree package is installed, which is not on CRAN. 
-  # The tree would not be depicted correctly if ggtree is not installed.
-  plTree <- PCMTreePlot(tree.ab)
-  plTree <- plTree + ggtree::geom_nodelab(size = 2) 
-
-  plTree
-}
+## ----eval=FLAGSuggestsAvailable-----------------------------------------------
+# if(requireNamespace("ggtree")) {
+#   palette <- PCMColorPalette(2, c("a", "b"))
+# 
+#   # Plot the tree with branches colored according to the regimes.
+#   # The following code works only if the ggtree package is installed, which is not on CRAN.
+#   # The tree would not be depicted correctly if ggtree is not installed.
+#   plTree <- PCMTreePlot(tree.ab)
+#   plTree <- plTree + ggtree::geom_nodelab(size = 2)
+# 
+#   plTree
+# }
 
 ## -----------------------------------------------------------------------------
 traits <- PCMSim(tree.ab, modelBM.ab, modelBM.ab$X0)

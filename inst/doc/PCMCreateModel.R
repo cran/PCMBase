@@ -133,100 +133,100 @@ PCMSpecify.BM_drift <- function(model, ...) {
 }
 
 ## ----eval=FLAGSuggestsAvailable-----------------------------------------------
-X0 <- c(5, 2, 1) ## root state
-
-## in regime a traits evolve independently
-a.Sigma_x <- rbind(c(1.6, 0.0, 0.0),c(0.0, 2.4, 0.0),c(0.0, 0.0, 2.0))
-## no jumps at the end of a branch
-a.Sigmae_x <- rbind(c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0))
-a.h_drift<-c(4, 5, 6)
-
-## in regime b evolution is correlated
-b.Sigma_x <- rbind(c(1.6, 0.3, 0.3), c(0.0, 0.3, 0.4),c(0.0, 0.0, 2.0))
-## no jumps at the end of a branch
-b.Sigmae_x <- rbind(c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0))
-b.h_drift<-c(1, 2, 3)
-
-Sigma_x <- PCMParamBindRegimeParams(a = a.Sigma_x, b = b.Sigma_x)
-Sigmae_x <- PCMParamBindRegimeParams(a = a.Sigmae_x, b = b.Sigmae_x)
-h_drift <- PCMParamBindRegimeParams(a = a.h_drift, b = b.h_drift)
-
-PCMBase_model_BM_drift <- PCM("BM_drift", k = 3, regimes = c("a", "b"),
-                              params = list(X0 = X0,h_drift = h_drift[,,drop=FALSE],
-                                            Sigma_x = Sigma_x[,,,drop=FALSE],Sigmae_x = Sigmae_x[,,,drop=FALSE]))
+# X0 <- c(5, 2, 1) ## root state
+# 
+# ## in regime a traits evolve independently
+# a.Sigma_x <- rbind(c(1.6, 0.0, 0.0),c(0.0, 2.4, 0.0),c(0.0, 0.0, 2.0))
+# ## no jumps at the end of a branch
+# a.Sigmae_x <- rbind(c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0))
+# a.h_drift<-c(4, 5, 6)
+# 
+# ## in regime b evolution is correlated
+# b.Sigma_x <- rbind(c(1.6, 0.3, 0.3), c(0.0, 0.3, 0.4),c(0.0, 0.0, 2.0))
+# ## no jumps at the end of a branch
+# b.Sigmae_x <- rbind(c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0),c(0.0, 0.0, 0.0))
+# b.h_drift<-c(1, 2, 3)
+# 
+# Sigma_x <- PCMParamBindRegimeParams(a = a.Sigma_x, b = b.Sigma_x)
+# Sigmae_x <- PCMParamBindRegimeParams(a = a.Sigmae_x, b = b.Sigmae_x)
+# h_drift <- PCMParamBindRegimeParams(a = a.h_drift, b = b.h_drift)
+# 
+# PCMBase_model_BM_drift <- PCM("BM_drift", k = 3, regimes = c("a", "b"),
+#                               params = list(X0 = X0,h_drift = h_drift[,,drop=FALSE],
+#                                             Sigma_x = Sigma_x[,,,drop=FALSE],Sigmae_x = Sigmae_x[,,,drop=FALSE]))
 
 ## ----eval=FLAGSuggestsAvailable-----------------------------------------------
-# make results reproducible
-set.seed(2, kind = "Mersenne-Twister", normal.kind = "Inversion")
+# # make results reproducible
+# set.seed(2, kind = "Mersenne-Twister", normal.kind = "Inversion")
+# 
+# # number of regimes
+# R <- 2
+# 
+# # number of extant tips
+# N <- 100
+# 
+# tree.a <- PCMTree(rtree(n=N))
+# PCMTreeSetLabels(tree.a)
+# PCMTreeSetPartRegimes(tree.a, part.regime = c(`101` = "a"), setPartition = TRUE)
+# 
+# lstDesc <- PCMTreeListDescendants(tree.a)
+# splitNode <- names(lstDesc)[which(sapply(lstDesc, length) > N/2 & sapply(lstDesc, length) < 2*N/3)][1]
+# 
+# tree.ab <- PCMTreeInsertSingletons(
+#   tree.a, nodes = as.integer(splitNode),
+#   positions = PCMTreeGetBranchLength(tree.a, as.integer(splitNode))/2)
+# PCMTreeSetPartRegimes(
+#   tree.ab,
+#   part.regime = structure(c("a", "b"), names = as.character(c(N+1, splitNode))),
+#   setPartition = TRUE)
+# 
+# palette <- PCMColorPalette(2, c("a", "b"))
+# 
+# # Plot the tree with branches colored according to the regimes.
+# # The following code works correctly only if the ggtree package is installed,
+# # which is not on CRAN.
+# plTree <- PCMTreePlot(tree.ab)
+# if(requireNamespace("ggtree")) {
+#   plTree <- plTree + ggtree::geom_nodelab(size = 2)
+# }
+# plTree
 
-# number of regimes
-R <- 2
+## ----eval=FLAGSuggestsAvailable-----------------------------------------------
+# mData<-PCMSim(tree.ab, PCMBase_model_BM_drift, X0)[,1:N] ## we only want the tip data
+# ## NOTE that observations from different species are in the columns NOT in the rows as
+# ## in other software
 
-# number of extant tips
-N <- 100
+## ----eval=FLAGSuggestsAvailable-----------------------------------------------
+# log_lik<- PCMLik(mData, tree.ab, PCMBase_model_BM_drift)
+# print(log_lik[1]) ## we just want to print the log-likelihood without the attributes
 
-tree.a <- PCMTree(rtree(n=N))
-PCMTreeSetLabels(tree.a)
-PCMTreeSetPartRegimes(tree.a, part.regime = c(`101` = "a"), setPartition = TRUE)
-
-lstDesc <- PCMTreeListDescendants(tree.a)
-splitNode <- names(lstDesc)[which(sapply(lstDesc, length) > N/2 & sapply(lstDesc, length) < 2*N/3)][1]
-
-tree.ab <- PCMTreeInsertSingletons(
-  tree.a, nodes = as.integer(splitNode), 
-  positions = PCMTreeGetBranchLength(tree.a, as.integer(splitNode))/2)
-PCMTreeSetPartRegimes(
-  tree.ab,
-  part.regime = structure(c("a", "b"), names = as.character(c(N+1, splitNode))), 
-  setPartition = TRUE)
-
-palette <- PCMColorPalette(2, c("a", "b"))
-
-# Plot the tree with branches colored according to the regimes.
-# The following code works correctly only if the ggtree package is installed, 
-# which is not on CRAN.
-plTree <- PCMTreePlot(tree.ab)
-if(requireNamespace("ggtree")) {
-  plTree <- plTree + ggtree::geom_nodelab(size = 2)
-}
-plTree
-
-## ---- eval=FLAGSuggestsAvailable----------------------------------------------
-mData<-PCMSim(tree.ab, PCMBase_model_BM_drift, X0)[,1:N] ## we only want the tip data
-## NOTE that observations from different species are in the columns NOT in the rows as 
-## in other software
-
-## ---- eval=FLAGSuggestsAvailable----------------------------------------------
-log_lik<- PCMLik(mData, tree.ab, PCMBase_model_BM_drift)
-print(log_lik[1]) ## we just want to print the log-likelihood without the attributes
-
-## ---- eval=FLAGSuggestsAvailable----------------------------------------------
-## create an vector of appropriate length to store the vectorized model parameters
-v_param <- double(PCMParamCount(PCMBase_model_BM_drift))
-
-# load the current model parameters into param
-PCMParamLoadOrStore(PCMBase_model_BM_drift, v_param, offset=0, load=FALSE)
-
-print(v_param)
-
-## now create a likelihood function for the particular model and observed data
-likFun <- PCMCreateLikelihood(mData, tree.ab, PCMBase_model_BM_drift)
-
-log_lik_from_likFun<-likFun(v_param)
-print(log_lik_from_likFun[1])
-print(log_lik_from_likFun[1]==log_lik[1])
-
-# modify slightly the model parameters
-v_param_2 <- jitter(v_param)
-
-print(v_param_2)
-
-# set the new parameter vector
-PCMBase_model_BM_drift_2<-PCMBase_model_BM_drift
-PCMParamLoadOrStore(PCMBase_model_BM_drift_2, v_param_2, offset = 0, load=TRUE)
-
-print(PCMBase_model_BM_drift_2)
-log_lik_from_likFun_2<-likFun(v_param_2)
-print(log_lik_from_likFun_2[1])
-
+## ----eval=FLAGSuggestsAvailable-----------------------------------------------
+# ## create an vector of appropriate length to store the vectorized model parameters
+# v_param <- double(PCMParamCount(PCMBase_model_BM_drift))
+# 
+# # load the current model parameters into param
+# PCMParamLoadOrStore(PCMBase_model_BM_drift, v_param, offset=0, load=FALSE)
+# 
+# print(v_param)
+# 
+# ## now create a likelihood function for the particular model and observed data
+# likFun <- PCMCreateLikelihood(mData, tree.ab, PCMBase_model_BM_drift)
+# 
+# log_lik_from_likFun<-likFun(v_param)
+# print(log_lik_from_likFun[1])
+# print(log_lik_from_likFun[1]==log_lik[1])
+# 
+# # modify slightly the model parameters
+# v_param_2 <- jitter(v_param)
+# 
+# print(v_param_2)
+# 
+# # set the new parameter vector
+# PCMBase_model_BM_drift_2<-PCMBase_model_BM_drift
+# PCMParamLoadOrStore(PCMBase_model_BM_drift_2, v_param_2, offset = 0, load=TRUE)
+# 
+# print(PCMBase_model_BM_drift_2)
+# log_lik_from_likFun_2<-likFun(v_param_2)
+# print(log_lik_from_likFun_2[1])
+# 
 

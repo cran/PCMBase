@@ -34,57 +34,57 @@ X <- cbind(
 colnames(X) <- as.character(1:5)
 
 ## ----PlotTreeAndData, include=FALSE, eval=FALSE-------------------------------
-#  library(tikzDevice); library(ggplot2); library(data.table);
-#  # 4. Plotting the tree, the data and the active coordinate vectors:
-#  tipValueLabels <- data.table(
-#    node = seq_len(PCMTreeNumTips(tree)),
-#    valueLabel = paste0(
-#      "$\\vec{x}_{", tree$tip.label, "}=(", apply(X[, tree$tip.label], 2, toString), ")^T$"),
-#    parse = TRUE)
-#  
-#  # Determine the active coordinates for X:
-#  k_i <- PCMPresentCoordinates(X[, tree$tip.label], tree, NULL)
-#  
-#  
-#  dtNodes <- PCMTreeDtNodes(tree)
-#  dtNodes[, kLabel:=paste0(
-#    "$\\vec{k}_{", endNodeLab, "}=(", sapply(endNode, function(i) toString(which(k_i[,i]))), ")^T$")]
-#  dtNodes[, kLabel2:=kLabel]
-#  dtNodes[endNodeLab == "8", kLabel:=NA]
-#  dtNodes[endNodeLab != "8", kLabel2:=NA]
-#  dtNodes[, tLabel:=paste0("$t_{", endNodeLab, "}=", endTime-startTime, "$")]
-#  dtNodes[endNodeLab == "0", tLabel:=NA]
-#  
-#  tikz(file = "TreeMGPMExample.tex", width = 8, height = 5)
-#  palette <- PCMColorPalette(2, names = c("1", "2"), colors = c("black", "orange"))
-#  
-#  plTree <- PCMTreePlot(tree, palette = palette, size=2)
-#  
-#  # Plot the tree with branches colored according to the regimes.
-#  # The following code works correctly only if the ggtree package is installed,
-#  # which is not on CRAN.
-#  if(requireNamespace("ggtree")) {
-#  
-#    plTree <- plTree +
-#      ggtree::geom_nodelab(geom = "label", color = "red") +
-#      ggtree::geom_tiplab(geom = "label", color = "black")
-#  
-#    plTree <- plTree %<+% tipValueLabels %<+% dtNodes[, list(node = endNode, kLabel, kLabel2, tLabel)]
-#  
-#    plTree <- plTree +
-#      ggtree::geom_tiplab(geom = "text", aes(label = valueLabel), color = "black", hjust = -0.2, vjust = -1.1) +
-#      ggtree::geom_tiplab(geom = "text", aes(label = kLabel), color = "black", hjust = -0.4, vjust = 1.1) +
-#      ggtree::geom_nodelab(geom = "text", aes(label = kLabel), color = "red", hjust = -0.2, vjust = 0.6) +
-#      ggtree::geom_nodelab(geom = "text", aes(label = kLabel2), color = "red", hjust = 0.4, vjust = 2.8) +
-#      geom_text(aes(x = branch, label = tLabel), vjust = -0.8, color = "black") +
-#      scale_x_continuous(limits = c(0, 5.2)) + scale_y_continuous(limits = c(0.8, 5.2))
-#  }
-#  
-#  plTree
-#  
-#  dev.off()
+# library(tikzDevice); library(ggplot2); library(data.table);
+# # 4. Plotting the tree, the data and the active coordinate vectors:
+# tipValueLabels <- data.table(
+#   node = seq_len(PCMTreeNumTips(tree)),
+#   valueLabel = paste0(
+#     "$\\vec{x}_{", tree$tip.label, "}=(", apply(X[, tree$tip.label], 2, toString), ")^T$"),
+#   parse = TRUE)
+# 
+# # Determine the active coordinates for X:
+# k_i <- PCMPresentCoordinates(X[, tree$tip.label], tree, NULL)
+# 
+# 
+# dtNodes <- PCMTreeDtNodes(tree)
+# dtNodes[, kLabel:=paste0(
+#   "$\\vec{k}_{", endNodeLab, "}=(", sapply(endNode, function(i) toString(which(k_i[,i]))), ")^T$")]
+# dtNodes[, kLabel2:=kLabel]
+# dtNodes[endNodeLab == "8", kLabel:=NA]
+# dtNodes[endNodeLab != "8", kLabel2:=NA]
+# dtNodes[, tLabel:=paste0("$t_{", endNodeLab, "}=", endTime-startTime, "$")]
+# dtNodes[endNodeLab == "0", tLabel:=NA]
+# 
+# tikz(file = "TreeMGPMExample.tex", width = 8, height = 5)
+# palette <- PCMColorPalette(2, names = c("1", "2"), colors = c("black", "orange"))
+# 
+# plTree <- PCMTreePlot(tree, palette = palette, size=2)
+# 
+# # Plot the tree with branches colored according to the regimes.
+# # The following code works correctly only if the ggtree package is installed,
+# # which is not on CRAN.
+# if(requireNamespace("ggtree")) {
+# 
+#   plTree <- plTree +
+#     ggtree::geom_nodelab(geom = "label", color = "red") +
+#     ggtree::geom_tiplab(geom = "label", color = "black")
+# 
+#   plTree <- plTree %<+% tipValueLabels %<+% dtNodes[, list(node = endNode, kLabel, kLabel2, tLabel)]
+# 
+#   plTree <- plTree +
+#     ggtree::geom_tiplab(geom = "text", aes(label = valueLabel), color = "black", hjust = -0.2, vjust = -1.1) +
+#     ggtree::geom_tiplab(geom = "text", aes(label = kLabel), color = "black", hjust = -0.4, vjust = 1.1) +
+#     ggtree::geom_nodelab(geom = "text", aes(label = kLabel), color = "red", hjust = -0.2, vjust = 0.6) +
+#     ggtree::geom_nodelab(geom = "text", aes(label = kLabel2), color = "red", hjust = 0.4, vjust = 2.8) +
+#     geom_text(aes(x = branch, label = tLabel), vjust = -0.8, color = "black") +
+#     scale_x_continuous(limits = c(0, 5.2)) + scale_y_continuous(limits = c(0.8, 5.2))
+# }
+# 
+# plTree
+# 
+# dev.off()
 
-## ---- results='asis'----------------------------------------------------------
+## ----results='asis'-----------------------------------------------------------
 model.OU.BM <- MixedGaussian(
   k = nrow(X), 
   modelTypes = c(
@@ -118,14 +118,14 @@ print(
   xtable = TRUE, type=tableOutputType)
 
 ## ----add-to-PCMBaseTestObjects, include = FALSE, eval=FALSE-------------------
-#  # add these objects to the PCMBaseTestObjects (needed for the coding examples).
-#  PCMBaseTestObjects[["tree"]] <- tree
-#  PCMBaseTestObjects[["X"]] <- X[, tree$tip.label]
-#  PCMBaseTestObjects[["model.OU.BM"]] <- model.OU.BM
-#  
-#  usethis::use_data(PCMBaseTestObjects, overwrite = TRUE)
+# # add these objects to the PCMBaseTestObjects (needed for the coding examples).
+# PCMBaseTestObjects[["tree"]] <- tree
+# PCMBaseTestObjects[["X"]] <- X[, tree$tip.label]
+# PCMBaseTestObjects[["model.OU.BM"]] <- model.OU.BM
+# 
+# usethis::use_data(PCMBaseTestObjects, overwrite = TRUE)
 
-## ---- echo = TRUE-------------------------------------------------------------
+## ----echo = TRUE--------------------------------------------------------------
 options(digits = 4)
 # Variant 1: 
 PCMLik(X[, tree$tip.label], tree, model.OU.BM)

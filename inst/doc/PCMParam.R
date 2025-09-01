@@ -123,7 +123,7 @@ PCMParamLoadOrStore(modelObject, vec, offset = 0, load=TRUE)
 
 str(modelObject)
 
-## ---- results='asis'----------------------------------------------------------
+## ----results='asis'-----------------------------------------------------------
 options(digits = 1)
 print(
   PCMTable(modelObject, addTransformed = FALSE, removeUntransformed = FALSE), 
@@ -155,7 +155,7 @@ PCMGenerateParameterizations(structure(0.0, class="BM"),
 ## -----------------------------------------------------------------------------
 PCMModels("BM")
 
-## ---- results='asis'----------------------------------------------------------
+## ----results='asis'-----------------------------------------------------------
 BMModelGlobalSigmae <- paste0(
   "BM" , 
   "__Global_X0", 
